@@ -1,0 +1,128 @@
+{
+  "common": {
+    "continue": "Continue",
+    "play": "Play",
+    "retry": "Try Again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "share": "Share",
+    "close": "Close",
+    "next": "Next",
+    "back": "Back",
+    "skip": "Skip",
+    "done": "Done",
+    "loading": "Loading...",
+    "error": "Error",
+    "offline": "No connection. Using cached data",
+    "ad": "Ad"
+  },
+  "tabs": {
+    "home": "Home",
+    "infinite": "Mode",
+    "leaderboard": "Ranking",
+    "profile": "Profile"
+  },
+  "onboarding": {
+    "step1Title": "Play with words —\ndiscover real facts!",
+    "step1Desc": "New puzzles and interesting facts from verified sources every day",
+    "step2Title": "5 mini-games\nevery day",
+    "step2Desc": "Anagrams, compose words, chains, word search and Wordle — all in one app",
+    "step3Title": "Choose content\nlanguage",
+    "step3Desc": "Puzzles and facts are available in Russian and English",
+    "langRu": "Russian",
+    "langEn": "English",
+    "start": "Start!"
+  },
+  "home": {
+    "title": "WordPulse",
+    "dailySet": "Daily Set",
+    "dailyTheme": "Theme: {{theme}}",
+    "progress": "{{current}}/{{total}}",
+    "infiniteMode": "Infinite Mode",
+    "infiniteDesc": "Random puzzles without limits",
+    "completed": "Set completed!",
+    "newSetIn": "New set in {{time}}",
+    "empty": "Today's set is not ready yet"
+  },
+  "game": {
+    "anagram": "Unscramble",
+    "anagramDesc": "the mixed-up letters",
+    "compose": "Compose Words",
+    "composeDesc": "from given letters",
+    "chain": "Word Chain",
+    "chainDesc": "change one letter",
+    "search": "Word Search",
+    "searchDesc": "find words in the grid",
+    "guess": "Guess the Word",
+    "guessDesc": "in 6 attempts",
+    "check": "Check",
+    "hint": "Hint",
+    "correct": "Correct!",
+    "incorrect": "Incorrect",
+    "timeUp": "Time's up"
+  },
+  "fact": {
+    "title": "Fun Fact!",
+    "source": "Source"
+  },
+  "results": {
+    "title": "Results",
+    "excellent": "Excellent!",
+    "good": "Good job!",
+    "okay": "Not bad!",
+    "tryAgain": "Try again tomorrow!",
+    "streak": "Streak: {{days}} days",
+    "position": "#{{position}} of {{total}} players today",
+    "goHome": "Go Home"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "daily": "Today",
+    "weekly": "Week",
+    "allTime": "All Time",
+    "yourPosition": "Your position",
+    "empty": "No data yet",
+    "setNickname": "Set a nickname to participate"
+  },
+  "profile": {
+    "title": "Profile",
+    "streak": "streak",
+    "score": "score",
+    "facts": "facts",
+    "activity": "Activity",
+    "statistics": "Statistics",
+    "totalGames": "Total games",
+    "correctPercent": "Correct",
+    "bestStreak": "Best streak",
+    "avgScore": "Avg score"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "sound": "Sound",
+    "haptics": "Haptics",
+    "notifications": "Notifications",
+    "about": "About",
+    "version": "Version"
+  },
+  "nickname": {
+    "title": "Nickname",
+    "placeholder": "Enter nickname",
+    "hint": "3 to 16 characters"
+  },
+  "streakMilestone": {
+    "title7": "7 days in a row!",
+    "title30": "One month streak!",
+    "title100": "100 days! Incredible!",
+    "desc": "Keep up the great work!"
+  },
+  "error": {
+    "title": "Oops! Something went wrong",
+    "generic": "An error occurred. Try again later.",
+    "network": "Check your internet connection"
+  }
+}

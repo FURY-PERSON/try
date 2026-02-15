@@ -1,0 +1,19 @@
+{
+  "name": "@wordpulse/api-client",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "clean": "rm -rf dist node_modules"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "@wordpulse/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

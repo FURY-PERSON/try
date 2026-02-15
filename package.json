@@ -1,0 +1,40 @@
+{
+  "name": "wordpulse",
+  "private": true,
+  "scripts": {
+    "dev:mobile": "turbo run dev --filter=@wordpulse/mobile",
+    "dev:server": "turbo run dev --filter=@wordpulse/server",
+    "dev:web": "turbo run dev --filter=@wordpulse/web",
+    "build": "turbo run build",
+    "build:server": "turbo run build --filter=@wordpulse/server",
+    "build:web": "turbo run build --filter=@wordpulse/web",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:push": "pnpm --filter @wordpulse/server exec prisma db push",
+    "db:migrate": "pnpm --filter @wordpulse/server exec prisma migrate dev",
+    "db:migrate:deploy": "pnpm --filter @wordpulse/server exec prisma migrate deploy",
+    "db:seed": "pnpm --filter @wordpulse/server exec prisma db seed",
+    "db:studio": "pnpm --filter @wordpulse/server exec prisma studio",
+    "db:generate": "pnpm --filter @wordpulse/server exec prisma generate",
+    "clean": "turbo run clean",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.6.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": ["prettier --write"],
+    "*.{json,md,css}": ["prettier --write"]
+  },
+  "packageManager": "pnpm@9.14.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

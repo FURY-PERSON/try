@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  deviceId           String    @unique
+  nickname           String?   @unique
+  language           String    @default("both")
+  pushToken          String?
+  pushEnabled        Boolean   @default(true)
+  currentStreak      Int       @default(0)
+  bestStreak         Int       @default(0)
+  lastPlayedDate     DateTime?
+  totalGamesPlayed   Int       @default(0)
+  totalCorrectAnswers Int      @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  questionHistory    UserQuestionHistory[]
+  leaderboardEntries LeaderboardEntry[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  nameEn    String
+  slug      String     @unique
+  icon      String
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+
+  questions Question[]
+}
+
+model Question {
+  id                 String   @id @default(cuid())
+  type               String
+  language           String
+  categoryId         String
+  difficulty         Int
+  status             String   @default("moderation")
+
+  questionData       Json
+
+  fact               String
+  factSource         String
+  factSourceUrl      String?
+
+  illustrationUrl    String?
+  illustrationPrompt String?
+
+  timesShown         Int      @default(0)
+  timesCorrect       Int      @default(0)
+  avgTimeSeconds     Float    @default(0)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  category           Category @relation(fields: [categoryId], references: [id])
+  dailySets          DailySetQuestion[]
+  history            UserQuestionHistory[]
+}
+
+model DailySet {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  theme     String
+  themeEn   String
+  status    String   @default("draft")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  questions DailySetQuestion[]
+  leaderboardEntries LeaderboardEntry[]
+}
+
+model DailySetQuestion {
+  id         String   @id @default(cuid())
+  dailySetId String
+  questionId String
+  sortOrder  Int
+
+  dailySet   DailySet @relation(fields: [dailySetId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id])
+
+  @@unique([dailySetId, questionId])
+}
+
+model UserQuestionHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  questionId       String
+  result           String
+  answeredAt       DateTime @default(now())
+  timeSpentSeconds Int
+
+  user     User     @relation(fields: [userId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@index([userId, questionId])
+  @@index([userId, result])
+}
+
+model LeaderboardEntry {
+  id               String   @id @default(cuid())
+  userId           String
+  dailySetId       String
+  score            Int
+  correctAnswers   Int
+  totalTimeSeconds Int
+  createdAt        DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  dailySet DailySet @relation(fields: [dailySetId], references: [id])
+
+  @@unique([userId, dailySetId])
+  @@index([dailySetId, score(sort: Desc)])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
