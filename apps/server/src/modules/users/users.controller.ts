@@ -15,7 +15,7 @@ import { DeviceAuthGuard } from '@/common/guards/device-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('users')
-@Controller('api/v1/users')
+@Controller('v1/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

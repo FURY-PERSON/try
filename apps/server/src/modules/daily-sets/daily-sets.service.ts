@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 
 @Injectable()
@@ -230,7 +231,7 @@ export class DailySetsService {
       lastPlayed.setHours(0, 0, 0, 0);
 
       const diffTime = today.getTime() - lastPlayed.getTime();
-      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
         // Already played today — should not happen since we check for existing entry
@@ -250,67 +251,79 @@ export class DailySetsService {
     const newBestStreak = Math.max(user.bestStreak, newCurrentStreak);
 
     // Execute all database operations in a transaction
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Create UserQuestionHistory for each question
-      await tx.userQuestionHistory.createMany({
-        data: dto.results.map((r) => ({
-          userId,
-          questionId: r.questionId,
-          result: r.result,
-          timeSpentSeconds: r.timeSpentSeconds,
-        })),
-      });
+    // Handles race condition: if two requests arrive simultaneously,
+    // the unique constraint on (userId, dailySetId) will catch duplicates
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // Create UserQuestionHistory for each question
+        await tx.userQuestionHistory.createMany({
+          data: dto.results.map((r) => ({
+            userId,
+            questionId: r.questionId,
+            result: r.result,
+            timeSpentSeconds: r.timeSpentSeconds,
+          })),
+        });
 
-      // Update question stats for each question
-      for (const r of dto.results) {
-        const question = dailySet.questions.find(
-          (dsq) => dsq.questionId === r.questionId,
-        )?.question;
+        // Update question stats for each question
+        for (const r of dto.results) {
+          const question = dailySet.questions.find(
+            (dsq) => dsq.questionId === r.questionId,
+          )?.question;
 
-        if (question) {
-          const newTimesShown = question.timesShown + 1;
-          const newTimesCorrect =
-            question.timesCorrect + (r.result === 'correct' ? 1 : 0);
-          const newAvgTime =
-            (question.avgTimeSeconds * question.timesShown + r.timeSpentSeconds) /
-            newTimesShown;
+          if (question) {
+            const newTimesShown = question.timesShown + 1;
+            const newTimesCorrect =
+              question.timesCorrect + (r.result === 'correct' ? 1 : 0);
+            const newAvgTime =
+              (question.avgTimeSeconds * question.timesShown + r.timeSpentSeconds) /
+              newTimesShown;
 
-          await tx.question.update({
-            where: { id: r.questionId },
-            data: {
-              timesShown: newTimesShown,
-              timesCorrect: newTimesCorrect,
-              avgTimeSeconds: newAvgTime,
-            },
-          });
+            await tx.question.update({
+              where: { id: r.questionId },
+              data: {
+                timesShown: newTimesShown,
+                timesCorrect: newTimesCorrect,
+                avgTimeSeconds: newAvgTime,
+              },
+            });
+          }
         }
+
+        // Update user streak and stats
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            currentStreak: newCurrentStreak,
+            bestStreak: newBestStreak,
+            lastPlayedDate: today,
+            totalGamesPlayed: { increment: 1 },
+            totalCorrectAnswers: { increment: correctAnswers },
+          },
+        });
+
+        // Create leaderboard entry
+        await tx.leaderboardEntry.create({
+          data: {
+            userId,
+            dailySetId,
+            score,
+            correctAnswers,
+            totalTimeSeconds,
+          },
+        });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException(
+          'You have already submitted results for this daily set',
+        );
       }
-
-      // Update user streak and stats
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          currentStreak: newCurrentStreak,
-          bestStreak: newBestStreak,
-          lastPlayedDate: today,
-          totalGamesPlayed: { increment: 1 },
-          totalCorrectAnswers: { increment: correctAnswers },
-        },
-      });
-
-      // Create leaderboard entry
-      const leaderboardEntry = await tx.leaderboardEntry.create({
-        data: {
-          userId,
-          dailySetId,
-          score,
-          correctAnswers,
-          totalTimeSeconds,
-        },
-      });
-
-      return leaderboardEntry;
-    });
+      throw error;
+    }
 
     // Calculate leaderboard position
     const higherScoreCount = await this.prisma.leaderboardEntry.count({

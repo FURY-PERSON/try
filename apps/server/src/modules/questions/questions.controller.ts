@@ -21,7 +21,7 @@ import { DeviceAuthGuard } from '@/common/guards/device-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 
 @ApiTags('questions')
-@Controller('api/v1/questions')
+@Controller('v1/questions')
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 

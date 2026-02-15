@@ -15,9 +15,9 @@ export class DeviceAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const deviceId = request.headers['x-device-id'] as string;
 
-    if (!deviceId) {
+    if (!deviceId || deviceId.length < 8 || deviceId.length > 256) {
       throw new UnauthorizedException(
-        'Missing x-device-id header. Please register your device first.',
+        'Missing or invalid x-device-id header. Please register your device first.',
       );
     }
 

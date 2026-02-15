@@ -47,7 +47,7 @@ export class AdminQuestionsService {
       this.prisma.question.count({ where }),
     ]);
 
-    return createPaginatedResponse(questions, total, page, limit);
+    return createPaginatedResponse(questions, total, query);
   }
 
   async findOne(id: string) {
@@ -85,7 +85,7 @@ export class AdminQuestionsService {
         language: dto.language,
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
-        questionData: dto.questionData,
+        questionData: dto.questionData as unknown as Prisma.InputJsonValue,
         fact: dto.fact,
         factSource: dto.factSource,
         factSourceUrl: dto.factSourceUrl,
@@ -124,7 +124,7 @@ export class AdminQuestionsService {
         language: dto.language,
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
-        questionData: dto.questionData,
+        questionData: dto.questionData as unknown as Prisma.InputJsonValue,
         fact: dto.fact,
         factSource: dto.factSource,
         factSourceUrl: dto.factSourceUrl,

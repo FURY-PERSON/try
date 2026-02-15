@@ -1,4 +1,9 @@
-import { AD_FREQUENCY } from '@/constants/ads';
+// Inline the constants to avoid importing react-native (Platform) dependency
+const AD_FREQUENCY = {
+  interstitialCooldownMs: 120_000,
+  interstitialMaxPerDay: 10,
+  gracePeriodGames: 3,
+} as const;
 
 // Test the AdManager logic without importing the singleton
 // Re-implement the core logic for testing

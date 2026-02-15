@@ -1,21 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsIn } from 'class-validator';
 
 export class QuestionFilterDto {
   @ApiPropertyOptional({
     description: 'Filter by language (ru, en, both)',
     example: 'en',
+    enum: ['ru', 'en', 'both'],
   })
   @IsOptional()
-  @IsString()
+  @IsIn(['ru', 'en', 'both'])
   language?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by question type (anagram, compose_words, word_chain, word_search, guess_word)',
     example: 'anagram',
+    enum: ['anagram', 'compose_words', 'word_chain', 'word_search', 'guess_word'],
   })
   @IsOptional()
-  @IsString()
+  @IsIn(['anagram', 'compose_words', 'word_chain', 'word_search', 'guess_word'])
   type?: string;
 
   @ApiPropertyOptional({

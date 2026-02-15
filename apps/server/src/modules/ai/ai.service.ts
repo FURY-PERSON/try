@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PrismaService } from '@/prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { UploadService } from '@/modules/admin/upload/upload.service';
 import {
   getQuestionGenerationSystemPrompt,
@@ -156,7 +157,7 @@ export class AiService {
             language,
             categoryId: categoryRecord.id,
             difficulty: q.difficulty || difficulty,
-            questionData: q.questionData as Record<string, unknown>,
+            questionData: q.questionData as unknown as Prisma.InputJsonValue,
             fact: q.fact,
             factSource,
             factSourceUrl: q.factSourceUrl || null,
@@ -212,7 +213,7 @@ export class AiService {
         response_format: 'b64_json',
       });
 
-      const b64Data = response.data[0]?.b64_json;
+      const b64Data = response.data?.[0]?.b64_json;
 
       if (!b64Data) {
         throw new Error('No image data in DALL-E response');

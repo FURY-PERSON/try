@@ -10,7 +10,7 @@ interface LeaderboardEntryResult {
   totalTimeSeconds: number;
 }
 
-interface LeaderboardResponse {
+export interface LeaderboardResponse {
   entries: LeaderboardEntryResult[];
   userPosition: number | null;
   totalPlayers: number;

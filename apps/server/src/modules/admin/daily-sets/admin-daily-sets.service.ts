@@ -41,7 +41,7 @@ export class AdminDailySetsService {
       this.prisma.dailySet.count({ where }),
     ]);
 
-    return createPaginatedResponse(dailySets, total, page, limit);
+    return createPaginatedResponse(dailySets, total, query);
   }
 
   async findOne(id: string) {

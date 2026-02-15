@@ -5,12 +5,12 @@ import {
   ApiHeader,
   ApiQuery,
 } from '@nestjs/swagger';
-import { LeaderboardService } from './leaderboard.service';
+import { LeaderboardService, LeaderboardResponse } from './leaderboard.service';
 import { DeviceAuthGuard } from '../../common/guards/device-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('leaderboard')
-@Controller('api/v1/leaderboard')
+@Controller('v1/leaderboard')
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
@@ -27,7 +27,7 @@ export class LeaderboardController {
   async getDaily(
     @CurrentUser() user: any,
     @Query('date') date?: string,
-  ) {
+  ): Promise<LeaderboardResponse> {
     return this.leaderboardService.getDailyLeaderboard(user.id, date);
   }
 
@@ -35,7 +35,7 @@ export class LeaderboardController {
   @UseGuards(DeviceAuthGuard)
   @ApiOperation({ summary: 'Get weekly leaderboard (current week)' })
   @ApiHeader({ name: 'x-device-id', required: true })
-  async getWeekly(@CurrentUser() user: any) {
+  async getWeekly(@CurrentUser() user: any): Promise<LeaderboardResponse> {
     return this.leaderboardService.getWeeklyLeaderboard(user.id);
   }
 
@@ -43,7 +43,7 @@ export class LeaderboardController {
   @UseGuards(DeviceAuthGuard)
   @ApiOperation({ summary: 'Get all-time leaderboard' })
   @ApiHeader({ name: 'x-device-id', required: true })
-  async getAllTime(@CurrentUser() user: any) {
+  async getAllTime(@CurrentUser() user: any): Promise<LeaderboardResponse> {
     return this.leaderboardService.getAllTimeLeaderboard(user.id);
   }
 }

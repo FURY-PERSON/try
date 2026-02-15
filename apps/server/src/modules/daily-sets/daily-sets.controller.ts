@@ -13,7 +13,7 @@ import { DeviceAuthGuard } from '../../common/guards/device-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('daily-sets')
-@Controller('api/v1/daily-sets')
+@Controller('v1/daily-sets')
 export class DailySetsController {
   constructor(private readonly dailySetsService: DailySetsService) {}
 
