@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig } from 'axios';
+import type { AxiosInstance } from 'axios';
 import type { ApiClientOptions } from './types';
 import { createUsersEndpoints } from './endpoints/users';
 import { createQuestionsEndpoints } from './endpoints/questions';

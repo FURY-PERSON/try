@@ -63,7 +63,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   // Start server
-  const port = configService.get<number>('PORT') || 3000;
+  const port = configService.get<number>('PORT') || 3001;
   await app.listen(port);
   logger.log(`WordPulse API is running on: http://localhost:${port}`);
   logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);

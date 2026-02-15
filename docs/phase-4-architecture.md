@@ -1118,7 +1118,7 @@ COPY --from=builder /app/apps/server/node_modules ./node_modules
 COPY --from=builder /app/apps/server/prisma ./prisma
 COPY --from=builder /app/apps/server/package.json ./
 
-EXPOSE 3000
+EXPOSE 3001
 CMD ["node", "dist/main"]
 ```
 
@@ -1147,11 +1147,11 @@ services:
       - postgres
     environment:
       DATABASE_URL: postgresql://wordpulse:wordpulse_dev@postgres:5432/wordpulse
-      PORT: 3000
+      PORT: 3001
       JWT_SECRET: dev-secret-change-in-production
       NODE_ENV: development
     ports:
-      - "3000:3000"
+      - "3001:3001"
 
 volumes:
   postgres_data:
@@ -1164,7 +1164,7 @@ volumes:
 DATABASE_URL="postgresql://wordpulse:wordpulse_dev@localhost:5432/wordpulse"
 
 # Server
-PORT=3000
+PORT=3001
 NODE_ENV=development
 
 # Auth
@@ -1204,7 +1204,7 @@ THROTTLE_LIMIT=100
 
 ```env
 # API
-API_URL=http://localhost:3000
+API_URL=http://localhost:3001
 
 # Ads (Test IDs — replace with real ones for production)
 ADMOB_BANNER_ID_IOS=ca-app-pub-3940256099942544/2934735716
@@ -1218,7 +1218,7 @@ ADMOB_REWARDED_ID_ANDROID=ca-app-pub-3940256099942544/5224354917
 ### 3.19 apps/web/.env.example
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3001
 ```
 
 ### 3.20 .gitignore
@@ -1664,7 +1664,7 @@ T-001 (monorepo init)
 | Переменная           | Где используется | Обязательна | Описание |
 |----------------------|-----------------|-------------|----------|
 | `DATABASE_URL`       | server          | Да          | PostgreSQL connection string |
-| `PORT`               | server          | Нет (3000)  | Порт сервера |
+| `PORT`               | server          | Нет (3001)  | Порт сервера |
 | `JWT_SECRET`         | server          | Да          | Секрет для JWT |
 | `ADMIN_EMAIL`        | server (seed)   | Да          | Email админа |
 | `ADMIN_PASSWORD`     | server (seed)   | Да          | Пароль админа |

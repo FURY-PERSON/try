@@ -31,8 +31,8 @@ export function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="questions" element={<QuestionsListPage />} />
-        <Route path="questions/:id" element={<QuestionDetailPage />} />
         <Route path="questions/generate" element={<QuestionGeneratePage />} />
+        <Route path="questions/:id" element={<QuestionDetailPage />} />
         <Route path="daily-sets" element={<DailySetsPage />} />
         <Route path="daily-sets/create" element={<DailySetCreatePage />} />
         <Route path="categories" element={<CategoriesPage />} />
