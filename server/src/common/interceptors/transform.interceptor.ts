@@ -19,6 +19,19 @@ export class TransformInterceptor<T>
     _context: ExecutionContext,
     next: CallHandler,
   ): Observable<TransformedResponse<T>> {
-    return next.handle().pipe(map((response) => ({ data: response })));
+    return next.handle().pipe(
+      map((response) => {
+        // Don't double-wrap paginated responses that already have { data, meta }
+        if (
+          response &&
+          typeof response === 'object' &&
+          'data' in response &&
+          'meta' in response
+        ) {
+          return response;
+        }
+        return { data: response };
+      }),
+    );
   }
 }

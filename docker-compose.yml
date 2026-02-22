@@ -32,7 +32,7 @@ services:
       ADMIN_PASSWORD: admin123
       CORS_ORIGIN: "*"
       THROTTLE_TTL: "60"
-      THROTTLE_LIMIT: "100"
+      THROTTLE_LIMIT: "1000"
     depends_on:
       postgres:
         condition: service_healthy

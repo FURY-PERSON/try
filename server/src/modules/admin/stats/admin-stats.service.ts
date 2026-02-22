@@ -76,19 +76,15 @@ export class AdminStatsService {
 
     return {
       totalUsers,
-      dau: dauResult,
-      mau: mauResult,
-      totalQuestions: {
-        moderation: totalQuestionsModeration,
-        approved: totalQuestionsApproved,
-        rejected: totalQuestionsRejected,
-        total:
-          totalQuestionsModeration +
-          totalQuestionsApproved +
-          totalQuestionsRejected,
-      },
+      activeToday: dauResult,
+      totalQuestions:
+        totalQuestionsModeration +
+        totalQuestionsApproved +
+        totalQuestionsRejected,
+      approvedQuestions: totalQuestionsApproved,
+      pendingQuestions: totalQuestionsModeration,
       totalDailySets,
-      avgCorrectRate,
+      publishedSets: totalDailySets,
     };
   }
 

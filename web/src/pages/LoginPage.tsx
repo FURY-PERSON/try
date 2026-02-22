@@ -36,7 +36,6 @@ export function LoginPage() {
       const response = await api.admin.auth.login(data);
       const tokens = response.data.data;
       setTokens(tokens.accessToken, tokens.refreshToken);
-      api.setAccessToken(tokens.accessToken);
       toast.success('Успешный вход');
       navigate('/');
     } catch {

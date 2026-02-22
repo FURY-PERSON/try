@@ -31,7 +31,11 @@ export function createApiClient(baseUrl: string, options: ApiClientOptions = {})
     (response) => response,
     (error) => {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        options.onTokenExpired?.();
+        // Only handle token expiry for authenticated requests (not login attempts)
+        const hasAuth = error.config?.headers?.['Authorization'];
+        if (hasAuth) {
+          options.onTokenExpired?.();
+        }
       }
       return Promise.reject(error);
     },

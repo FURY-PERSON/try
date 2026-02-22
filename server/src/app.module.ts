@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
@@ -18,9 +18,17 @@ import { AiModule } from './modules/ai/ai.module';
     // Configuration - globally available
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // Rate limiting - 100 requests per 60 seconds
-    ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60000, limit: 100 }],
+    // Rate limiting - configurable via THROTTLE_TTL and THROTTLE_LIMIT env vars
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: (config.get<number>('THROTTLE_TTL') || 60) * 1000,
+            limit: config.get<number>('THROTTLE_LIMIT') || 100,
+          },
+        ],
+      }),
     }),
 
     // Task scheduling
