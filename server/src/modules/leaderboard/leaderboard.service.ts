@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 
+const CARDS_PER_DAILY_SET = 15;
+
 interface LeaderboardEntryResult {
   rank: number;
   userId: string;
   nickname: string | null;
-  score: number;
   correctAnswers: number;
+  totalQuestions: number;
+  score: number;
   totalTimeSeconds: number;
 }
 
@@ -20,83 +23,9 @@ export interface LeaderboardResponse {
 export class LeaderboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDailyLeaderboard(
-    userId: string,
-    dateStr?: string,
-  ): Promise<LeaderboardResponse> {
-    // Determine the target date
-    const targetDate = dateStr ? new Date(dateStr) : new Date();
-    targetDate.setHours(0, 0, 0, 0);
-
-    // Find the daily set for this date
-    const dailySet = await this.prisma.dailySet.findUnique({
-      where: { date: targetDate },
-    });
-
-    if (!dailySet) {
-      return { entries: [], userPosition: null, totalPlayers: 0 };
-    }
-
-    // Get top 100 entries ordered by score DESC, then totalTimeSeconds ASC (faster is better)
-    const top100 = await this.prisma.leaderboardEntry.findMany({
-      where: { dailySetId: dailySet.id },
-      orderBy: [{ score: 'desc' }, { totalTimeSeconds: 'asc' }],
-      take: 100,
-      include: {
-        user: {
-          select: { id: true, nickname: true },
-        },
-      },
-    });
-
-    const entries: LeaderboardEntryResult[] = top100.map((entry, index) => ({
-      rank: index + 1,
-      userId: entry.userId,
-      nickname: entry.user.nickname,
-      score: entry.score,
-      correctAnswers: entry.correctAnswers,
-      totalTimeSeconds: entry.totalTimeSeconds,
-    }));
-
-    // Total players
-    const totalPlayers = await this.prisma.leaderboardEntry.count({
-      where: { dailySetId: dailySet.id },
-    });
-
-    // Find user's position
-    const userEntry = await this.prisma.leaderboardEntry.findUnique({
-      where: {
-        userId_dailySetId: {
-          userId,
-          dailySetId: dailySet.id,
-        },
-      },
-    });
-
-    let userPosition: number | null = null;
-    if (userEntry) {
-      const higherCount = await this.prisma.leaderboardEntry.count({
-        where: {
-          dailySetId: dailySet.id,
-          OR: [
-            { score: { gt: userEntry.score } },
-            {
-              score: userEntry.score,
-              totalTimeSeconds: { lt: userEntry.totalTimeSeconds },
-            },
-          ],
-        },
-      });
-      userPosition = higherCount + 1;
-    }
-
-    return { entries, userPosition, totalPlayers };
-  }
-
   async getWeeklyLeaderboard(userId: string): Promise<LeaderboardResponse> {
-    // Calculate Monday of the current week
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const dayOfWeek = now.getDay();
     const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
     const monday = new Date(now);
@@ -106,178 +35,127 @@ export class LeaderboardService {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    // Find all daily sets for this week
-    const dailySets = await this.prisma.dailySet.findMany({
-      where: {
-        date: {
-          gte: monday,
-          lte: today,
-        },
-      },
-      select: { id: true },
+    return this.getAggregatedLeaderboard(userId, { gte: monday, lte: today });
+  }
+
+  async getMonthlyLeaderboard(userId: string): Promise<LeaderboardResponse> {
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    firstOfMonth.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    return this.getAggregatedLeaderboard(userId, {
+      gte: firstOfMonth,
+      lte: today,
     });
+  }
 
-    const dailySetIds = dailySets.map((ds) => ds.id);
+  async getYearlyLeaderboard(userId: string): Promise<LeaderboardResponse> {
+    const firstOfYear = new Date(new Date().getFullYear(), 0, 1);
+    firstOfYear.setHours(0, 0, 0, 0);
 
-    if (dailySetIds.length === 0) {
-      return { entries: [], userPosition: null, totalPlayers: 0 };
-    }
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
 
-    // Aggregate scores per user for this week's daily sets
-    const aggregated = await this.prisma.leaderboardEntry.groupBy({
-      by: ['userId'],
-      where: {
-        dailySetId: { in: dailySetIds },
-      },
-      _sum: {
-        score: true,
-        correctAnswers: true,
-        totalTimeSeconds: true,
-      },
-      orderBy: {
-        _sum: {
-          score: 'desc',
-        },
-      },
-      take: 100,
+    return this.getAggregatedLeaderboard(userId, {
+      gte: firstOfYear,
+      lte: today,
     });
-
-    const totalPlayers = await this.prisma.leaderboardEntry.groupBy({
-      by: ['userId'],
-      where: {
-        dailySetId: { in: dailySetIds },
-      },
-    });
-
-    // Fetch nicknames for top 100 users
-    const userIds = aggregated.map((a) => a.userId);
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, nickname: true },
-    });
-
-    const userMap = new Map(users.map((u) => [u.id, u.nickname]));
-
-    const entries: LeaderboardEntryResult[] = aggregated.map((agg, index) => ({
-      rank: index + 1,
-      userId: agg.userId,
-      nickname: userMap.get(agg.userId) ?? null,
-      score: agg._sum.score ?? 0,
-      correctAnswers: agg._sum.correctAnswers ?? 0,
-      totalTimeSeconds: agg._sum.totalTimeSeconds ?? 0,
-    }));
-
-    // Find user's position
-    let userPosition: number | null = null;
-    const userAgg = await this.prisma.leaderboardEntry.groupBy({
-      by: ['userId'],
-      where: {
-        userId,
-        dailySetId: { in: dailySetIds },
-      },
-      _sum: {
-        score: true,
-      },
-    });
-
-    if (userAgg.length > 0) {
-      const userScore = userAgg[0]._sum.score ?? 0;
-
-      // Count users with higher aggregated score
-      const allAggregated = await this.prisma.leaderboardEntry.groupBy({
-        by: ['userId'],
-        where: {
-          dailySetId: { in: dailySetIds },
-        },
-        _sum: {
-          score: true,
-        },
-        having: {
-          score: {
-            _sum: {
-              gt: userScore,
-            },
-          },
-        },
-      });
-
-      userPosition = allAggregated.length + 1;
-    }
-
-    return {
-      entries,
-      userPosition,
-      totalPlayers: totalPlayers.length,
-    };
   }
 
   async getAllTimeLeaderboard(userId: string): Promise<LeaderboardResponse> {
-    // Aggregate all scores per user
+    return this.getAggregatedLeaderboard(userId);
+  }
+
+  private async getAggregatedLeaderboard(
+    userId: string,
+    dateFilter?: { gte: Date; lte: Date },
+  ): Promise<LeaderboardResponse> {
+    let dailySetIds: string[] | undefined;
+
+    if (dateFilter) {
+      const dailySets = await this.prisma.dailySet.findMany({
+        where: {
+          date: { gte: dateFilter.gte, lte: dateFilter.lte },
+        },
+        select: { id: true },
+      });
+      dailySetIds = dailySets.map((ds) => ds.id);
+
+      if (dailySetIds.length === 0) {
+        return { entries: [], userPosition: null, totalPlayers: 0 };
+      }
+    }
+
+    const entryWhere = dailySetIds
+      ? { dailySetId: { in: dailySetIds } }
+      : {};
+
+    // Top 100 by correctAnswers DESC
     const aggregated = await this.prisma.leaderboardEntry.groupBy({
       by: ['userId'],
+      where: entryWhere,
       _sum: {
-        score: true,
         correctAnswers: true,
+        score: true,
         totalTimeSeconds: true,
       },
+      _count: { _all: true },
       orderBy: {
-        _sum: {
-          score: 'desc',
-        },
+        _sum: { correctAnswers: 'desc' },
       },
       take: 100,
     });
 
+    // Total unique players
     const totalPlayersResult = await this.prisma.leaderboardEntry.groupBy({
       by: ['userId'],
+      where: entryWhere,
     });
 
-    // Fetch nicknames for top 100 users
+    // Fetch nicknames
     const userIds = aggregated.map((a) => a.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, nickname: true },
     });
-
     const userMap = new Map(users.map((u) => [u.id, u.nickname]));
 
     const entries: LeaderboardEntryResult[] = aggregated.map((agg, index) => ({
       rank: index + 1,
       userId: agg.userId,
       nickname: userMap.get(agg.userId) ?? null,
-      score: agg._sum.score ?? 0,
       correctAnswers: agg._sum.correctAnswers ?? 0,
+      totalQuestions: agg._count._all * CARDS_PER_DAILY_SET,
+      score: agg._sum.score ?? 0,
       totalTimeSeconds: agg._sum.totalTimeSeconds ?? 0,
     }));
 
-    // Find user's position
+    // User position
     let userPosition: number | null = null;
     const userAgg = await this.prisma.leaderboardEntry.groupBy({
       by: ['userId'],
-      where: { userId },
-      _sum: {
-        score: true,
-      },
+      where: { userId, ...entryWhere },
+      _sum: { correctAnswers: true },
     });
 
     if (userAgg.length > 0) {
-      const userScore = userAgg[0]._sum.score ?? 0;
+      const userCorrect = userAgg[0]._sum.correctAnswers ?? 0;
 
-      const higherScoreUsers = await this.prisma.leaderboardEntry.groupBy({
+      const higherUsers = await this.prisma.leaderboardEntry.groupBy({
         by: ['userId'],
-        _sum: {
-          score: true,
-        },
+        where: entryWhere,
+        _sum: { correctAnswers: true },
         having: {
-          score: {
-            _sum: {
-              gt: userScore,
-            },
+          correctAnswers: {
+            _sum: { gt: userCorrect },
           },
         },
       });
 
-      userPosition = higherScoreUsers.length + 1;
+      userPosition = higherUsers.length + 1;
     }
 
     return {

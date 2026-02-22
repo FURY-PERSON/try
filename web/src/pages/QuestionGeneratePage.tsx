@@ -47,7 +47,7 @@ export function QuestionGeneratePage() {
     defaultValues: {
       difficulty: 3,
       language: 'ru',
-      count: 5,
+      count: 10,
     },
   });
 
@@ -77,8 +77,8 @@ export function QuestionGeneratePage() {
   return (
     <div>
       <PageHeader
-        title="AI Генерация вопросов"
-        description="Используйте AI для создания новых вопросов"
+        title="AI Генерация утверждений"
+        description="Генерация фактов и фейков с помощью AI (~50/50)"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -89,7 +89,7 @@ export function QuestionGeneratePage() {
             <Select
               id="category"
               label="Категория"
-              options={categories.map((c) => ({ value: c.slug, label: c.name }))}
+              options={categories.map((c: any) => ({ value: c.slug, label: c.name }))}
               placeholder="Выберите категорию"
               error={errors.category?.message}
               {...register('category')}
@@ -130,7 +130,7 @@ export function QuestionGeneratePage() {
             <Textarea
               id="additionalPrompt"
               label="Дополнительные инструкции (необязательно)"
-              placeholder="Например: сфокусируйся на теме космос..."
+              placeholder="Например: больше фейков про космос..."
               rows={3}
               {...register('additionalPrompt')}
             />
@@ -153,7 +153,7 @@ export function QuestionGeneratePage() {
             <div className="mt-4 flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-4" />
-                <p className="text-sm text-text-secondary">Генерация вопросов...</p>
+                <p className="text-sm text-text-secondary">Генерация утверждений...</p>
                 <p className="text-xs text-text-secondary mt-1">Это может занять до минуты</p>
               </div>
             </div>
@@ -161,25 +161,23 @@ export function QuestionGeneratePage() {
 
           {results && (
             <div className="mt-4 space-y-3 max-h-[500px] overflow-auto">
-              {results.map((q, i) => (
+              {results.map((q: any, i: number) => (
                 <div
                   key={i}
                   className="p-3 bg-surface-secondary rounded-lg border border-border"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <Badge variant="primary">
-                      {String((q as Record<string, unknown>).type ?? 'unknown')}
+                    <Badge variant={q.isTrue ? 'success' : 'danger'}>
+                      {q.isTrue ? 'Факт' : 'Фейк'}
                     </Badge>
                     <span className="text-xs text-text-secondary">#{i + 1}</span>
                   </div>
-                  <pre className="text-xs font-mono text-text-secondary overflow-auto max-h-32">
-                    {JSON.stringify(q, null, 2)}
-                  </pre>
+                  <p className="text-sm text-text-primary mb-2">{q.statement}</p>
+                  <p className="text-xs text-text-secondary">{q.explanation}</p>
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => {
-                        const qId = (q as Record<string, unknown>).id;
-                        if (typeof qId === 'string') navigate(`/questions/${qId}`);
+                        if (typeof q.id === 'string') navigate(`/questions/${q.id}`);
                       }}
                       className="text-xs text-blue hover:underline flex items-center gap-1"
                     >

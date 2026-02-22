@@ -1,15 +1,15 @@
 import { apiClient } from '@/services/api';
-import type { LeaderboardEntry } from '@/shared';
+import type { LeaderboardResponse } from '@/shared';
 
-type LeaderboardResponse = {
-  data: LeaderboardEntry[];
+type LeaderboardPeriod = 'weekly' | 'monthly' | 'yearly' | 'alltime';
+
+type ApiLeaderboardResponse = {
+  data: LeaderboardResponse;
 };
 
-type LeaderboardPeriod = 'daily' | 'weekly' | 'alltime';
-
 export const leaderboardApi = {
-  async getLeaderboard(period: LeaderboardPeriod): Promise<LeaderboardEntry[]> {
-    const response = await apiClient.get<LeaderboardResponse>(`/leaderboard/${period}`);
+  async getLeaderboard(period: LeaderboardPeriod): Promise<LeaderboardResponse> {
+    const response = await apiClient.get<ApiLeaderboardResponse>(`/api/v1/leaderboard/${period}`);
     return response.data.data;
   },
 };

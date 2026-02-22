@@ -12,6 +12,7 @@ type AnalyticsEvent =
   | 'ad_interstitial_shown'
   | 'ad_rewarded_shown'
   | 'ad_rewarded_completed'
+  | 'card_answered'
   | 'hint_used'
   | 'streak_milestone'
   | 'nickname_set'

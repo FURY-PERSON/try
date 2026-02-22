@@ -1,8 +1,12 @@
 {
-  "name": "wordpulse-mobile",
+  "name": "factorfake-mobile",
   "version": "1.0.0",
   "private": true,
+  "main": "expo-router/entry",
   "scripts": {
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "start": "expo start",
     "dev": "expo start",
     "build:dev": "eas build --profile development",
     "build:preview": "eas build --profile preview",
@@ -12,7 +16,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "jest",
-    "clean": "rm -rf node_modules .expo dist"
+    "clean": "rm -rf node_modules .expo dist",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.2.3",
@@ -21,10 +26,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/netinfo": "11.4.1",
-    "@rnx-kit/metro-config": "^2.2.4",
-    "@rnx-kit/metro-resolver-symlinks": "^0.2.11",
     "@tanstack/react-query": "^5.60.0",
-    "axios": "^1.7.0",
     "expo": "~52.0.0",
     "expo-dev-client": "~5.0.0",
     "expo-font": "~13.0.0",

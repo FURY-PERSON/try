@@ -1,19 +1,29 @@
-import type { DailySetStatus } from '../constants/daily-set-status';
-import type { Question } from './question';
-
-export type DailySet = {
+export type DailySetQuestion = {
   id: string;
-  date: string;
-  theme: string;
-  themeEn: string;
-  status: DailySetStatus;
-  createdAt: string;
-  updatedAt: string;
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl: string | null;
+  language: string;
+  categoryId: string;
+  difficulty: number;
+  illustrationUrl: string | null;
+  sortOrder: number;
+  category?: {
+    id: string;
+    name: string;
+    nameEn: string;
+    slug: string;
+  };
 };
 
-export type DailySetWithQuestions = DailySet & {
-  questions: {
-    sortOrder: number;
-    question: Question;
-  }[];
+export type DailySetWithQuestions = {
+  id: string | null;
+  date: string;
+  theme: string | null;
+  themeEn: string | null;
+  status: string;
+  questions: DailySetQuestion[];
+  completed?: boolean;
 };

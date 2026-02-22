@@ -21,14 +21,14 @@ export class DeviceAuthGuard implements CanActivate {
       );
     }
 
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { deviceId },
     });
 
     if (!user) {
-      throw new UnauthorizedException(
-        'No user found for the provided device ID. Please register first.',
-      );
+      user = await this.prisma.user.create({
+        data: { deviceId },
+      });
     }
 
     (request as any).user = user;

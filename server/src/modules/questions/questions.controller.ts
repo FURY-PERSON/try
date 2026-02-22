@@ -27,10 +27,10 @@ export class QuestionsController {
 
   @Get('random')
   @UseGuards(DeviceAuthGuard)
-  @ApiOperation({ summary: 'Get a random question the user has not answered correctly' })
+  @ApiOperation({ summary: 'Get a random statement the user has not answered correctly' })
   @ApiHeader({ name: 'x-device-id', description: 'Device identifier', required: true })
-  @ApiResponse({ status: 200, description: 'Random question returned successfully' })
-  @ApiResponse({ status: 404, description: 'No available questions found' })
+  @ApiResponse({ status: 200, description: 'Random statement returned successfully' })
+  @ApiResponse({ status: 404, description: 'No available statements found' })
   @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid device ID' })
   async getRandomQuestion(
     @CurrentUser() user: any,
@@ -41,7 +41,7 @@ export class QuestionsController {
 
   @Post(':id/answer')
   @UseGuards(DeviceAuthGuard)
-  @ApiOperation({ summary: 'Submit an answer for a question' })
+  @ApiOperation({ summary: 'Submit an answer for a statement (fact or fake)' })
   @ApiHeader({ name: 'x-device-id', description: 'Device identifier', required: true })
   @ApiParam({ name: 'id', description: 'Question ID' })
   @ApiResponse({
@@ -52,9 +52,10 @@ export class QuestionsController {
       properties: {
         correct: { type: 'boolean', example: true },
         score: { type: 'number', example: 220 },
-        fact: { type: 'string', example: 'The word "algorithm" comes from the name of Persian mathematician al-Khwarizmi.' },
-        factSource: { type: 'string', example: 'Wikipedia' },
-        factSourceUrl: { type: 'string', nullable: true, example: 'https://en.wikipedia.org/wiki/Algorithm' },
+        isTrue: { type: 'boolean', example: false },
+        explanation: { type: 'string', example: 'This is a common myth...' },
+        source: { type: 'string', example: 'NASA' },
+        sourceUrl: { type: 'string', nullable: true, example: 'https://nasa.gov/...' },
       },
     },
   })

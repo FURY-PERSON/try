@@ -1,5 +1,4 @@
 import type {
-  GameType,
   Language,
   QuestionStatus,
   UserLanguagePreference,
@@ -19,15 +18,13 @@ export type UpdateUserDto = {
 };
 
 export type AnswerQuestionDto = {
-  result: 'correct' | 'incorrect';
+  userAnswer: boolean;
   timeSpentSeconds: number;
 };
 
 export type QuestionFilterDto = {
-  type?: GameType;
   language?: Language;
   categoryId?: string;
-  difficulty?: number;
 };
 
 export type SubmitDailySetDto = {
@@ -48,14 +45,14 @@ export type RefreshTokenDto = {
 };
 
 export type CreateQuestionDto = {
-  type: GameType;
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl?: string;
   language: Language;
   categoryId: string;
   difficulty: number;
-  questionData: Record<string, unknown>;
-  fact: string;
-  factSource: string;
-  factSourceUrl?: string;
   illustrationUrl?: string;
   illustrationPrompt?: string;
 };
@@ -67,7 +64,7 @@ export type UpdateQuestionDto = Partial<CreateQuestionDto> & {
 export type QuestionQueryDto = {
   page?: number;
   limit?: number;
-  type?: GameType;
+  isTrue?: string;
   language?: Language;
   categoryId?: string;
   status?: QuestionStatus;
@@ -127,9 +124,10 @@ export type AuthTokens = {
 export type AnswerResult = {
   correct: boolean;
   score: number;
-  fact: string;
-  factSource: string;
-  factSourceUrl?: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl?: string;
 };
 
 export type DashboardStats = {
@@ -143,9 +141,9 @@ export type DashboardStats = {
 };
 
 export type QuestionStats = {
-  hardest: { id: string; type: GameType; correctRate: number }[];
-  easiest: { id: string; type: GameType; correctRate: number }[];
-  mostShown: { id: string; type: GameType; timesShown: number }[];
+  hardest: { id: string; correctRate: number }[];
+  easiest: { id: string; correctRate: number }[];
+  mostShown: { id: string; timesShown: number }[];
 };
 
 export type GenerateQuestionsResult = {

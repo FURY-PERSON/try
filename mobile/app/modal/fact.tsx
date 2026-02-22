@@ -8,9 +8,9 @@ import { analytics } from '@/services/analytics';
 export default function FactModal() {
   const router = useRouter();
   const params = useLocalSearchParams<{
-    fact: string;
-    factSource: string;
-    factSourceUrl?: string;
+    explanation: string;
+    source: string;
+    sourceUrl?: string;
     illustrationUrl?: string;
   }>();
 
@@ -19,7 +19,7 @@ export default function FactModal() {
   };
 
   const handleShare = async () => {
-    await shareFact(params.fact ?? '', params.factSource ?? '');
+    await shareFact(params.explanation ?? '', params.source ?? '');
     analytics.logEvent('fact_shared');
   };
 
@@ -30,9 +30,9 @@ export default function FactModal() {
   return (
     <Screen edges={['bottom', 'left', 'right']} style={{ justifyContent: 'center', padding: 16 }}>
       <FactCard
-        fact={params.fact ?? ''}
-        factSource={params.factSource ?? ''}
-        factSourceUrl={params.factSourceUrl}
+        explanation={params.explanation ?? ''}
+        source={params.source ?? ''}
+        sourceUrl={params.sourceUrl}
         illustrationUrl={params.illustrationUrl}
         onNext={handleNext}
         onShare={handleShare}

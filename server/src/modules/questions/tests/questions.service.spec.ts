@@ -45,7 +45,12 @@ describe('QuestionsService', () => {
     it('returns a question when available', async () => {
       const question = {
         id: 'q-1',
-        type: 'anagram',
+        statement: 'Test statement',
+        isTrue: true,
+        language: 'ru',
+        categoryId: 'c-1',
+        difficulty: 3,
+        illustrationUrl: null,
         status: 'approved',
         category: { id: 'c-1', name: 'Science' },
       };
@@ -55,12 +60,22 @@ describe('QuestionsService', () => {
 
       const result = await service.getRandomQuestion('user-1', {});
 
-      expect(result).toEqual(question);
+      expect(result.id).toBe('q-1');
+      expect(result.statement).toBe('Test statement');
     });
 
     it('applies language filter', async () => {
       mockPrisma.question.count.mockResolvedValue(1);
-      mockPrisma.question.findFirst.mockResolvedValue({ id: 'q-1' });
+      mockPrisma.question.findFirst.mockResolvedValue({
+        id: 'q-1',
+        statement: 'Test',
+        isTrue: true,
+        language: 'ru',
+        categoryId: 'c-1',
+        difficulty: 3,
+        illustrationUrl: null,
+        category: { id: 'c-1' },
+      });
 
       await service.getRandomQuestion('user-1', { language: 'ru' });
 
@@ -70,31 +85,20 @@ describe('QuestionsService', () => {
         }),
       );
     });
-
-    it('applies type filter', async () => {
-      mockPrisma.question.count.mockResolvedValue(1);
-      mockPrisma.question.findFirst.mockResolvedValue({ id: 'q-1' });
-
-      await service.getRandomQuestion('user-1', { type: 'anagram' });
-
-      expect(mockPrisma.question.count).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ type: 'anagram' }),
-        }),
-      );
-    });
   });
 
   describe('answerQuestion', () => {
     const mockQuestion = {
       id: 'q-1',
+      statement: 'The Earth is flat',
+      isTrue: false,
+      explanation: 'The Earth is actually an oblate spheroid',
+      source: 'NASA',
+      sourceUrl: 'https://nasa.gov',
       difficulty: 3,
       timesShown: 10,
       timesCorrect: 7,
       avgTimeSeconds: 15,
-      fact: 'Interesting fact',
-      factSource: 'Wikipedia',
-      factSourceUrl: 'https://en.wikipedia.org/wiki/Test',
     };
 
     it('throws NotFoundException if question not found', async () => {
@@ -102,7 +106,7 @@ describe('QuestionsService', () => {
 
       await expect(
         service.answerQuestion('user-1', 'nonexistent', {
-          result: 'correct',
+          userAnswer: false,
           timeSpentSeconds: 10,
         }),
       ).rejects.toThrow(NotFoundException);
@@ -114,7 +118,7 @@ describe('QuestionsService', () => {
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {
-        result: 'correct',
+        userAnswer: false,
         timeSpentSeconds: 10,
       });
 
@@ -134,7 +138,7 @@ describe('QuestionsService', () => {
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {
-        result: 'correct',
+        userAnswer: false,
         timeSpentSeconds: 20,
       });
 
@@ -148,20 +152,22 @@ describe('QuestionsService', () => {
       });
     });
 
-    it('returns fact data on correct answer', async () => {
+    it('returns explanation data on correct answer', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
       mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
+      // userAnswer=false matches isTrue=false, so correct
       const result = await service.answerQuestion('user-1', 'q-1', {
-        result: 'correct',
+        userAnswer: false,
         timeSpentSeconds: 10,
       });
 
       expect(result.correct).toBe(true);
       expect(result.score).toBeGreaterThan(0);
-      expect(result.fact).toBe('Interesting fact');
-      expect(result.factSource).toBe('Wikipedia');
+      expect(result.isTrue).toBe(false);
+      expect(result.explanation).toBe('The Earth is actually an oblate spheroid');
+      expect(result.source).toBe('NASA');
     });
 
     it('returns 0 score for incorrect answer', async () => {
@@ -169,8 +175,9 @@ describe('QuestionsService', () => {
       mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
+      // userAnswer=true but isTrue=false, so incorrect
       const result = await service.answerQuestion('user-1', 'q-1', {
-        result: 'incorrect',
+        userAnswer: true,
         timeSpentSeconds: 10,
       });
 
@@ -184,7 +191,7 @@ describe('QuestionsService', () => {
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {
-        result: 'correct',
+        userAnswer: false,
         timeSpentSeconds: 10,
       });
 

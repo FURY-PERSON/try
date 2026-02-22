@@ -1,17 +1,49 @@
 import {
   IsString,
   IsInt,
+  IsBoolean,
   IsOptional,
-  IsObject,
   Min,
   Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateQuestionDto {
-  @ApiProperty({ example: 'multiple_choice', description: 'Question type' })
+  @ApiProperty({
+    example: 'Великая Китайская стена видна из космоса невооружённым глазом',
+    description: 'Statement text that the user will evaluate as fact or fake',
+  })
   @IsString()
-  type: string;
+  statement: string;
+
+  @ApiProperty({
+    example: false,
+    description: 'Whether this statement is true (fact) or false (fake)',
+  })
+  @IsBoolean()
+  isTrue: boolean;
+
+  @ApiProperty({
+    example: 'Это распространённый миф. Астронавты подтвердили, что стену невозможно увидеть из космоса без специального оборудования.',
+    description: 'Explanation of why this statement is true or false',
+  })
+  @IsString()
+  explanation: string;
+
+  @ApiProperty({
+    example: 'NASA',
+    description: 'Source of the information',
+  })
+  @IsString()
+  source: string;
+
+  @ApiPropertyOptional({
+    example: 'https://www.nasa.gov/...',
+    description: 'URL to the source',
+  })
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string;
 
   @ApiProperty({ example: 'ru', description: 'Language code' })
   @IsString()
@@ -26,30 +58,6 @@ export class CreateQuestionDto {
   @Min(1)
   @Max(5)
   difficulty: number;
-
-  @ApiProperty({
-    description: 'Question data as JSON (question text, options, correct answer, etc.)',
-    example: {
-      question: 'What is the capital of France?',
-      options: ['London', 'Berlin', 'Paris', 'Madrid'],
-      correctAnswer: 2,
-    },
-  })
-  @IsObject()
-  questionData: Record<string, unknown>;
-
-  @ApiProperty({ description: 'Interesting fact related to the question' })
-  @IsString()
-  fact: string;
-
-  @ApiProperty({ description: 'Source of the fact (Wikipedia, book, encyclopedia)' })
-  @IsString()
-  factSource: string;
-
-  @ApiPropertyOptional({ description: 'URL to the fact source' })
-  @IsOptional()
-  @IsString()
-  factSourceUrl?: string;
 
   @ApiPropertyOptional({ description: 'URL of the illustration image' })
   @IsOptional()

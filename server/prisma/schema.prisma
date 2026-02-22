@@ -41,17 +41,16 @@ model Category {
 
 model Question {
   id                 String   @id @default(cuid())
-  type               String
-  language           String
+  statement          String
+  isTrue             Boolean
+  explanation        String
+  source             String
+  sourceUrl          String?
+
+  language           String   @default("ru")
   categoryId         String
-  difficulty         Int
+  difficulty         Int      @default(3)
   status             String   @default("moderation")
-
-  questionData       Json
-
-  fact               String
-  factSource         String
-  factSourceUrl      String?
 
   illustrationUrl    String?
   illustrationPrompt String?

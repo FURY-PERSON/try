@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Дашборд' },
-  { to: '/questions', icon: HelpCircle, label: 'Вопросы' },
+  { to: '/questions', icon: HelpCircle, label: 'Утверждения' },
   { to: '/questions/generate', icon: Sparkles, label: 'AI Генерация' },
   { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
   { to: '/categories', icon: FolderTree, label: 'Категории' },
@@ -31,7 +31,7 @@ export function AppLayout() {
     <div className="flex h-screen bg-surface-secondary">
       <aside className="w-64 bg-surface border-r border-border flex flex-col">
         <div className="p-6 border-b border-border">
-          <h1 className="text-xl font-bold text-primary">WordPulse</h1>
+          <h1 className="text-xl font-bold text-primary">Факт или Фейк</h1>
           <p className="text-xs text-text-secondary mt-1">Админ-панель</p>
         </div>
 

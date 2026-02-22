@@ -15,7 +15,7 @@ export class AdminQuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: QuestionQueryDto) {
-    const { page, limit, status, language, type, categoryId, difficulty } =
+    const { page, limit, status, language, isTrue, categoryId, difficulty, search } =
       query;
 
     const where: Prisma.QuestionWhereInput = {};
@@ -26,14 +26,17 @@ export class AdminQuestionsService {
     if (language) {
       where.language = language;
     }
-    if (type) {
-      where.type = type;
+    if (isTrue !== undefined) {
+      where.isTrue = isTrue === 'true';
     }
     if (categoryId) {
       where.categoryId = categoryId;
     }
     if (difficulty !== undefined) {
       where.difficulty = difficulty;
+    }
+    if (search) {
+      where.statement = { contains: search, mode: 'insensitive' };
     }
 
     const [questions, total] = await Promise.all([
@@ -81,14 +84,14 @@ export class AdminQuestionsService {
 
     return this.prisma.question.create({
       data: {
-        type: dto.type,
+        statement: dto.statement,
+        isTrue: dto.isTrue,
+        explanation: dto.explanation,
+        source: dto.source,
+        sourceUrl: dto.sourceUrl,
         language: dto.language,
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
-        questionData: dto.questionData as unknown as Prisma.InputJsonValue,
-        fact: dto.fact,
-        factSource: dto.factSource,
-        factSourceUrl: dto.factSourceUrl,
         illustrationUrl: dto.illustrationUrl,
         illustrationPrompt: dto.illustrationPrompt,
         status: 'moderation',
@@ -120,14 +123,14 @@ export class AdminQuestionsService {
     return this.prisma.question.update({
       where: { id },
       data: {
-        type: dto.type,
+        statement: dto.statement,
+        isTrue: dto.isTrue,
+        explanation: dto.explanation,
+        source: dto.source,
+        sourceUrl: dto.sourceUrl,
         language: dto.language,
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
-        questionData: dto.questionData as unknown as Prisma.InputJsonValue,
-        fact: dto.fact,
-        factSource: dto.factSource,
-        factSourceUrl: dto.factSourceUrl,
         illustrationUrl: dto.illustrationUrl,
         illustrationPrompt: dto.illustrationPrompt,
       },

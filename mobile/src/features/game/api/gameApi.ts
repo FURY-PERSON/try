@@ -1,50 +1,58 @@
 import { apiClient } from '@/services/api';
-import type { DailySet, Question } from '@/shared';
+import type { DailySetWithQuestions } from '@/shared';
+import type { SubmissionResult } from '../types';
 
 type DailySetResponse = {
-  data: DailySet;
+  data: DailySetWithQuestions;
 };
 
 type SubmitAnswerResponse = {
   data: {
     correct: boolean;
     score: number;
-    fact: string;
-    factSource: string;
-    factSourceUrl?: string;
-    illustrationUrl?: string;
+    isTrue: boolean;
+    explanation: string;
+    source: string;
+    sourceUrl?: string;
   };
 };
 
-type RandomQuestionResponse = {
-  data: Question;
+type SubmitDailySetResponse = {
+  data: SubmissionResult;
+};
+
+type GameResult = {
+  questionId: string;
+  result: 'correct' | 'incorrect';
+  timeSpentSeconds: number;
 };
 
 export const gameApi = {
-  async getTodaySet(): Promise<DailySet> {
+  async getTodaySet(): Promise<DailySetWithQuestions> {
     const response = await apiClient.get<DailySetResponse>('/api/v1/daily-sets/today');
     return response.data.data;
   },
 
   async submitAnswer(
     questionId: string,
-    result: 'correct' | 'incorrect',
+    userAnswer: boolean,
     timeSpentSeconds: number,
   ): Promise<SubmitAnswerResponse['data']> {
     const response = await apiClient.post<SubmitAnswerResponse>(
       `/api/v1/questions/${questionId}/answer`,
-      { result, timeSpentSeconds },
+      { userAnswer, timeSpentSeconds },
     );
     return response.data.data;
   },
 
-  async getRandomQuestion(type?: string, language?: string): Promise<Question> {
-    const params: Record<string, string> = {};
-    if (type) params.type = type;
-    if (language) params.language = language;
-    const response = await apiClient.get<RandomQuestionResponse>('/api/v1/questions/random', {
-      params,
-    });
+  async submitDailySet(
+    dailySetId: string,
+    results: GameResult[],
+  ): Promise<SubmissionResult> {
+    const response = await apiClient.post<SubmitDailySetResponse>(
+      `/api/v1/daily-sets/${dailySetId}/submit`,
+      { results },
+    );
     return response.data.data;
   },
 };

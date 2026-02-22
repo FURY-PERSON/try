@@ -1,20 +1,24 @@
 import { create } from 'zustand';
-import type { GameResult, DailySetProgress } from '../types';
+import { CARDS_PER_DAILY_SET } from '@/shared';
+import type { CardResult, DailySetProgress, SubmissionResult } from '../types';
 
 type GameStoreState = {
   dailyProgress: DailySetProgress;
   isPlaying: boolean;
-  currentGameStartTime: number | null;
+  currentCardStartTime: number | null;
+  submissionResult: SubmissionResult | null;
 
-  startDailySet: (totalGames: number) => void;
-  startGame: () => void;
-  submitGameResult: (result: GameResult) => void;
+  startDailySet: (dailySetId: string | null, totalCards: number) => void;
+  startCard: () => void;
+  submitCardResult: (result: CardResult) => void;
+  setSubmissionResult: (result: SubmissionResult) => void;
   resetDailyProgress: () => void;
 };
 
 const initialProgress: DailySetProgress = {
-  currentGameIndex: 0,
-  totalGames: 5,
+  dailySetId: null,
+  currentCardIndex: 0,
+  totalCards: CARDS_PER_DAILY_SET,
   results: [],
   completed: false,
 };
@@ -22,47 +26,55 @@ const initialProgress: DailySetProgress = {
 export const useGameStore = create<GameStoreState>()((set, get) => ({
   dailyProgress: { ...initialProgress },
   isPlaying: false,
-  currentGameStartTime: null,
+  currentCardStartTime: null,
+  submissionResult: null,
 
-  startDailySet: (totalGames: number) => {
+  startDailySet: (dailySetId: string | null, totalCards: number) => {
     set({
       dailyProgress: {
-        currentGameIndex: 0,
-        totalGames,
+        dailySetId,
+        currentCardIndex: 0,
+        totalCards,
         results: [],
         completed: false,
       },
       isPlaying: true,
+      submissionResult: null,
     });
   },
 
-  startGame: () => {
-    set({ currentGameStartTime: Date.now() });
+  startCard: () => {
+    set({ currentCardStartTime: Date.now() });
   },
 
-  submitGameResult: (result: GameResult) => {
+  submitCardResult: (result: CardResult) => {
     const current = get().dailyProgress;
     const newResults = [...current.results, result];
-    const newIndex = current.currentGameIndex + 1;
-    const completed = newIndex >= current.totalGames;
+    const newIndex = current.currentCardIndex + 1;
+    const completed = newIndex >= current.totalCards;
 
     set({
       dailyProgress: {
         ...current,
-        currentGameIndex: newIndex,
+        currentCardIndex: newIndex,
         results: newResults,
         completed,
       },
       isPlaying: !completed,
-      currentGameStartTime: null,
+      currentCardStartTime: null,
     });
+  },
+
+  setSubmissionResult: (result: SubmissionResult) => {
+    set({ submissionResult: result });
   },
 
   resetDailyProgress: () => {
     set({
       dailyProgress: { ...initialProgress },
       isPlaying: false,
-      currentGameStartTime: null,
+      currentCardStartTime: null,
+      submissionResult: null,
     });
   },
 }));

@@ -22,35 +22,36 @@ export default function ResultsModal() {
   const router = useRouter();
   const streak = useUserStore((s) => s.currentStreak);
   const { dailyProgress, resetDailyProgress } = useGameStore();
+  const submissionResult = useGameStore((s) => s.submissionResult);
   const { showIfReady } = useInterstitialAd();
 
   const results = dailyProgress.results;
   const correctCount = results.filter((r) => r.correct).length;
-  const totalGames = dailyProgress.totalGames;
+  const totalCards = dailyProgress.totalCards;
   const resultBools = results.map((r) => r.correct);
-  const messageKey = getResultMessage(correctCount, totalGames);
+  const messageKey = getResultMessage(correctCount, totalCards);
 
   React.useEffect(() => {
     showIfReady();
     analytics.logEvent('daily_set_complete', {
       score: correctCount,
-      total: totalGames,
+      total: totalCards,
     });
-  }, [showIfReady, correctCount, totalGames]);
+  }, [showIfReady, correctCount, totalCards]);
 
   const scoreColor =
-    correctCount === totalGames
+    correctCount === totalCards
       ? colors.gold
-      : correctCount >= 4
+      : correctCount >= totalCards * 0.8
         ? colors.primary
-        : correctCount >= 3
+        : correctCount >= totalCards * 0.5
           ? colors.blue
           : colors.orange;
 
   const handleShare = () => {
     shareResult({
       score: correctCount,
-      total: totalGames,
+      total: totalCards,
       streak,
       results: resultBools,
     });
@@ -66,21 +67,46 @@ export default function ResultsModal() {
     <Screen style={styles.screen}>
       <View style={styles.content}>
         <Text style={[styles.score, { color: scoreColor }]}>
-          {correctCount}/{totalGames}
+          {correctCount}/{totalCards}
         </Text>
         <Text style={[styles.message, { color: colors.textPrimary }]}>
           {t(`results.${messageKey}`)}
         </Text>
 
-        <StreakBadge days={streak} size="md" />
+        {submissionResult && (
+          <Text style={[styles.percentText, { color: colors.primary }]}>
+            {t('results.correctPercent', {
+              percent: submissionResult.correctPercent,
+            })}
+          </Text>
+        )}
+
+        <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
 
         <DailyResultCard results={resultBools} />
 
-        <Card variant="flat" style={styles.positionCard}>
-          <Text style={[styles.positionText, { color: colors.textSecondary }]}>
-            {t('results.position', { position: 42, total: 487 })}
-          </Text>
-        </Card>
+        {submissionResult ? (
+          <Card variant="flat" style={styles.positionCard}>
+            <Text
+              style={[styles.positionText, { color: colors.textSecondary }]}
+            >
+              {t('results.percentile', {
+                percent: submissionResult.percentile,
+              })}
+            </Text>
+          </Card>
+        ) : (
+          <Card variant="flat" style={styles.positionCard}>
+            <Text
+              style={[styles.positionText, { color: colors.textSecondary }]}
+            >
+              {t('results.position', {
+                position: '—',
+                total: '—',
+              })}
+            </Text>
+          </Card>
+        )}
       </View>
 
       <View style={styles.footer}>
@@ -120,6 +146,11 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 24,
     fontFamily: 'Nunito_800ExtraBold',
+  },
+  percentText: {
+    fontSize: 18,
+    fontFamily: 'Nunito_700Bold',
+    textAlign: 'center',
   },
   positionCard: {
     paddingVertical: 12,

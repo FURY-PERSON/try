@@ -8,18 +8,18 @@ import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
 
 type FactCardProps = {
-  fact: string;
-  factSource: string;
-  factSourceUrl?: string;
+  explanation: string;
+  source: string;
+  sourceUrl?: string;
   illustrationUrl?: string;
   onNext: () => void;
   onShare: () => void;
 };
 
 export const FactCard: FC<FactCardProps> = ({
-  fact,
-  factSource,
-  factSourceUrl,
+  explanation,
+  source,
+  sourceUrl,
   illustrationUrl,
   onNext,
   onShare,
@@ -28,8 +28,8 @@ export const FactCard: FC<FactCardProps> = ({
   const { t } = useTranslation();
 
   const handleSourcePress = () => {
-    if (factSourceUrl) {
-      Linking.openURL(factSourceUrl);
+    if (sourceUrl) {
+      Linking.openURL(sourceUrl);
     }
   };
 
@@ -58,19 +58,19 @@ export const FactCard: FC<FactCardProps> = ({
         />
       )}
 
-      <Text style={[styles.factText, { color: colors.textPrimary }]}>{fact}</Text>
+      <Text style={[styles.factText, { color: colors.textPrimary }]}>{explanation}</Text>
 
-      {factSource && (
+      {source && (
         <Pressable onPress={handleSourcePress} style={styles.sourceRow}>
           <Feather name="link" size={12} color={colors.textSecondary} />
           <Text
             style={[
               styles.sourceText,
               { color: colors.textSecondary },
-              factSourceUrl && styles.sourceLink,
+              sourceUrl && styles.sourceLink,
             ]}
           >
-            {factSource}
+            {source}
           </Text>
         </Pressable>
       )}

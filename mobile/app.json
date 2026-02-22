@@ -1,11 +1,16 @@
 {
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
+    "ios_app_id": "ca-app-pub-3940256099942544~1458002511"
+  },
   "expo": {
-    "name": "WordPulse",
-    "slug": "wordpulse",
+    "name": "Факт или Фейк",
+    "slug": "fact-or-fake",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "wordpulse",
+    "scheme": "factorfake",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",
@@ -14,7 +19,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.wordpulse.app",
+      "bundleIdentifier": "com.factorfake.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
@@ -23,7 +28,7 @@
         ]
       },
       "config": {
-        "googleMobileAdsAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
       }
     },
     "android": {
@@ -31,11 +36,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#58CC02"
       },
-      "package": "com.wordpulse.app",
+      "package": "com.factorfake.app",
       "versionCode": 1,
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
       "config": {
-        "googleMobileAdsAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~ZZZZZZZZZZ"
+        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
       }
     },
     "plugins": [
@@ -53,8 +58,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~ZZZZZZZZZZ",
-          "iosAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
       [
@@ -77,12 +82,6 @@
         "projectId": "YOUR_EAS_PROJECT_ID"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "runtimeVersion": "1.0.0"
   }
 }
-

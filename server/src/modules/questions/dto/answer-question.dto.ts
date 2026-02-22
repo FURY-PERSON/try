@@ -1,14 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsInt, Min } from 'class-validator';
+import { IsBoolean, IsInt, Min } from 'class-validator';
 
 export class AnswerQuestionDto {
   @ApiProperty({
-    description: 'Result of the answer',
-    enum: ['correct', 'incorrect'],
-    example: 'correct',
+    description: 'User answer: true if they think the statement is a fact, false if they think it is a fake',
+    example: true,
   })
-  @IsEnum(['correct', 'incorrect'])
-  result: 'correct' | 'incorrect';
+  @IsBoolean()
+  userAnswer: boolean;
 
   @ApiProperty({
     description: 'Time spent answering in seconds',

@@ -10,7 +10,7 @@ test.describe('Dashboard Page', () => {
 
   test('displays dashboard heading', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Дашборд' })).toBeVisible();
-    await expect(page.getByText('Обзор состояния контента WordPulse')).toBeVisible();
+    await expect(page.getByText('Обзор состояния контента Факт или Фейк')).toBeVisible();
   });
 
   test('displays 6 stat cards with correct labels', async ({ page }) => {

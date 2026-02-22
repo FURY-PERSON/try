@@ -5,7 +5,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'WordPulse' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Факт или Фейк' })).toBeVisible();
   });
 
   test('shows login form', async ({ page }) => {
@@ -25,7 +25,6 @@ test.describe('Login Page', () => {
     await page.locator('#email').fill('wrong@email.com');
     await page.locator('#password').fill('wrongpassword');
 
-    // Start waiting for the response before clicking
     const responsePromise = page.waitForResponse(
       (r) => r.url().includes('/admin/auth/login'),
       { timeout: 15000 },
@@ -36,7 +35,6 @@ test.describe('Login Page', () => {
     const response = await responsePromise;
     expect(response.status()).toBe(401);
 
-    // After receiving 401, the error toast should appear
     await expect(page.getByText('Неверный email или пароль')).toBeVisible({ timeout: 5000 });
   });
 

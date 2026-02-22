@@ -49,7 +49,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'wordpulse-settings-store',
+      name: 'factorfake-settings-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

@@ -42,7 +42,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'wordpulse-app-store',
+      name: 'factorfake-app-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

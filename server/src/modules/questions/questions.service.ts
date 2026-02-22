@@ -44,10 +44,6 @@ export class QuestionsService {
       where.language = filters.language;
     }
 
-    if (filters.type) {
-      where.type = filters.type;
-    }
-
     if (filters.categoryId) {
       where.categoryId = filters.categoryId;
     }
@@ -72,7 +68,16 @@ export class QuestionsService {
       throw new NotFoundException('No available questions found');
     }
 
-    return question;
+    // Return statement without revealing the answer
+    return {
+      id: question.id,
+      statement: question.statement,
+      language: question.language,
+      categoryId: question.categoryId,
+      difficulty: question.difficulty,
+      illustrationUrl: question.illustrationUrl,
+      category: question.category,
+    };
   }
 
   async answerQuestion(
@@ -90,13 +95,14 @@ export class QuestionsService {
       );
     }
 
-    const isCorrect = dto.result === 'correct';
+    const isCorrect = dto.userAnswer === question.isTrue;
+    const result = isCorrect ? 'correct' : 'incorrect';
 
     await this.prisma.userQuestionHistory.create({
       data: {
         userId,
         questionId,
-        result: dto.result,
+        result,
         timeSpentSeconds: dto.timeSpentSeconds,
       },
     });
@@ -133,9 +139,10 @@ export class QuestionsService {
     return {
       correct: isCorrect,
       score,
-      fact: question.fact,
-      factSource: question.factSource,
-      factSourceUrl: question.factSourceUrl,
+      isTrue: question.isTrue,
+      explanation: question.explanation,
+      source: question.source,
+      sourceUrl: question.sourceUrl,
     };
   }
 

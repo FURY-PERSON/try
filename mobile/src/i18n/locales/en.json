@@ -18,51 +18,41 @@
   },
   "tabs": {
     "home": "Home",
-    "infinite": "Mode",
     "leaderboard": "Ranking",
     "profile": "Profile"
   },
   "onboarding": {
-    "step1Title": "Play with words —\ndiscover real facts!",
-    "step1Desc": "New puzzles and interesting facts from verified sources every day",
-    "step2Title": "5 mini-games\nevery day",
-    "step2Desc": "Anagrams, compose words, chains, word search and Wordle — all in one app",
+    "step1Title": "Fact or Fake?\nBust the myths!",
+    "step1Desc": "15 statements every day — tell fact from fiction. After each answer, learn the explanation from verified sources",
+    "step2Title": "Swipe\nleft and right",
+    "step2Desc": "Think it's true — swipe right. Think it's fake — swipe left. Simple!",
     "step3Title": "Choose content\nlanguage",
-    "step3Desc": "Puzzles and facts are available in Russian and English",
+    "step3Desc": "Statements and explanations are available in Russian and English",
     "langRu": "Russian",
     "langEn": "English",
     "start": "Start!"
   },
   "home": {
-    "title": "WordPulse",
+    "title": "Fact or Fake",
     "dailySet": "Daily Set",
     "dailyTheme": "Theme: {{theme}}",
+    "dailyDesc": "15 statements — swipe right (fact) or left (fake)",
     "progress": "{{current}}/{{total}}",
-    "infiniteMode": "Infinite Mode",
-    "infiniteDesc": "Random puzzles without limits",
     "completed": "Set completed!",
     "newSetIn": "New set in {{time}}",
     "empty": "Today's set is not ready yet"
   },
   "game": {
-    "anagram": "Unscramble",
-    "anagramDesc": "the mixed-up letters",
-    "compose": "Compose Words",
-    "composeDesc": "from given letters",
-    "chain": "Word Chain",
-    "chainDesc": "change one letter",
-    "search": "Word Search",
-    "searchDesc": "find words in the grid",
-    "guess": "Guess the Word",
-    "guessDesc": "in 6 attempts",
-    "check": "Check",
-    "hint": "Hint",
+    "fact": "Fact",
+    "fake": "Fake",
+    "thisIs": "This is",
     "correct": "Correct!",
     "incorrect": "Incorrect",
-    "timeUp": "Time's up"
+    "swipeRight": "Swipe right — fact",
+    "swipeLeft": "Swipe left — fake"
   },
   "fact": {
-    "title": "Fun Fact!",
+    "title": "Explanation",
     "source": "Source"
   },
   "results": {
@@ -73,14 +63,17 @@
     "tryAgain": "Try again tomorrow!",
     "streak": "Streak: {{days}} days",
     "position": "#{{position}} of {{total}} players today",
+    "correctPercent": "{{percent}}% correct answers",
+    "percentile": "You're better than {{percent}}% of players today",
     "goHome": "Go Home"
   },
   "leaderboard": {
     "title": "Leaderboard",
-    "daily": "Today",
     "weekly": "Week",
+    "monthly": "Month",
+    "yearly": "Year",
     "allTime": "All Time",
-    "yourPosition": "Your position",
+    "position": "Your position: #{{position}} of {{total}}",
     "empty": "No data yet",
     "setNickname": "Set a nickname to participate"
   },
@@ -91,7 +84,7 @@
     "facts": "facts",
     "activity": "Activity",
     "statistics": "Statistics",
-    "totalGames": "Total games",
+    "totalGames": "Total sets",
     "correctPercent": "Correct",
     "bestStreak": "Best streak",
     "avgScore": "Avg score"

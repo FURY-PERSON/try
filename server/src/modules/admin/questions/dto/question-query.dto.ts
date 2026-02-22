@@ -1,5 +1,5 @@
-import { IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsInt, IsIn, Min, Max } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@/common/dto/pagination.dto';
 
@@ -11,17 +11,17 @@ export class QuestionQueryDto extends PaginationQueryDto {
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by language (ru, en, both)' })
+  @ApiPropertyOptional({ description: 'Filter by language (ru, en)' })
   @IsOptional()
   @IsString()
   language?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by question type (multiple_choice, true_false, etc.)',
+    description: 'Filter by isTrue (true = facts only, false = fakes only)',
   })
   @IsOptional()
-  @IsString()
-  type?: string;
+  @IsIn(['true', 'false'])
+  isTrue?: string;
 
   @ApiPropertyOptional({ description: 'Filter by category ID' })
   @IsOptional()
@@ -39,4 +39,9 @@ export class QuestionQueryDto extends PaginationQueryDto {
   @Max(5)
   @Type(() => Number)
   difficulty?: number;
+
+  @ApiPropertyOptional({ description: 'Search by statement text' })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }

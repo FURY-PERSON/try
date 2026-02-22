@@ -6,12 +6,12 @@ test.describe('Sidebar Navigation', () => {
   });
 
   test('sidebar shows app title and subtitle', async ({ page }) => {
-    await expect(page.locator('aside').getByText('WordPulse')).toBeVisible();
+    await expect(page.locator('aside').getByText('Факт или Фейк')).toBeVisible();
     await expect(page.locator('aside').getByText('Админ-панель')).toBeVisible();
   });
 
   test('sidebar shows all navigation items', async ({ page }) => {
-    const navItems = ['Дашборд', 'Вопросы', 'AI Генерация', 'Ежедневные наборы', 'Категории'];
+    const navItems = ['Дашборд', 'Утверждения', 'AI Генерация', 'Ежедневные наборы', 'Категории'];
     for (const item of navItems) {
       await expect(page.locator('aside').getByText(item)).toBeVisible();
     }
@@ -21,10 +21,10 @@ test.describe('Sidebar Navigation', () => {
     await expect(page.locator('aside').getByText('Выйти')).toBeVisible();
   });
 
-  test('navigate to Вопросы', async ({ page }) => {
-    await page.locator('aside').getByText('Вопросы').click();
+  test('navigate to Утверждения', async ({ page }) => {
+    await page.locator('aside').getByText('Утверждения').click();
     await expect(page).toHaveURL('/questions');
-    await expect(page.getByText('Вопросы').first()).toBeVisible();
+    await expect(page.getByText('Утверждения').first()).toBeVisible();
   });
 
   test('navigate to AI Генерация', async ({ page }) => {

@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, CheckCircle, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { GAME_TYPES, QUESTION_STATUS } from '@/shared';
-import type { GameType, QuestionStatus } from '@/shared';
+import { QUESTION_STATUS } from '@/shared';
+import type { QuestionStatus } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -15,13 +15,10 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-const GAME_TYPE_OPTIONS = [
-  { value: '', label: 'Все типы' },
-  { value: GAME_TYPES.ANAGRAM, label: 'Анаграмма' },
-  { value: GAME_TYPES.COMPOSE_WORDS, label: 'Составь слова' },
-  { value: GAME_TYPES.WORD_CHAIN, label: 'Цепочка слов' },
-  { value: GAME_TYPES.WORD_SEARCH, label: 'Поиск слов' },
-  { value: GAME_TYPES.GUESS_WORD, label: 'Угадай слово' },
+const IS_TRUE_OPTIONS = [
+  { value: '', label: 'Все' },
+  { value: 'true', label: 'Факты' },
+  { value: 'false', label: 'Фейки' },
 ];
 
 const STATUS_OPTIONS = [
@@ -39,31 +36,23 @@ const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | '
   rejected: 'danger',
 };
 
-const GAME_TYPE_LABELS: Record<string, string> = {
-  anagram: 'Анаграмма',
-  compose_words: 'Составь слова',
-  word_chain: 'Цепочка',
-  word_search: 'Поиск слов',
-  guess_word: 'Угадай слово',
-};
-
 export function QuestionsListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [isTrueFilter, setIsTrueFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'questions', { page, search, type: typeFilter, status: statusFilter }],
+    queryKey: ['admin', 'questions', { page, search, isTrue: isTrueFilter, status: statusFilter }],
     queryFn: () =>
       api.admin.questions.list({
         page,
         limit: 20,
         search: search || undefined,
-        type: (typeFilter || undefined) as GameType | undefined,
+        isTrue: (isTrueFilter || undefined) as string | undefined,
         status: (statusFilter || undefined) as QuestionStatus | undefined,
       }),
   });
@@ -71,7 +60,7 @@ export function QuestionsListPage() {
   const bulkApproveMutation = useMutation({
     mutationFn: (ids: string[]) => api.admin.questions.bulkApprove(ids),
     onSuccess: () => {
-      toast.success(`Одобрено: ${selected.length} вопросов`);
+      toast.success(`Одобрено: ${selected.length} утверждений`);
       setSelected([]);
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
     },
@@ -91,14 +80,14 @@ export function QuestionsListPage() {
     if (selected.length === questions.length) {
       setSelected([]);
     } else {
-      setSelected(questions.map((q) => q.id));
+      setSelected(questions.map((q: any) => q.id));
     }
   };
 
   return (
     <div>
       <PageHeader
-        title="Вопросы"
+        title="Утверждения"
         description={meta ? `Всего: ${meta.total}` : undefined}
         actions={
           <div className="flex gap-2">
@@ -113,6 +102,10 @@ export function QuestionsListPage() {
                 Одобрить ({selected.length})
               </Button>
             )}
+            <Button variant="secondary" size="sm" onClick={() => navigate('/questions/create')}>
+              <Plus className="w-4 h-4" />
+              Добавить
+            </Button>
             <Button size="sm" onClick={() => navigate('/questions/generate')}>
               <Plus className="w-4 h-4" />
               Генерировать
@@ -136,9 +129,9 @@ export function QuestionsListPage() {
             </div>
           </div>
           <Select
-            options={GAME_TYPE_OPTIONS}
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
+            options={IS_TRUE_OPTIONS}
+            value={isTrueFilter}
+            onChange={(e) => { setIsTrueFilter(e.target.value); setPage(1); }}
             className="w-48"
           />
           <Select
@@ -160,11 +153,11 @@ export function QuestionsListPage() {
         ) : questions.length === 0 ? (
           <EmptyState
             icon={Filter}
-            title="Нет вопросов"
-            description="Попробуйте изменить фильтры или сгенерировать новые вопросы с помощью AI"
+            title="Нет утверждений"
+            description="Попробуйте изменить фильтры или сгенерировать новые утверждения с помощью AI"
             action={
               <Button size="sm" onClick={() => navigate('/questions/generate')}>
-                Генерировать вопросы
+                Генерировать утверждения
               </Button>
             }
           />
@@ -181,7 +174,8 @@ export function QuestionsListPage() {
                       className="rounded"
                     />
                   </TableHead>
-                  <TableHead>Тип</TableHead>
+                  <TableHead>Утверждение</TableHead>
+                  <TableHead className="w-24">Факт/Фейк</TableHead>
                   <TableHead>Категория</TableHead>
                   <TableHead>Сложность</TableHead>
                   <TableHead>Статус</TableHead>
@@ -190,7 +184,7 @@ export function QuestionsListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {questions.map((q) => (
+                {questions.map((q: any) => (
                   <TableRow
                     key={q.id}
                     className="cursor-pointer"
@@ -204,9 +198,12 @@ export function QuestionsListPage() {
                         className="rounded"
                       />
                     </TableCell>
+                    <TableCell className="max-w-[300px]">
+                      <p className="text-sm truncate">{q.statement}</p>
+                    </TableCell>
                     <TableCell>
-                      <Badge variant="primary">
-                        {GAME_TYPE_LABELS[q.type] ?? q.type}
+                      <Badge variant={q.isTrue ? 'success' : 'danger'}>
+                        {q.isTrue ? 'Факт' : 'Фейк'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-text-secondary">

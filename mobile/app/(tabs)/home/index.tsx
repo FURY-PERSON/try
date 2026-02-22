@@ -14,6 +14,7 @@ import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useUserStore } from '@/stores/useUserStore';
 import { useThemeContext } from '@/theme';
 import { useGameStore } from '@/features/game/stores/useGameStore';
+import { CARDS_PER_DAILY_SET } from '@/shared';
 
 export default function HomeScreen() {
   const { colors, spacing } = useThemeContext();
@@ -25,13 +26,9 @@ export default function HomeScreen() {
 
   const handleStartDaily = () => {
     if (data) {
-      startDailySet(data.questions?.length ?? 5);
-      router.push('/game/daily');
+      startDailySet(data.id ?? null, data.questions?.length ?? CARDS_PER_DAILY_SET);
+      router.push('/game/card');
     }
-  };
-
-  const handleStartInfinite = () => {
-    router.push('/game/anagram');
   };
 
   if (isLoading) {
@@ -43,7 +40,6 @@ export default function HomeScreen() {
         </View>
         <View style={styles.skeletons}>
           <Skeleton width="100%" height={200} shape="card" />
-          <Skeleton width="100%" height={140} shape="card" style={{ marginTop: 16 }} />
         </View>
       </Screen>
     );
@@ -72,7 +68,7 @@ export default function HomeScreen() {
         </View>
 
         <Card variant="highlighted" style={{ marginTop: spacing.sectionGap }}>
-          <Text style={[styles.cardEmoji, { color: colors.textPrimary }]}>📅</Text>
+          <Text style={[styles.cardEmoji, { color: colors.textPrimary }]}>🎯</Text>
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
             {t('home.dailySet')}
           </Text>
@@ -81,38 +77,21 @@ export default function HomeScreen() {
               {t('home.dailyTheme', { theme: data.theme })}
             </Text>
           )}
+          <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
+            {t('home.dailyDesc')}
+          </Text>
           <View style={styles.progressRow}>
             <ProgressBar progress={0} variant="primary" />
             <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-              {t('home.progress', { current: 0, total: data?.questions?.length ?? 5 })}
+              {t('home.progress', { current: 0, total: data?.questions?.length ?? CARDS_PER_DAILY_SET })}
             </Text>
           </View>
           <Button
-            label={t('common.continue')}
+            label={t('common.play')}
             variant="primary"
             size="lg"
             onPress={handleStartDaily}
             iconLeft={<Text style={{ fontSize: 16 }}>▶</Text>}
-          />
-        </Card>
-
-        <Card
-          variant="highlighted"
-          highlightColor={colors.blue}
-          style={{ marginTop: spacing.lg }}
-        >
-          <Text style={[styles.cardEmoji, { color: colors.textPrimary }]}>♾️</Text>
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-            {t('home.infiniteMode')}
-          </Text>
-          <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-            {t('home.infiniteDesc')}
-          </Text>
-          <Button
-            label={t('common.play')}
-            variant="blue"
-            size="lg"
-            onPress={handleStartInfinite}
           />
         </Card>
 
@@ -149,6 +128,11 @@ const styles = StyleSheet.create({
   },
   cardSubtitle: {
     fontSize: 15,
+    fontFamily: 'Nunito_600SemiBold',
+    marginBottom: 4,
+  },
+  cardDesc: {
+    fontSize: 14,
     fontFamily: 'Nunito_400Regular',
     marginBottom: 16,
   },

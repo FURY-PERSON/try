@@ -25,7 +25,7 @@ export default function OnboardingStep2() {
 
         <View style={styles.content}>
           <View style={[styles.illustration, { backgroundColor: colors.blue + '33' }]}>
-            <MaterialCommunityIcons name="puzzle" size={80} color={colors.blue} />
+            <MaterialCommunityIcons name="gesture-swipe" size={80} color={colors.blue} />
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>

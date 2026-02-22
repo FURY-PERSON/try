@@ -7,6 +7,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 
+const CARDS_PER_DAILY_SET = 15;
+
 @Injectable()
 export class DailySetsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -25,14 +27,14 @@ export class DailySetsService {
             question: {
               select: {
                 id: true,
-                type: true,
+                statement: true,
+                isTrue: true,
+                explanation: true,
+                source: true,
+                sourceUrl: true,
                 language: true,
                 categoryId: true,
                 difficulty: true,
-                questionData: true,
-                fact: true,
-                factSource: true,
-                factSourceUrl: true,
                 illustrationUrl: true,
               },
             },
@@ -77,14 +79,14 @@ export class DailySetsService {
         status: dailySet.status,
         questions: dailySet.questions.map((dsq) => ({
           id: dsq.question.id,
-          type: dsq.question.type,
+          statement: dsq.question.statement,
+          isTrue: dsq.question.isTrue,
+          explanation: dsq.question.explanation,
+          source: dsq.question.source,
+          sourceUrl: dsq.question.sourceUrl,
           language: dsq.question.language,
           categoryId: dsq.question.categoryId,
           difficulty: dsq.question.difficulty,
-          questionData: dsq.question.questionData,
-          fact: dsq.question.fact,
-          factSource: dsq.question.factSource,
-          factSourceUrl: dsq.question.factSourceUrl,
           illustrationUrl: dsq.question.illustrationUrl,
           sortOrder: dsq.sortOrder,
         })),
@@ -96,18 +98,18 @@ export class DailySetsService {
     // Fallback: generate from random approved questions
     const fallbackQuestions = await this.prisma.question.findMany({
       where: { status: 'approved' },
-      take: 5,
+      take: CARDS_PER_DAILY_SET,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        type: true,
+        statement: true,
+        isTrue: true,
+        explanation: true,
+        source: true,
+        sourceUrl: true,
         language: true,
         categoryId: true,
         difficulty: true,
-        questionData: true,
-        fact: true,
-        factSource: true,
-        factSourceUrl: true,
         illustrationUrl: true,
       },
     });
@@ -129,14 +131,14 @@ export class DailySetsService {
       status: 'fallback',
       questions: fallbackQuestions.map((q, index) => ({
         id: q.id,
-        type: q.type,
+        statement: q.statement,
+        isTrue: q.isTrue,
+        explanation: q.explanation,
+        source: q.source,
+        sourceUrl: q.sourceUrl,
         language: q.language,
         categoryId: q.categoryId,
         difficulty: q.difficulty,
-        questionData: q.questionData,
-        fact: q.fact,
-        factSource: q.factSource,
-        factSourceUrl: q.factSourceUrl,
         illustrationUrl: q.illustrationUrl,
         sortOrder: index + 1,
       })),
@@ -234,71 +236,27 @@ export class DailySetsService {
       const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
-        // Already played today — should not happen since we check for existing entry
         throw new BadRequestException('You have already played today');
       } else if (diffDays === 1) {
-        // Played yesterday, continue streak
         newCurrentStreak = user.currentStreak + 1;
       } else {
-        // Streak broken
         newCurrentStreak = 1;
       }
     } else {
-      // First time playing
       newCurrentStreak = 1;
     }
 
     const newBestStreak = Math.max(user.bestStreak, newCurrentStreak);
 
-    // Execute all database operations in a transaction
-    // Handles race condition: if two requests arrive simultaneously,
-    // the unique constraint on (userId, dailySetId) will catch duplicates
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Create UserQuestionHistory for each question
-        await tx.userQuestionHistory.createMany({
-          data: dto.results.map((r) => ({
-            userId,
-            questionId: r.questionId,
-            result: r.result,
-            timeSpentSeconds: r.timeSpentSeconds,
-          })),
-        });
-
-        // Update question stats for each question
-        for (const r of dto.results) {
-          const question = dailySet.questions.find(
-            (dsq) => dsq.questionId === r.questionId,
-          )?.question;
-
-          if (question) {
-            const newTimesShown = question.timesShown + 1;
-            const newTimesCorrect =
-              question.timesCorrect + (r.result === 'correct' ? 1 : 0);
-            const newAvgTime =
-              (question.avgTimeSeconds * question.timesShown + r.timeSpentSeconds) /
-              newTimesShown;
-
-            await tx.question.update({
-              where: { id: r.questionId },
-              data: {
-                timesShown: newTimesShown,
-                timesCorrect: newTimesCorrect,
-                avgTimeSeconds: newAvgTime,
-              },
-            });
-          }
-        }
-
-        // Update user streak and stats
+        // Update user streak (question history and stats are already handled per-card by answerQuestion)
         await tx.user.update({
           where: { id: userId },
           data: {
             currentStreak: newCurrentStreak,
             bestStreak: newBestStreak,
             lastPlayedDate: today,
-            totalGamesPlayed: { increment: 1 },
-            totalCorrectAnswers: { increment: correctAnswers },
           },
         });
 
@@ -325,29 +283,52 @@ export class DailySetsService {
       throw error;
     }
 
-    // Calculate leaderboard position
-    const higherScoreCount = await this.prisma.leaderboardEntry.count({
+    // Calculate leaderboard position by correctAnswers
+    const higherCorrectCount = await this.prisma.leaderboardEntry.count({
       where: {
         dailySetId,
         OR: [
-          { score: { gt: score } },
+          { correctAnswers: { gt: correctAnswers } },
           {
-            score,
+            correctAnswers,
             totalTimeSeconds: { lt: totalTimeSeconds },
           },
         ],
       },
     });
+    const leaderboardPosition = higherCorrectCount + 1;
 
-    const leaderboardPosition = higherScoreCount + 1;
+    // Calculate percentage and percentile
+    const totalQuestionsInSet = dailySet.questions.length;
+    const correctPercent = Math.round(
+      (correctAnswers / totalQuestionsInSet) * 100,
+    );
+
+    const totalPlayersToday = await this.prisma.leaderboardEntry.count({
+      where: { dailySetId },
+    });
+    const lowerCount = await this.prisma.leaderboardEntry.count({
+      where: {
+        dailySetId,
+        correctAnswers: { lt: correctAnswers },
+      },
+    });
+    const percentile =
+      totalPlayersToday > 1
+        ? Math.round((lowerCount / (totalPlayersToday - 1)) * 100)
+        : 100;
 
     return {
       score,
       correctAnswers,
+      totalQuestions: totalQuestionsInSet,
       totalTimeSeconds,
       streak: newCurrentStreak,
       bestStreak: newBestStreak,
       leaderboardPosition,
+      correctPercent,
+      percentile,
+      totalPlayers: totalPlayersToday,
     };
   }
 }

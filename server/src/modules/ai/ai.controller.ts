@@ -37,16 +37,16 @@ export class GenerateQuestionsDto {
 
   @ApiProperty({
     example: 'ru',
-    description: 'Language for generated questions (ru, en)',
+    description: 'Language for generated statements (ru, en)',
   })
   @IsString()
   language: string;
 
   @ApiProperty({
-    example: 5,
+    example: 10,
     minimum: 1,
     maximum: 20,
-    description: 'Number of questions to generate',
+    description: 'Number of statements to generate (approx. 50% facts, 50% fakes)',
   })
   @IsInt()
   @Min(1)
@@ -85,18 +85,18 @@ export class AiController {
 
   @Post('generate-questions')
   @ApiOperation({
-    summary: 'Generate questions via AI',
+    summary: 'Generate fact-or-fake statements via AI',
     description:
-      'Uses Anthropic Claude to generate trivia questions with verified facts and sources. All generated questions are saved with status "moderation".',
+      'Uses Anthropic Claude to generate statements (facts and fakes) with explanations and sources. All generated statements are saved with status "moderation".',
   })
   @ApiResponse({
     status: 201,
-    description: 'Questions generated and saved',
+    description: 'Statements generated and saved',
     schema: {
       type: 'object',
       properties: {
-        generated: { type: 'number', example: 5 },
-        saved: { type: 'number', example: 5 },
+        generated: { type: 'number', example: 10 },
+        saved: { type: 'number', example: 10 },
         questions: { type: 'array', items: { type: 'object' } },
       },
     },
@@ -109,7 +109,7 @@ export class AiController {
 
   @Post('generate-illustration')
   @ApiOperation({
-    summary: 'Generate an illustration for a question via DALL-E',
+    summary: 'Generate an illustration for a statement via DALL-E',
     description:
       'Uses OpenAI DALL-E to generate an illustration image, uploads it to S3, and updates the question.',
   })

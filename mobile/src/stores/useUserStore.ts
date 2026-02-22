@@ -79,7 +79,7 @@ export const useUserStore = create<UserState>()(
       },
     }),
     {
-      name: 'wordpulse-user-store',
+      name: 'factorfake-user-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

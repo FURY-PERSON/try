@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { GAMES_PER_DAILY_SET } from '@/shared';
+import { CARDS_PER_DAILY_SET } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -62,29 +62,21 @@ export function DailySetCreatePage() {
   });
 
   const onSubmit = (data: CreateFormData) => {
-    if (selectedQuestionIds.length !== GAMES_PER_DAILY_SET) {
-      toast.error(`Необходимо выбрать ровно ${GAMES_PER_DAILY_SET} вопросов`);
+    if (selectedQuestionIds.length !== CARDS_PER_DAILY_SET) {
+      toast.error(`Необходимо выбрать ровно ${CARDS_PER_DAILY_SET} утверждений`);
       return;
     }
     createMutation.mutate(data);
   };
 
   const addQuestion = (id: string) => {
-    if (selectedQuestionIds.length >= GAMES_PER_DAILY_SET) return;
+    if (selectedQuestionIds.length >= CARDS_PER_DAILY_SET) return;
     if (selectedQuestionIds.includes(id)) return;
     setSelectedQuestionIds((prev) => [...prev, id]);
   };
 
   const removeQuestion = (id: string) => {
     setSelectedQuestionIds((prev) => prev.filter((qId) => qId !== id));
-  };
-
-  const GAME_TYPE_LABELS: Record<string, string> = {
-    anagram: 'Анаграмма',
-    compose_words: 'Составь слова',
-    word_chain: 'Цепочка',
-    word_search: 'Поиск слов',
-    guess_word: 'Угадай слово',
   };
 
   return (
@@ -136,33 +128,36 @@ export function DailySetCreatePage() {
 
             <div className="pt-4">
               <p className="text-sm font-medium text-text-primary mb-2">
-                Выбранные вопросы ({selectedQuestionIds.length}/{GAMES_PER_DAILY_SET})
+                Выбранные утверждения ({selectedQuestionIds.length}/{CARDS_PER_DAILY_SET})
               </p>
               {selectedQuestionIds.length === 0 ? (
                 <p className="text-sm text-text-secondary">
-                  Выберите вопросы из списка справа
+                  Выберите утверждения из списка справа
                 </p>
               ) : (
                 <div className="space-y-2">
                   {selectedQuestionIds.map((id, index) => {
-                    const q = approvedQuestions.find((aq) => aq.id === id);
+                    const q = approvedQuestions.find((aq: any) => aq.id === id);
                     return (
                       <div
                         key={id}
                         className="flex items-center justify-between p-2 bg-surface-secondary rounded-lg"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-text-secondary">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-mono text-text-secondary shrink-0">
                             #{index + 1}
                           </span>
-                          <Badge variant="primary">
-                            {q ? (GAME_TYPE_LABELS[q.type] ?? q.type) : id.slice(0, 8)}
+                          <Badge variant={q?.isTrue ? 'success' : 'danger'} className="shrink-0">
+                            {q?.isTrue ? 'Факт' : 'Фейк'}
                           </Badge>
+                          <span className="text-xs text-text-secondary truncate">
+                            {q?.statement?.slice(0, 40) ?? id.slice(0, 8)}...
+                          </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeQuestion(id)}
-                          className="p-1 text-text-secondary hover:text-red transition-colors"
+                          className="p-1 text-text-secondary hover:text-red transition-colors shrink-0"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -177,7 +172,7 @@ export function DailySetCreatePage() {
               type="submit"
               className="w-full"
               loading={createMutation.isPending}
-              disabled={selectedQuestionIds.length !== GAMES_PER_DAILY_SET}
+              disabled={selectedQuestionIds.length !== CARDS_PER_DAILY_SET}
             >
               Создать набор
             </Button>
@@ -185,38 +180,38 @@ export function DailySetCreatePage() {
         </Card>
 
         <Card>
-          <CardTitle>Одобренные вопросы</CardTitle>
+          <CardTitle>Одобренные утверждения</CardTitle>
           <div className="mt-4 space-y-2 max-h-[600px] overflow-auto">
             {approvedQuestions.length === 0 ? (
               <p className="text-sm text-text-secondary py-8 text-center">
-                Нет одобренных вопросов
+                Нет одобренных утверждений
               </p>
             ) : (
               approvedQuestions
-                .filter((q) => !selectedQuestionIds.includes(q.id))
-                .map((q) => (
+                .filter((q: any) => !selectedQuestionIds.includes(q.id))
+                .map((q: any) => (
                   <div
                     key={q.id}
                     className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-secondary/80 transition-colors"
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="primary">
-                          {GAME_TYPE_LABELS[q.type] ?? q.type}
+                        <Badge variant={q.isTrue ? 'success' : 'danger'}>
+                          {q.isTrue ? 'Факт' : 'Фейк'}
                         </Badge>
                         <span className="text-xs text-text-secondary">
                           {q.category?.name}
                         </span>
                       </div>
                       <p className="text-xs text-text-secondary truncate max-w-[250px]">
-                        {q.fact.slice(0, 80)}...
+                        {q.statement?.slice(0, 80)}...
                       </p>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={selectedQuestionIds.length >= GAMES_PER_DAILY_SET}
+                      disabled={selectedQuestionIds.length >= CARDS_PER_DAILY_SET}
                       onClick={() => addQuestion(q.id)}
                     >
                       <Plus className="w-4 h-4" />

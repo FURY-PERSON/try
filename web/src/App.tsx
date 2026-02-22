@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { QuestionsListPage } from '@/pages/QuestionsListPage';
 import { QuestionDetailPage } from '@/pages/QuestionDetailPage';
 import { QuestionGeneratePage } from '@/pages/QuestionGeneratePage';
+import { QuestionCreatePage } from '@/pages/QuestionCreatePage';
 import { DailySetsPage } from '@/pages/DailySetsPage';
 import { DailySetCreatePage } from '@/pages/DailySetCreatePage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
@@ -32,6 +33,7 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="questions" element={<QuestionsListPage />} />
         <Route path="questions/generate" element={<QuestionGeneratePage />} />
+        <Route path="questions/create" element={<QuestionCreatePage />} />
         <Route path="questions/:id" element={<QuestionDetailPage />} />
         <Route path="daily-sets" element={<DailySetsPage />} />
         <Route path="daily-sets/create" element={<DailySetCreatePage />} />

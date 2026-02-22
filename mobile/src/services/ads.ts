@@ -9,7 +9,7 @@ type AdState = {
   userTotalGames: number;
 };
 
-const AD_STATE_KEY = 'wordpulse-ad-state';
+const AD_STATE_KEY = 'factorfake-ad-state';
 
 const getDefaultState = (): AdState => ({
   interstitialLastShown: 0,

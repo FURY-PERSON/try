@@ -16,14 +16,6 @@ const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | '
   rejected: 'danger',
 };
 
-const GAME_TYPE_LABELS: Record<string, string> = {
-  anagram: 'Анаграмма',
-  compose_words: 'Составь слова',
-  word_chain: 'Цепочка слов',
-  word_search: 'Поиск слов',
-  guess_word: 'Угадай слово',
-};
-
 export function QuestionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -38,7 +30,7 @@ export function QuestionDetailPage() {
   const approveMutation = useMutation({
     mutationFn: () => api.admin.questions.approve(id!),
     onSuccess: () => {
-      toast.success('Вопрос одобрен');
+      toast.success('Утверждение одобрено');
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
     },
   });
@@ -46,7 +38,7 @@ export function QuestionDetailPage() {
   const rejectMutation = useMutation({
     mutationFn: () => api.admin.questions.reject(id!),
     onSuccess: () => {
-      toast.success('Вопрос отклонён');
+      toast.success('Утверждение отклонено');
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
     },
   });
@@ -54,7 +46,7 @@ export function QuestionDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: () => api.admin.questions.delete(id!),
     onSuccess: () => {
-      toast.success('Вопрос удалён');
+      toast.success('Утверждение удалено');
       navigate('/questions');
     },
   });
@@ -85,9 +77,9 @@ export function QuestionDetailPage() {
   if (!question) {
     return (
       <div className="text-center py-16">
-        <p className="text-text-secondary">Вопрос не найден</p>
+        <p className="text-text-secondary">Утверждение не найдено</p>
         <Button variant="secondary" className="mt-4" onClick={() => navigate('/questions')}>
-          К списку вопросов
+          К списку утверждений
         </Button>
       </div>
     );
@@ -106,7 +98,7 @@ export function QuestionDetailPage() {
       </div>
 
       <PageHeader
-        title={`Вопрос: ${GAME_TYPE_LABELS[question.type] ?? question.type}`}
+        title="Утверждение"
         actions={
           <div className="flex gap-2">
             {question.status !== 'approved' && (
@@ -135,7 +127,7 @@ export function QuestionDetailPage() {
               size="sm"
               loading={deleteMutation.isPending}
               onClick={() => {
-                if (confirm('Удалить вопрос?')) deleteMutation.mutate();
+                if (confirm('Удалить утверждение?')) deleteMutation.mutate();
               }}
             >
               <Trash2 className="w-4 h-4" />
@@ -158,7 +150,14 @@ export function QuestionDetailPage() {
                 </Badge>
               }
             />
-            <InfoRow label="Тип" value={GAME_TYPE_LABELS[question.type] ?? question.type} />
+            <InfoRow
+              label="Факт/Фейк"
+              value={
+                <Badge variant={question.isTrue ? 'success' : 'danger'}>
+                  {question.isTrue ? 'Факт' : 'Фейк'}
+                </Badge>
+              }
+            />
             <InfoRow label="Категория" value={question.category?.name ?? '—'} />
             <InfoRow label="Язык" value={question.language.toUpperCase()} />
             <InfoRow label="Сложность" value={`${question.difficulty}/5`} />
@@ -179,24 +178,29 @@ export function QuestionDetailPage() {
         </Card>
 
         <Card>
-          <CardTitle>Данные вопроса</CardTitle>
-          <pre className="mt-4 bg-surface-secondary rounded-lg p-4 text-xs font-mono overflow-auto max-h-64">
-            {JSON.stringify(question.questionData, null, 2)}
-          </pre>
+          <CardTitle>Утверждение</CardTitle>
+          <p className="mt-4 text-base text-text-primary leading-relaxed font-medium">
+            {question.statement}
+          </p>
+          <div className="mt-4">
+            <Badge variant={question.isTrue ? 'success' : 'danger'} className="text-sm">
+              {question.isTrue ? 'Это ФАКТ' : 'Это ФЕЙК'}
+            </Badge>
+          </div>
         </Card>
 
         <Card>
-          <CardTitle>Факт</CardTitle>
+          <CardTitle>Объяснение</CardTitle>
           <p className="mt-4 text-sm text-text-primary leading-relaxed">
-            {question.fact}
+            {question.explanation}
           </p>
           <div className="mt-3 space-y-1">
             <p className="text-xs text-text-secondary">
-              Источник: {question.factSource}
+              Источник: {question.source}
             </p>
-            {question.factSourceUrl && (
+            {question.sourceUrl && (
               <a
-                href={question.factSourceUrl}
+                href={question.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-blue hover:underline"

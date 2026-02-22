@@ -25,7 +25,7 @@ export const notifications = {
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'WordPulse',
+        name: 'Факт или Фейк',
         importance: Notifications.AndroidImportance.DEFAULT,
         vibrationPattern: [0, 250, 250, 250],
       });
@@ -39,8 +39,8 @@ export const notifications = {
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'WordPulse',
-        body: 'Новый набор головоломок ждёт! Не потеряй свой стрик 🔥',
+        title: 'Факт или Фейк',
+        body: 'Новый набор утверждений ждёт! Не потеряй свой стрик 🔥',
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,

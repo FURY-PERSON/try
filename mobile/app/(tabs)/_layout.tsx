@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 
@@ -33,15 +33,6 @@ export default function TabsLayout() {
           title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <Feather name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="infinite"
-        options={{
-          title: t('tabs.infinite'),
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="infinity" size={size} color={color} />
           ),
         }}
       />

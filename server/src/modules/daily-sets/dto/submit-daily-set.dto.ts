@@ -39,13 +39,13 @@ export class GameResultDto {
 
 export class SubmitDailySetDto {
   @ApiProperty({
-    description: 'Array of 5 game results, one per question',
+    description: 'Array of 15 results, one per statement',
     type: [GameResultDto],
   })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => GameResultDto)
-  @ArrayMinSize(5)
-  @ArrayMaxSize(5)
+  @ArrayMinSize(15)
+  @ArrayMaxSize(15)
   results: GameResultDto[];
 }

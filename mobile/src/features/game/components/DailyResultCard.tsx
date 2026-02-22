@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
 
@@ -30,12 +30,13 @@ export const DailyResultCard: FC<DailyResultCardProps> = ({ results }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 6,
+    flexWrap: 'wrap',
+    gap: 4,
     justifyContent: 'center',
   },
   square: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
   },
 });

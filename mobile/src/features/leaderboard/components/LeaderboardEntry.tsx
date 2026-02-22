@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useThemeContext } from '@/theme';
-import { formatScore } from '@/utils/format';
 import type { LeaderboardEntry as LeaderboardEntryType } from '@/shared';
 import type { FC } from 'react';
 
@@ -14,9 +13,9 @@ type LeaderboardEntryProps = {
 };
 
 const MEDAL_EMOJI: Record<number, string> = {
-  1: '🥇',
-  2: '🥈',
-  3: '🥉',
+  1: '\u{1F947}',
+  2: '\u{1F948}',
+  3: '\u{1F949}',
 };
 
 export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
@@ -40,7 +39,7 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
         <Text style={[styles.rank, { color: colors.textSecondary }]}>
           {medal ?? `#${rank}`}
         </Text>
-        <Avatar nickname={entry.nickname} size="sm" />
+        <Avatar nickname={entry.nickname ?? '?'} size="sm" />
         <Text
           style={[
             styles.nickname,
@@ -48,10 +47,10 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
           ]}
           numberOfLines={1}
         >
-          {entry.nickname}
+          {entry.nickname ?? '???'}
         </Text>
         <Text style={[styles.score, { color: colors.textPrimary }]}>
-          {formatScore(entry.score)}
+          {entry.correctAnswers}
         </Text>
       </View>
     </Card>

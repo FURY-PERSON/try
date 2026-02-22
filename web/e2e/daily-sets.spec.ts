@@ -3,9 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Daily Sets Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/daily-sets');
-    // Wait for page heading to confirm the page rendered
     await expect(page.getByRole('heading', { name: 'Ежедневные наборы' })).toBeVisible({ timeout: 15000 });
-    // Wait for data to load
     await page.waitForResponse(
       (r) => r.url().includes('/admin/daily-sets') && r.status() === 200,
       { timeout: 15000 },
@@ -18,7 +16,6 @@ test.describe('Daily Sets Page', () => {
   });
 
   test('shows create button in header', async ({ page }) => {
-    // The header button has a "+" icon prefix — use first() since empty state also has "Создать набор"
     const buttons = page.locator('main').getByRole('button', { name: /Создать набор/ });
     await expect(buttons.first()).toBeVisible();
   });
@@ -44,7 +41,6 @@ test.describe('Daily Sets Page', () => {
   });
 
   test('create button navigates to create page', async ({ page }) => {
-    // Click the first "Создать набор" button (header button)
     await page.locator('main').getByRole('button', { name: /Создать набор/ }).first().click();
     await expect(page).toHaveURL('/daily-sets/create');
   });
@@ -64,7 +60,6 @@ test.describe('Daily Sets Page', () => {
 test.describe('Daily Set Create Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/daily-sets/create');
-    // Wait for the heading to appear
     await expect(page.getByRole('heading', { name: 'Создать ежедневный набор' })).toBeVisible({ timeout: 15000 });
   });
 
@@ -74,8 +69,8 @@ test.describe('Daily Set Create Page', () => {
     await expect(page.locator('#themeEn')).toBeVisible();
   });
 
-  test('shows selected questions counter', async ({ page }) => {
-    await expect(page.getByText(/Выбранные вопросы/)).toBeVisible();
+  test('shows selected statements counter', async ({ page }) => {
+    await expect(page.getByText(/Выбранные утверждения/)).toBeVisible();
   });
 
   test('back button navigates to daily sets list', async ({ page }) => {
@@ -83,7 +78,7 @@ test.describe('Daily Set Create Page', () => {
     await expect(page).toHaveURL('/daily-sets');
   });
 
-  test('create button is disabled without 5 questions', async ({ page }) => {
+  test('create button is disabled without 15 statements', async ({ page }) => {
     const submitButton = page.locator('main').getByRole('button', { name: 'Создать набор' });
     await expect(submitButton).toBeDisabled();
   });

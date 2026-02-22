@@ -1,48 +1,55 @@
 export function getQuestionGenerationSystemPrompt(): string {
-  return `You are a professional trivia question writer and fact-checker for an educational quiz application called WordPulse.
+  return `You are a professional fact-checker and content creator for an educational mobile app called "Факт или Фейк" (Fact or Fake).
 
-Your task is to generate trivia questions with VERIFIED, REAL facts. You must follow these rules strictly:
+Your task is to generate statements that users will evaluate as either FACT (true) or FAKE (false). You must follow these rules strictly:
 
-1. FACTS MUST BE REAL AND VERIFIED
-   - Every fact you provide MUST be a real, verifiable fact.
-   - Never fabricate, invent, or guess facts.
-   - If you are not 100% certain about a fact, do NOT include it.
+1. STATEMENT QUALITY
+   - Each statement should be a clear, concise claim about the world.
+   - Statements should be interesting, surprising, and educational.
+   - FACTS must be real, verified, and sourced — never fabricate true statements.
+   - FAKES must sound highly plausible and believable — they should trick people who are not experts.
+   - Good fakes are statements that "feel" true but are actually wrong, based on common misconceptions, exaggerated claims, or plausible-sounding but incorrect data.
 
-2. EVERY FACT MUST INCLUDE A SOURCE
-   - Provide a specific source for EACH fact: a Wikipedia article URL, a book title and author, an encyclopedia entry, or a reputable academic source.
-   - Format sources as: "Wikipedia: [article title]" or "Book: [title] by [author]" or "[Encyclopedia name]: [entry]"
-   - If you cannot provide a verifiable source for a fact, mark the factSource as "Requires verification" and the fact itself should still be plausible and educational.
+2. BALANCE
+   - Approximately 50% of generated statements should be facts (isTrue: true).
+   - Approximately 50% should be fakes (isTrue: false).
 
-3. QUESTION QUALITY
-   - Questions should be interesting, educational, and engaging.
-   - Wrong answer options should be plausible but clearly incorrect to someone who knows the subject.
-   - Difficulty should match the requested level (1=very easy, 5=very hard).
-   - Facts should be surprising or "did you know?" style - things that make people want to share.
+3. EXPLANATIONS
+   - Every statement MUST have a clear, educational explanation.
+   - For facts: explain why this surprising truth is real, with context.
+   - For fakes: explain why people commonly believe this and what the actual truth is.
+   - Explanations should be 1-3 sentences, informative and engaging.
 
-4. RESPONSE FORMAT
+4. SOURCES
+   - Every statement MUST include a credible source.
+   - Format: "Wikipedia", "NASA", "Smithsonian", "Nature Journal", book title, university name, etc.
+   - Include sourceUrl when a specific URL is available.
+   - If you cannot verify a source, mark it as "Requires verification".
+
+5. RESPONSE FORMAT
    - You MUST respond with a valid JSON array and NOTHING else.
-   - No markdown, no code blocks, no explanatory text - ONLY the JSON array.
-   - Each element in the array must be an object with these exact fields:
+   - No markdown, no code blocks, no explanatory text — ONLY the JSON array.
+   - Each element must be:
      {
-       "type": "multiple_choice" | "true_false",
-       "questionData": {
-         "question": "The question text",
-         "options": ["Option A", "Option B", "Option C", "Option D"],
-         "correctAnswer": 0
-       },
-       "fact": "An interesting fact related to the correct answer",
-       "factSource": "Wikipedia: Article Name | Book: Title by Author | etc.",
-       "factSourceUrl": "https://en.wikipedia.org/wiki/..." (optional, if available),
+       "statement": "The claim text",
+       "isTrue": true | false,
+       "explanation": "Why this is true/false...",
+       "source": "Source name",
+       "sourceUrl": "https://..." (optional),
        "difficulty": 1-5
      }
-   - For "true_false" type, options should be ["True", "False"] or localized equivalents.
-   - correctAnswer is the zero-based index of the correct option.
 
-5. LANGUAGE
-   - Generate questions in the specified language.
-   - For Russian ("ru"): questions, options, and facts in Russian.
-   - For English ("en"): questions, options, and facts in English.
-   - For both ("both"): generate in the specified primary language.`;
+6. LANGUAGE
+   - Generate in the specified language.
+   - For Russian ("ru"): everything in Russian.
+   - For English ("en"): everything in English.
+
+7. DIFFICULTY LEVELS
+   - 1: Common knowledge myths that most people get wrong
+   - 2: Interesting facts that surprise but are easy to verify
+   - 3: Moderate — requires some general knowledge
+   - 4: Specialized — requires domain-specific knowledge
+   - 5: Expert level — very tricky, even knowledgeable people might be fooled`;
 }
 
 export function getQuestionGenerationUserPrompt(params: {
@@ -55,19 +62,21 @@ export function getQuestionGenerationUserPrompt(params: {
   const { category, difficulty, language, count, additionalPrompt } = params;
 
   const langLabel = language === 'ru' ? 'Russian' : 'English';
+  const factsCount = Math.ceil(count / 2);
+  const fakesCount = count - factsCount;
 
-  let prompt = `Generate exactly ${count} trivia questions with the following parameters:
+  let prompt = `Generate exactly ${count} statements (approximately ${factsCount} facts and ${fakesCount} fakes) with the following parameters:
 
 - Category: ${category}
 - Difficulty: ${difficulty} out of 5 (1=very easy, 5=very hard)
 - Language: ${langLabel}
-- Type: multiple_choice (4 options each)
 
 Requirements:
-- Each question must have an interesting, verified fact with a credible source.
-- Facts should be engaging "did you know?" style facts that users will want to share.
-- Wrong options should be plausible but clearly distinguishable from the correct answer.
-- Ensure variety in the questions - do not repeat similar topics.`;
+- Each statement must be a clear, evaluable claim.
+- Facts must be real and verified with credible sources.
+- Fakes must sound highly plausible — they should fool most people.
+- Explanations must be educational and engaging.
+- Ensure variety — do not repeat similar topics within the batch.`;
 
   if (additionalPrompt) {
     prompt += `\n\nAdditional instructions: ${additionalPrompt}`;

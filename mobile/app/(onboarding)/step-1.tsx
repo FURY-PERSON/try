@@ -30,7 +30,7 @@ export default function OnboardingStep1() {
 
         <View style={styles.content}>
           <View style={[styles.illustration, { backgroundColor: colors.primaryLight }]}>
-            <MaterialCommunityIcons name="book-open-page-variant" size={80} color={colors.primary} />
+            <MaterialCommunityIcons name="check-decagram" size={80} color={colors.primary} />
           </View>
 
           <Text style={[styles.title, { color: colors.textPrimary }]}>

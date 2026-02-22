@@ -8,14 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 import { UploadService } from '@/modules/admin/upload/upload.service';
 import {
   getQuestionGenerationSystemPrompt,
   getQuestionGenerationUserPrompt,
 } from './prompts/question-generation';
 
-interface GenerateQuestionsParams {
+interface GenerateStatementsParams {
   category: string;
   difficulty: number;
   language: string;
@@ -23,16 +22,12 @@ interface GenerateQuestionsParams {
   additionalPrompt?: string;
 }
 
-interface GeneratedQuestion {
-  type: string;
-  questionData: {
-    question: string;
-    options: string[];
-    correctAnswer: number;
-  };
-  fact: string;
-  factSource: string;
-  factSourceUrl?: string;
+interface GeneratedStatement {
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl?: string;
   difficulty: number;
 }
 
@@ -61,7 +56,7 @@ export class AiService {
     });
   }
 
-  async generateQuestions(params: GenerateQuestionsParams) {
+  async generateQuestions(params: GenerateStatementsParams) {
     const { category, difficulty, language, count, additionalPrompt } = params;
 
     const categoryRecord = await this.prisma.category.findFirst({
@@ -88,7 +83,7 @@ export class AiService {
       additionalPrompt,
     });
 
-    let generatedQuestions: GeneratedQuestion[];
+    let generatedStatements: GeneratedStatement[];
 
     try {
       const model = this.configService.get<string>(
@@ -123,10 +118,10 @@ export class AiService {
         throw new Error('No JSON array found in AI response');
       }
 
-      generatedQuestions = JSON.parse(jsonMatch[0]) as GeneratedQuestion[];
+      generatedStatements = JSON.parse(jsonMatch[0]) as GeneratedStatement[];
     } catch (error) {
       this.logger.error(
-        `Failed to generate questions via AI: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to generate statements via AI: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
 
       if (error instanceof BadRequestException) {
@@ -134,33 +129,33 @@ export class AiService {
       }
 
       throw new InternalServerErrorException(
-        `AI question generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `AI statement generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
 
-    if (!Array.isArray(generatedQuestions) || generatedQuestions.length === 0) {
+    if (!Array.isArray(generatedStatements) || generatedStatements.length === 0) {
       throw new InternalServerErrorException(
-        'AI returned empty or invalid question array',
+        'AI returned empty or invalid statement array',
       );
     }
 
     const createdQuestions = [];
 
-    for (const q of generatedQuestions) {
-      const factSource =
-        q.factSource && q.factSource !== '' ? q.factSource : 'Requires verification';
+    for (const stmt of generatedStatements) {
+      const source =
+        stmt.source && stmt.source !== '' ? stmt.source : 'Requires verification';
 
       try {
         const created = await this.prisma.question.create({
           data: {
-            type: q.type || 'multiple_choice',
+            statement: stmt.statement,
+            isTrue: stmt.isTrue,
+            explanation: stmt.explanation,
+            source,
+            sourceUrl: stmt.sourceUrl || null,
             language,
             categoryId: categoryRecord.id,
-            difficulty: q.difficulty || difficulty,
-            questionData: q.questionData as unknown as Prisma.InputJsonValue,
-            fact: q.fact,
-            factSource,
-            factSourceUrl: q.factSourceUrl || null,
+            difficulty: stmt.difficulty || difficulty,
             status: 'moderation',
           },
           include: { category: true },
@@ -169,13 +164,13 @@ export class AiService {
         createdQuestions.push(created);
       } catch (error) {
         this.logger.warn(
-          `Failed to save generated question: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Failed to save generated statement: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
       }
     }
 
     return {
-      generated: generatedQuestions.length,
+      generated: generatedStatements.length,
       saved: createdQuestions.length,
       questions: createdQuestions,
     };
@@ -195,12 +190,8 @@ export class AiService {
       );
     }
 
-    const questionData = question.questionData as Record<string, unknown>;
-    const questionText =
-      (questionData.question as string) || 'educational trivia question';
-
     const imageStyle = style || 'flat illustration, modern, colorful, educational';
-    const imagePrompt = `Create a ${imageStyle} illustration for a trivia quiz question about: "${questionText}". Category: ${question.category.nameEn}. The illustration should be visually appealing, educational, and suitable for a mobile quiz app. Do not include any text or letters in the image.`;
+    const imagePrompt = `Create a ${imageStyle} illustration for a fact-or-fake quiz statement: "${question.statement}". Category: ${question.category.nameEn}. The illustration should be visually appealing, educational, and suitable for a mobile quiz app. Do not include any text or letters in the image.`;
 
     let imageBuffer: Buffer;
 

@@ -11,34 +11,41 @@ import { LeaderboardList } from '@/features/leaderboard/components/LeaderboardLi
 import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
 import { useThemeContext } from '@/theme';
 
-type Period = 'daily' | 'weekly' | 'alltime';
+type Period = 'weekly' | 'monthly' | 'yearly' | 'alltime';
 
 export default function LeaderboardScreen() {
   const { colors, spacing } = useThemeContext();
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<Period>('daily');
+  const [period, setPeriod] = useState<Period>('weekly');
   const { data, isLoading, isError, error, refetch } = useLeaderboard(period);
+  const entries = data?.entries ?? [];
 
   return (
     <Screen>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
-          🏆 {t('leaderboard.title')}
+          {t('leaderboard.title')}
         </Text>
       </View>
 
       <View style={styles.tabs}>
         <Chip
-          label={t('leaderboard.daily')}
-          variant="primary"
-          selected={period === 'daily'}
-          onPress={() => setPeriod('daily')}
-        />
-        <Chip
           label={t('leaderboard.weekly')}
           variant="primary"
           selected={period === 'weekly'}
           onPress={() => setPeriod('weekly')}
+        />
+        <Chip
+          label={t('leaderboard.monthly')}
+          variant="primary"
+          selected={period === 'monthly'}
+          onPress={() => setPeriod('monthly')}
+        />
+        <Chip
+          label={t('leaderboard.yearly')}
+          variant="primary"
+          selected={period === 'yearly'}
+          onPress={() => setPeriod('yearly')}
         />
         <Chip
           label={t('leaderboard.allTime')}
@@ -56,10 +63,22 @@ export default function LeaderboardScreen() {
         </View>
       ) : isError ? (
         <ErrorState message={error?.message} onRetry={refetch} />
-      ) : !data || data.length === 0 ? (
+      ) : entries.length === 0 ? (
         <EmptyState title={t('leaderboard.empty')} />
       ) : (
-        <LeaderboardList data={data} />
+        <>
+          <LeaderboardList data={entries} />
+          {data?.userPosition && (
+            <View style={styles.positionFooter}>
+              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
+                {t('leaderboard.position', {
+                  position: data.userPosition,
+                  total: data.totalPlayers,
+                })}
+              </Text>
+            </View>
+          )}
+        </>
       )}
 
       <View style={{ marginTop: spacing.lg }}>
@@ -82,8 +101,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 16,
+    flexWrap: 'wrap',
   },
   skeletons: {
     marginTop: 8,
+  },
+  positionFooter: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  positionText: {
+    fontSize: 14,
+    fontFamily: 'Nunito_600SemiBold',
   },
 });

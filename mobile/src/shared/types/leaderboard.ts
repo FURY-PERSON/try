@@ -1,14 +1,11 @@
 export type LeaderboardEntry = {
-  id: string;
+  rank: number;
   userId: string;
-  dailySetId: string;
-  score: number;
+  nickname: string | null;
   correctAnswers: number;
+  totalQuestions: number;
+  score: number;
   totalTimeSeconds: number;
-  createdAt: string;
-  user: {
-    nickname: string | null;
-  };
 };
 
 export type LeaderboardResponse = {

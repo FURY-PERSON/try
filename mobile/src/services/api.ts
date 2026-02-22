@@ -1,30 +1,78 @@
-import axios from 'axios';
 import { API_URL } from '@/constants/config';
 import { useAppStore } from '@/stores/useAppStore';
 
-export const apiClient = axios.create({
-  baseURL: API_URL,
-  timeout: 15_000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-apiClient.interceptors.request.use((config) => {
-  const deviceId = useAppStore.getState().deviceId;
-  if (deviceId) {
-    config.headers['X-Device-Id'] = deviceId;
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
   }
-  return config;
-});
+}
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.message ?? error.message;
-      return Promise.reject(new Error(message));
+type ApiResponse<T> = {
+  data: T;
+};
+
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+): Promise<ApiResponse<T>> {
+  const deviceId = useAppStore.getState().deviceId;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (deviceId) {
+    headers['X-Device-Id'] = deviceId;
+  }
+
+  const url = `${API_URL}${path}`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      const message = json?.message ?? json?.error ?? `Request failed with status ${response.status}`;
+      throw new ApiError(message, response.status);
     }
-    return Promise.reject(error);
+
+    return { data: json };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export const apiClient = {
+  get<T>(path: string): Promise<ApiResponse<T>> {
+    return request<T>('GET', path);
   },
-);
+  post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return request<T>('POST', path, body);
+  },
+  patch<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return request<T>('PATCH', path, body);
+  },
+  put<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    return request<T>('PUT', path, body);
+  },
+  delete<T>(path: string): Promise<ApiResponse<T>> {
+    return request<T>('DELETE', path);
+  },
+};

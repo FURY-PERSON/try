@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { leaderboardApi } from '../api/leaderboardApi';
 
-type LeaderboardPeriod = 'daily' | 'weekly' | 'alltime';
+type LeaderboardPeriod = 'weekly' | 'monthly' | 'yearly' | 'alltime';
 
 export const useLeaderboard = (period: LeaderboardPeriod) => {
   return useQuery({

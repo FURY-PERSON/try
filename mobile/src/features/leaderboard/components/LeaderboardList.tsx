@@ -13,7 +13,7 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId 
   return (
     <FlatList
       data={data}
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => item.userId}
       renderItem={({ item, index }) => (
         <LeaderboardEntry
           entry={item}

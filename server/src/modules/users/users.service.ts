@@ -5,10 +5,10 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 export interface UserStats {
   totalGames: number;
-  correctPercentage: number;
-  currentStreak: number;
-  longestStreak: number;
-  factsLearned: number;
+  correctPercent: number;
+  bestStreak: number;
+  avgScore: number;
+  activityMap: Record<string, boolean>;
 }
 
 @Injectable()
@@ -64,8 +64,6 @@ export class UsersService {
       where: { id: userId },
       select: {
         totalGamesPlayed: true,
-        totalCorrectAnswers: true,
-        currentStreak: true,
         bestStreak: true,
       },
     });
@@ -82,26 +80,43 @@ export class UsersService {
       where: { userId, result: 'correct' },
     });
 
-    const correctPercentage =
+    const correctPercent =
       totalAnswered > 0
         ? Math.round((correctAnswered / totalAnswered) * 100)
         : 0;
 
-    const factsLearned = await this.prisma.userQuestionHistory.findMany({
+    // Average score per game from leaderboard entries
+    const scoreAgg = await this.prisma.leaderboardEntry.aggregate({
+      where: { userId },
+      _avg: { score: true },
+    });
+    const avgScore = scoreAgg._avg.score ?? 0;
+
+    // Activity map: dates when the user played (last 365 days)
+    const yearAgo = new Date();
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+    yearAgo.setHours(0, 0, 0, 0);
+
+    const entries = await this.prisma.leaderboardEntry.findMany({
       where: {
         userId,
-        result: 'correct',
+        createdAt: { gte: yearAgo },
       },
-      distinct: ['questionId'],
-      select: { questionId: true },
+      select: { createdAt: true },
     });
+
+    const activityMap: Record<string, boolean> = {};
+    for (const entry of entries) {
+      const dateStr = entry.createdAt.toISOString().split('T')[0];
+      activityMap[dateStr] = true;
+    }
 
     return {
       totalGames: user.totalGamesPlayed,
-      correctPercentage,
-      currentStreak: user.currentStreak,
-      longestStreak: user.bestStreak,
-      factsLearned: factsLearned.length,
+      correctPercent,
+      bestStreak: user.bestStreak,
+      avgScore: Math.round(avgScore * 10) / 10,
+      activityMap,
     };
   }
 
