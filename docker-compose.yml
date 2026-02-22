@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: wordpulse
+      POSTGRES_PASSWORD: wordpulse_dev
+      POSTGRES_DB: wordpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wordpulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://wordpulse:wordpulse_dev@postgres:5432/wordpulse
+      PORT: "3001"
+      NODE_ENV: production
+      JWT_SECRET: change-this-in-production-to-random-string
+      JWT_EXPIRATION: 1d
+      JWT_REFRESH_EXPIRATION: 30d
+      ADMIN_EMAIL: admin@wordpulse.app
+      ADMIN_PASSWORD: admin123
+      CORS_ORIGIN: "*"
+      THROTTLE_TTL: "60"
+      THROTTLE_LIMIT: "100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_data:

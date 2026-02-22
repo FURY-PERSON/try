@@ -15,23 +15,20 @@
 | Веб-интерфейс (если нужен) | React.js + Vite | React 19, Vite 6 |
 | Runtime | Node.js | 20 LTS |
 
-## Структура монорепозитория
+## Структура репозитория
 ```
 project-root/
-├── apps/
-│   ├── mobile/          # Expo приложение
-│   ├── server/          # NestJS API
-│   └── web/             # React + Vite (если потребуется)
-├── packages/
-│   ├── shared/          # Общие типы, утилиты, константы
-│   ├── ui/              # Общие UI-компоненты (если web + mobile)
-│   └── api-client/      # Типизированный API-клиент
-├── prisma/
-│   └── schema.prisma    # Схема базы данных
-├── package.json         # Workspace root
-├── turbo.json           # Turborepo конфигурация
-└── tsconfig.base.json   # Базовый TS конфиг
+├── server/              # NestJS API (самостоятельный проект)
+├── web/                 # React + Vite админ-панель (самостоятельный проект)
+├── mobile/              # Expo приложение (самостоятельный проект)
+├── docs/                # Документация фаз
+├── docker-compose.yml   # Docker Compose для деплоя
+├── .prettierrc          # Общий конфиг Prettier
+└── CLAUDE.md
 ```
+Каждый проект — самостоятельный, со своим package.json и зависимостями.
+Общие типы и утилиты встроены в `src/shared/` каждого проекта (web, mobile).
+API-клиент встроен в `web/src/api-client/`.
 
 ## Порядок выполнения фаз
 
@@ -58,15 +55,15 @@ project-root/
 
 ### Фаза 5a → Backend-разработчик
 Загрузи `.claude/agents/06-backend-developer.md`.
-Реализуй серверную часть в `apps/server/`.
+Реализуй серверную часть в `server/`.
 
 ### Фаза 5b → Mobile-разработчик
 Загрузи `.claude/agents/05-mobile-developer.md`.
-Реализуй мобильное приложение в `apps/mobile/`.
+Реализуй мобильное приложение в `mobile/`.
 
 ### Фаза 5c → Web-разработчик (если требуется)
 Загрузи `.claude/agents/07-web-developer.md`.
-Реализуй веб-интерфейс в `apps/web/`.
+Реализуй веб-интерфейс в `web/`.
 
 ### Фаза 6 → QA-инженер
 Загрузи `.claude/agents/08-qa-engineer.md`.
@@ -75,7 +72,7 @@ project-root/
 ## Глобальные правила
 
 1. **Язык кода**: TypeScript ВЕЗДЕ, strict mode, no any
-2. **Стиль**: ESLint + Prettier, единый конфиг на весь монорепо
+2. **Стиль**: ESLint + Prettier
 3. **Коммиты**: Conventional Commits (feat:, fix:, chore:, docs:)
 4. **Файлы**: создавай ПОЛНЫЕ файлы, никаких "// остальной код..."
 5. **Ошибки**: обработка ВСЕХ edge cases, graceful degradation

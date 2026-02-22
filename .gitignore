@@ -33,9 +33,6 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
-# Turbo
-.turbo/
-
 # Testing
 coverage/
 
