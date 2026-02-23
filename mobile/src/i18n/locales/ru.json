@@ -103,7 +103,9 @@
     "totalGames": "Всего наборов",
     "correctPercent": "Правильных",
     "bestStreak": "Лучший стрик",
-    "avgScore": "Средний балл"
+    "avgScore": "Средний балл",
+    "activityLess": "Меньше",
+    "activityMore": "Больше"
   },
   "settings": {
     "title": "Настройки",
@@ -141,6 +143,15 @@
     "completed": "Пройдено!",
     "lastScore": "Результат: {{correct}}/{{total}}",
     "playAgain": "Пройти снова"
+  },
+  "category": {
+    "start": "Начать",
+    "playAgain": "Играть ещё",
+    "available": "доступно",
+    "total": "всего",
+    "lastResult": "Последний результат",
+    "allDone": "Все факты изучены!",
+    "notFound": "Категория не найдена"
   },
   "error": {
     "title": "Упс! Что-то пошло не так",

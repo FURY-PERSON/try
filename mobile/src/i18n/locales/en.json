@@ -103,7 +103,9 @@
     "totalGames": "Total sets",
     "correctPercent": "Correct",
     "bestStreak": "Best streak",
-    "avgScore": "Avg score"
+    "avgScore": "Avg score",
+    "activityLess": "Less",
+    "activityMore": "More"
   },
   "settings": {
     "title": "Settings",
@@ -141,6 +143,15 @@
     "completed": "Completed!",
     "lastScore": "Score: {{correct}}/{{total}}",
     "playAgain": "Play Again"
+  },
+  "category": {
+    "start": "Start",
+    "playAgain": "Play Again",
+    "available": "available",
+    "total": "total",
+    "lastResult": "Last Result",
+    "allDone": "All facts explored!",
+    "notFound": "Category not found"
   },
   "error": {
     "title": "Oops! Something went wrong",

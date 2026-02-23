@@ -161,6 +161,14 @@ export class AiService {
           include: { category: true },
         });
 
+        // Create QuestionCategory record for multi-category support
+        await this.prisma.questionCategory.create({
+          data: {
+            questionId: created.id,
+            categoryId: categoryRecord.id,
+          },
+        });
+
         createdQuestions.push(created);
       } catch (error) {
         this.logger.warn(

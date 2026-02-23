@@ -55,6 +55,7 @@ export type CreateQuestionDto = {
   difficulty: number;
   illustrationUrl?: string;
   illustrationPrompt?: string;
+  categoryIds?: string[];
 };
 
 export type UpdateQuestionDto = Partial<CreateQuestionDto> & {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -41,6 +42,7 @@ type QuestionFormData = z.infer<typeof questionFormSchema>;
 export function QuestionCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>([]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ['admin', 'categories'],
@@ -85,7 +87,14 @@ export function QuestionCreatePage() {
       language: data.language as Language,
       categoryId: data.categoryId,
       difficulty: data.difficulty,
+      categoryIds: additionalCategoryIds.length > 0 ? additionalCategoryIds : undefined,
     });
+  };
+
+  const toggleAdditionalCategory = (catId: string) => {
+    setAdditionalCategoryIds((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId],
+    );
   };
 
   return (
@@ -174,7 +183,7 @@ export function QuestionCreatePage() {
               </div>
               <Select
                 id="categoryId"
-                label="Категория"
+                label="Основная категория"
                 options={categories.map((c: any) => ({
                   value: c.id,
                   label: `${c.icon} ${c.name}`,
@@ -183,6 +192,32 @@ export function QuestionCreatePage() {
                 error={errors.categoryId?.message}
                 {...register('categoryId')}
               />
+              {categories.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-2">
+                    Дополнительные категории
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((c: any) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleAdditionalCategory(c.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                          additionalCategoryIds.includes(c.id)
+                            ? 'bg-blue/10 border-blue text-blue'
+                            : 'bg-surface-secondary border-border text-text-secondary hover:border-text-secondary'
+                        }`}
+                      >
+                        {c.icon} {c.name}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-text-secondary mt-1">
+                    Основная категория включается автоматически
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
 

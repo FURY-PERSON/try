@@ -159,6 +159,20 @@ export function QuestionDetailPage() {
               }
             />
             <InfoRow label="Категория" value={question.category?.name ?? '—'} />
+            {question.categories && question.categories.length > 1 && (
+              <InfoRow
+                label="Все категории"
+                value={
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {question.categories.map((qc: any) => (
+                      <Badge key={qc.id} variant="default">
+                        {qc.category?.icon} {qc.category?.name}
+                      </Badge>
+                    ))}
+                  </div>
+                }
+              />
+            )}
             <InfoRow label="Язык" value={question.language.toUpperCase()} />
             <InfoRow label="Сложность" value={`${question.difficulty}/5`} />
             <InfoRow label="Показов" value={String(question.timesShown)} />

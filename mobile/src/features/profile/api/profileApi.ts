@@ -11,7 +11,7 @@ type StatsResponse = {
     correctPercent: number;
     bestStreak: number;
     avgScore: number;
-    activityMap: Record<string, boolean>;
+    activityMap: Record<string, number>;
   };
 };
 

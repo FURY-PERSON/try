@@ -58,6 +58,7 @@ export class AdminQuestionsService {
       where: { id },
       include: {
         category: true,
+        categories: { include: { category: true } },
         dailySets: {
           include: { dailySet: true },
         },
@@ -82,7 +83,7 @@ export class AdminQuestionsService {
       );
     }
 
-    return this.prisma.question.create({
+    const question = await this.prisma.question.create({
       data: {
         statement: dto.statement,
         isTrue: dto.isTrue,
@@ -96,8 +97,22 @@ export class AdminQuestionsService {
         illustrationPrompt: dto.illustrationPrompt,
         status: 'moderation',
       },
-      include: { category: true },
     });
+
+    // Create QuestionCategory records (primary + additional)
+    const allCategoryIds = new Set([
+      dto.categoryId,
+      ...(dto.categoryIds ?? []),
+    ]);
+    await this.prisma.questionCategory.createMany({
+      data: [...allCategoryIds].map((categoryId) => ({
+        questionId: question.id,
+        categoryId,
+      })),
+      skipDuplicates: true,
+    });
+
+    return this.findOne(question.id);
   }
 
   async update(id: string, dto: UpdateQuestionDto) {
@@ -120,7 +135,7 @@ export class AdminQuestionsService {
       }
     }
 
-    return this.prisma.question.update({
+    await this.prisma.question.update({
       where: { id },
       data: {
         statement: dto.statement,
@@ -134,8 +149,27 @@ export class AdminQuestionsService {
         illustrationUrl: dto.illustrationUrl,
         illustrationPrompt: dto.illustrationPrompt,
       },
-      include: { category: true },
     });
+
+    // Update QuestionCategory records if categoryIds provided
+    if (dto.categoryIds !== undefined) {
+      await this.prisma.questionCategory.deleteMany({
+        where: { questionId: id },
+      });
+
+      const primaryId = dto.categoryId ?? existing.categoryId;
+      const allCategoryIds = new Set([primaryId, ...dto.categoryIds]);
+
+      await this.prisma.questionCategory.createMany({
+        data: [...allCategoryIds].map((categoryId) => ({
+          questionId: id,
+          categoryId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    return this.findOne(id);
   }
 
   async remove(id: string) {

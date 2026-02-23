@@ -8,7 +8,7 @@ export interface UserStats {
   correctPercent: number;
   bestStreak: number;
   avgScore: number;
-  activityMap: Record<string, boolean>;
+  activityMap: Record<string, number>;
 }
 
 @Injectable()
@@ -92,13 +92,12 @@ export class UsersService {
     });
     const avgScore = scoreAgg._avg.score ?? 0;
 
-    // Activity map: dates when the user played (last 365 days)
-    // Combine data from leaderboard entries (daily sets) AND question history (all game types)
+    // Activity map: session count per day (last 365 days)
     const yearAgo = new Date();
     yearAgo.setFullYear(yearAgo.getFullYear() - 1);
     yearAgo.setHours(0, 0, 0, 0);
 
-    // Get activity from leaderboard entries using DailySet.date (proper date without time)
+    // Get activity from leaderboard entries (daily sets)
     const leaderboardEntries = await this.prisma.leaderboardEntry.findMany({
       where: {
         userId,
@@ -109,32 +108,30 @@ export class UsersService {
       },
     });
 
-    // Get activity from question history (covers all game types)
-    const questionHistory = await this.prisma.userQuestionHistory.findMany({
-      where: {
-        userId,
-        answeredAt: { gte: yearAgo },
-      },
-      select: { answeredAt: true },
-    });
+    // Get activity from collection progress (categories, difficulty, collections)
+    const collectionProgress =
+      await this.prisma.userCollectionProgress.findMany({
+        where: {
+          userId,
+          completedAt: { gte: yearAgo },
+        },
+        select: { completedAt: true },
+      });
 
-    const activityMap: Record<string, boolean> = {};
+    const activityMap: Record<string, number> = {};
 
-    // Use DailySet.date (db.Date type, no time component) for daily set activity
     for (const entry of leaderboardEntries) {
       const dateStr = new Date(entry.dailySet.date)
         .toISOString()
         .split('T')[0];
-      activityMap[dateStr] = true;
+      activityMap[dateStr] = (activityMap[dateStr] ?? 0) + 1;
     }
 
-    // Use answeredAt for question history, normalize to local date (UTC+3)
-    for (const entry of questionHistory) {
-      const date = new Date(entry.answeredAt);
-      // Shift to UTC+3 to get correct local date
+    for (const progress of collectionProgress) {
+      const date = new Date(progress.completedAt);
       date.setHours(date.getHours() + 3);
       const dateStr = date.toISOString().split('T')[0];
-      activityMap[dateStr] = true;
+      activityMap[dateStr] = (activityMap[dateStr] ?? 0) + 1;
     }
 
     return {

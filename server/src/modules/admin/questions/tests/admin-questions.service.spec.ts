@@ -19,6 +19,10 @@ describe('AdminQuestionsService', () => {
     category: {
       findUnique: jest.fn(),
     },
+    questionCategory: {
+      createMany: jest.fn(),
+      deleteMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -94,8 +98,11 @@ describe('AdminQuestionsService', () => {
 
   describe('create', () => {
     it('creates question with moderation status', async () => {
+      const createdQuestion = { id: 'q-new', status: 'moderation', category: {}, categories: [], dailySets: [] };
       mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
       mockPrisma.question.create.mockResolvedValue({ id: 'q-new', status: 'moderation' });
+      mockPrisma.questionCategory.createMany.mockResolvedValue({ count: 1 });
+      mockPrisma.question.findUnique.mockResolvedValue(createdQuestion);
 
       const result = await service.create({
         statement: 'The Earth is round',
@@ -113,6 +120,7 @@ describe('AdminQuestionsService', () => {
           data: expect.objectContaining({ status: 'moderation' }),
         }),
       );
+      expect(mockPrisma.questionCategory.createMany).toHaveBeenCalled();
     });
 
     it('throws BadRequestException if category not found', async () => {
@@ -134,7 +142,10 @@ describe('AdminQuestionsService', () => {
 
   describe('update', () => {
     it('updates existing question', async () => {
-      mockPrisma.question.findUnique.mockResolvedValue({ id: 'q-1' });
+      const updatedQuestion = { id: 'q-1', statement: 'updated', category: {}, categories: [], dailySets: [] };
+      mockPrisma.question.findUnique
+        .mockResolvedValueOnce({ id: 'q-1' }) // existence check
+        .mockResolvedValueOnce(updatedQuestion); // findOne after update
       mockPrisma.question.update.mockResolvedValue({ id: 'q-1', statement: 'updated' });
 
       const result = await service.update('q-1', { statement: 'updated' } as any);

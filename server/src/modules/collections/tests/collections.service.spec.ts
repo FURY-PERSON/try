@@ -17,7 +17,7 @@ describe('CollectionsService', () => {
     category: { findUnique: jest.fn() },
     collection: { findUnique: jest.fn() },
     question: { findMany: jest.fn() },
-    userQuestionHistory: { createMany: jest.fn() },
+    userQuestionHistory: { findMany: jest.fn().mockResolvedValue([]), createMany: jest.fn() },
     user: { update: jest.fn() },
     userCollectionProgress: { create: jest.fn() },
     $transaction: jest.fn((fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx)),

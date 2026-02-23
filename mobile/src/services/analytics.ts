@@ -21,6 +21,8 @@ type AnalyticsEvent =
   | 'collection_start'
   | 'collection_complete'
   | 'collection_detail_viewed'
+  | 'category_detail_viewed'
+  | 'category_start'
   | 'daily_locked_viewed'
   | 'home_section_scroll'
   | 'home_filter_applied';

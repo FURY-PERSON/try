@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { StartCollectionDto } from './dto/start-collection.dto';
 import { SubmitCollectionDto } from './dto/submit-collection.dto';
+import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
 
 interface SessionData {
   userId: string;
@@ -262,7 +263,7 @@ export class CollectionsService {
     }
 
     const questions = await this.getQuestionsWithAntiRepeat(userId, count, {
-      categoryId,
+      OR: [{ categoryId }, { categories: { some: { categoryId } } }],
     });
 
     const sessionId = this.createSession(userId, 'category', categoryId, null, questions);
@@ -387,38 +388,14 @@ export class CollectionsService {
     count: number,
     where: Record<string, unknown>,
   ) {
-    // Anti-repeat: exclude questions the user answered correctly,
-    // and questions answered incorrectly in the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Anti-repeat: correct=14 days, incorrect=7 days cooldown (based on last answer)
+    const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
 
     const questions = await this.prisma.question.findMany({
       where: {
         status: 'approved',
         ...where,
-        AND: [
-          {
-            NOT: {
-              history: {
-                some: {
-                  userId,
-                  result: 'correct',
-                },
-              },
-            },
-          },
-          {
-            NOT: {
-              history: {
-                some: {
-                  userId,
-                  result: 'incorrect',
-                  answeredAt: { gt: sevenDaysAgo },
-                },
-              },
-            },
-          },
-        ],
+        ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
       },
       select: {
         id: true,

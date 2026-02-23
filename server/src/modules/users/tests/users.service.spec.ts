@@ -21,6 +21,9 @@ describe('UsersService', () => {
       aggregate: jest.fn(),
       findMany: jest.fn(),
     },
+    userCollectionProgress: {
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -132,9 +135,9 @@ describe('UsersService', () => {
         { dailySet: { date: new Date('2026-02-21') } },
       ]);
 
-      mockPrisma.userQuestionHistory.findMany.mockResolvedValue([
-        { answeredAt: new Date('2026-02-20T10:00:00Z') },
-        { answeredAt: new Date('2026-02-21T15:00:00Z') },
+      mockPrisma.userCollectionProgress.findMany.mockResolvedValue([
+        { completedAt: new Date('2026-02-20T10:00:00Z') },
+        { completedAt: new Date('2026-02-21T15:00:00Z') },
       ]);
 
       const stats = await service.getUserStats('user-1');
@@ -161,7 +164,7 @@ describe('UsersService', () => {
       });
 
       mockPrisma.leaderboardEntry.findMany.mockResolvedValue([]);
-      mockPrisma.userQuestionHistory.findMany.mockResolvedValue([]);
+      mockPrisma.userCollectionProgress.findMany.mockResolvedValue([]);
 
       const stats = await service.getUserStats('user-1');
 

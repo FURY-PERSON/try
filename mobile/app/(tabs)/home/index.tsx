@@ -90,26 +90,9 @@ export default function HomeScreen() {
     }
   };
 
-  const handleStartCategory = useCallback(async (categoryId: string) => {
-    setLoadingCollection(categoryId);
-    try {
-      const session = await collectionsApi.start({
-        type: 'category',
-        categoryId,
-        count: 10,
-      });
-      startCollectionSession(session.sessionId, 'category', session.questions.length);
-      analytics.logEvent('collection_start', { type: 'category', referenceId: categoryId, questionCount: session.questions.length });
-      router.push({
-        pathname: '/game/card',
-        params: { questions: JSON.stringify(session.questions), mode: 'collection' },
-      });
-    } catch {
-      // Silently fail — user can retry
-    } finally {
-      setLoadingCollection(null);
-    }
-  }, [startCollectionSession, router]);
+  const handleOpenCategory = useCallback((categoryId: string) => {
+    router.push({ pathname: '/category/[id]', params: { id: categoryId } });
+  }, [router]);
 
   const handleStartDifficulty = useCallback(async (difficulty: 'easy' | 'medium' | 'hard') => {
     setLoadingCollection(difficulty);
@@ -291,8 +274,7 @@ export default function HomeScreen() {
                   category={item}
                   language={language}
                   colors={colors}
-                  loading={loadingCollection === item.id}
-                  onPress={() => handleStartCategory(item.id)}
+                  onPress={() => handleOpenCategory(item.id)}
                 />
               )}
             />
@@ -367,13 +349,11 @@ function CategoryCard({
   category,
   language,
   colors,
-  loading,
   onPress,
 }: {
   category: CategoryWithCount;
   language: string;
   colors: Record<string, string>;
-  loading: boolean;
   onPress: () => void;
 }) {
   const name = language === 'en' ? category.nameEn : category.name;
@@ -382,7 +362,6 @@ function CategoryCard({
   return (
     <Pressable
       onPress={onPress}
-      disabled={loading || category.availableCount === 0}
       style={[
         styles.categoryCard,
         { backgroundColor: colors.surface, borderColor: category.color + '30' },
@@ -397,7 +376,6 @@ function CategoryCard({
           ? t('home.questionsAvailable', { count: category.availableCount })
           : t('home.allDone')}
       </Text>
-      {loading && <ActivityIndicator size="small" color={category.color} />}
     </Pressable>
   );
 }

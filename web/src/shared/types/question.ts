@@ -28,4 +28,13 @@ export type QuestionWithCategory = Question & {
     nameEn: string;
     slug: string;
   };
+  categories?: {
+    id: string;
+    category: {
+      id: string;
+      name: string;
+      nameEn: string;
+      icon: string;
+    };
+  }[];
 };

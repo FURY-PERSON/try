@@ -3,6 +3,7 @@ import {
   IsInt,
   IsBoolean,
   IsOptional,
+  IsArray,
   Min,
   Max,
 } from 'class-validator';
@@ -58,6 +59,15 @@ export class CreateQuestionDto {
   @Min(1)
   @Max(5)
   difficulty: number;
+
+  @ApiPropertyOptional({
+    description: 'Additional category IDs (multi-category)',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categoryIds?: string[];
 
   @ApiPropertyOptional({ description: 'URL of the illustration image' })
   @IsOptional()

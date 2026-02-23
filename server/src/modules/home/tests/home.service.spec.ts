@@ -19,6 +19,9 @@ describe('HomeService', () => {
     question: {
       count: jest.fn(),
     },
+    userQuestionHistory: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     collection: {
       findMany: jest.fn(),
     },

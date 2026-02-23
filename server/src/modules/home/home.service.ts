@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
 
 const WEEKLY_LOCKOUT_DAYS = 7;
 
@@ -161,36 +162,21 @@ export class HomeService {
       },
     });
 
-    // Count available questions per category (with anti-repeat)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Anti-repeat: correct=14 days, incorrect=7 days cooldown (based on last answer)
+    const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
 
     const counts = await Promise.all(
       categories.map(async (cat) => {
         const availableCount = await this.prisma.question.count({
           where: {
-            categoryId: cat.id,
-            status: 'approved',
-            AND: [
-              {
-                NOT: {
-                  history: {
-                    some: { userId, result: 'correct' },
-                  },
-                },
-              },
-              {
-                NOT: {
-                  history: {
-                    some: {
-                      userId,
-                      result: 'incorrect',
-                      answeredAt: { gt: sevenDaysAgo },
-                    },
-                  },
-                },
-              },
+            OR: [
+              { categoryId: cat.id },
+              { categories: { some: { categoryId: cat.id } } },
             ],
+            status: 'approved',
+            ...(excludedIds.length > 0
+              ? { NOT: { id: { in: excludedIds } } }
+              : {}),
           },
         });
         return { ...cat, availableCount };

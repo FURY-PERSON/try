@@ -41,7 +41,8 @@ model Category {
   sortOrder     Int        @default(0)
   createdAt     DateTime   @default(now())
 
-  questions Question[]
+  questions          Question[]
+  questionCategories QuestionCategory[]
 }
 
 model Question {
@@ -68,6 +69,7 @@ model Question {
   updatedAt          DateTime @updatedAt
 
   category           Category @relation(fields: [categoryId], references: [id])
+  categories         QuestionCategory[]
   dailySets          DailySetQuestion[]
   history            UserQuestionHistory[]
   collectionQuestions CollectionQuestion[]
@@ -111,6 +113,7 @@ model UserQuestionHistory {
 
   @@index([userId, questionId])
   @@index([userId, result])
+  @@index([userId, answeredAt])
 }
 
 model LeaderboardEntry {
@@ -165,6 +168,18 @@ model CollectionQuestion {
   question   Question   @relation(fields: [questionId], references: [id])
 
   @@unique([collectionId, questionId])
+}
+
+model QuestionCategory {
+  id         String   @id @default(cuid())
+  questionId String
+  categoryId String
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([questionId, categoryId])
+  @@index([categoryId])
 }
 
 model UserCollectionProgress {
