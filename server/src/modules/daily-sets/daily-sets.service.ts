@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 
 const CARDS_PER_DAILY_SET = 15;
+const WEEKLY_LOCKOUT_DAYS = 7;
 
 @Injectable()
 export class DailySetsService {
@@ -16,6 +17,27 @@ export class DailySetsService {
   async getTodaySet(userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Check weekly lockout: did user complete any daily set in the last 7 days?
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
+
+    const recentEntry = await this.prisma.leaderboardEntry.findFirst({
+      where: {
+        userId,
+        createdAt: { gte: sevenDaysAgo },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        score: true,
+        correctAnswers: true,
+        totalTimeSeconds: true,
+        createdAt: true,
+        dailySet: {
+          select: { id: true, date: true, theme: true, themeEn: true },
+        },
+      },
+    });
 
     // Find published daily set for today
     let dailySet = await this.prisma.dailySet.findUnique({
@@ -48,11 +70,34 @@ export class DailySetsService {
       dailySet = null;
     }
 
-    // Check user's completion status
-    let completed = false;
-    let userEntry = null;
+    // If user played recently, check lockout
+    if (recentEntry) {
+      const unlocksAt = new Date(recentEntry.createdAt);
+      unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
+
+      if (unlocksAt > new Date()) {
+        // User is locked out
+        return {
+          id: dailySet?.id ?? null,
+          date: dailySet?.date ?? today,
+          theme: dailySet?.theme ?? null,
+          themeEn: dailySet?.themeEn ?? null,
+          status: dailySet?.status ?? 'locked',
+          questions: [],
+          completed: true,
+          isLocked: true,
+          unlocksAt,
+          userEntry: {
+            score: recentEntry.score,
+            correctAnswers: recentEntry.correctAnswers,
+            totalTimeSeconds: recentEntry.totalTimeSeconds,
+          },
+        };
+      }
+    }
 
     if (dailySet) {
+      // Check user's completion of today's specific set
       const existingEntry = await this.prisma.leaderboardEntry.findUnique({
         where: {
           userId_dailySetId: {
@@ -61,6 +106,9 @@ export class DailySetsService {
           },
         },
       });
+
+      let completed = false;
+      let userEntry = null;
 
       if (existingEntry) {
         completed = true;
@@ -91,6 +139,8 @@ export class DailySetsService {
           sortOrder: dsq.sortOrder,
         })),
         completed,
+        isLocked: false,
+        unlocksAt: null,
         userEntry,
       };
     }
@@ -150,6 +200,8 @@ export class DailySetsService {
         sortOrder: index + 1,
       })),
       completed: false,
+      isLocked: false,
+      unlocksAt: null,
       userEntry: null,
     };
   }
@@ -229,7 +281,24 @@ export class DailySetsService {
       throw new NotFoundException('User not found');
     }
 
-    // Calculate streak
+    // Check weekly lockout: user can only play once per 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
+
+    const recentCompletion = await this.prisma.leaderboardEntry.findFirst({
+      where: {
+        userId,
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    if (recentCompletion) {
+      throw new BadRequestException(
+        'You have already completed a daily set this week. Try again later.',
+      );
+    }
+
+    // Calculate streak (weekly cadence: playing within 14 days maintains streak)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -244,9 +313,11 @@ export class DailySetsService {
 
       if (diffDays === 0) {
         throw new BadRequestException('You have already played today');
-      } else if (diffDays === 1) {
+      } else if (diffDays <= 14) {
+        // Within 2 weeks — streak continues (weekly cadence)
         newCurrentStreak = user.currentStreak + 1;
       } else {
+        // Missed more than 2 weeks — streak resets
         newCurrentStreak = 1;
       }
     } else {

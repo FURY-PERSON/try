@@ -19,6 +19,9 @@ import { AdminCategoriesService } from './categories/admin-categories.service';
 import { AdminStatsController } from './stats/admin-stats.controller';
 import { AdminStatsService } from './stats/admin-stats.service';
 
+import { AdminCollectionsController } from './collections/admin-collections.controller';
+import { AdminCollectionsService } from './collections/admin-collections.service';
+
 import { UploadController } from './upload/upload.controller';
 import { UploadService } from './upload/upload.service';
 
@@ -42,6 +45,7 @@ import { UploadService } from './upload/upload.service';
     AdminDailySetsController,
     AdminCategoriesController,
     AdminStatsController,
+    AdminCollectionsController,
     UploadController,
   ],
   providers: [
@@ -51,6 +55,7 @@ import { UploadService } from './upload/upload.service';
     AdminDailySetsService,
     AdminCategoriesService,
     AdminStatsService,
+    AdminCollectionsService,
     UploadService,
   ],
   exports: [UploadService],

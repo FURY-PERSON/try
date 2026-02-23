@@ -24,17 +24,22 @@ model User {
 
   questionHistory    UserQuestionHistory[]
   leaderboardEntries LeaderboardEntry[]
+  collectionProgress UserCollectionProgress[]
 }
 
 model Category {
-  id        String     @id @default(cuid())
-  name      String
-  nameEn    String
-  slug      String     @unique
-  icon      String
-  isActive  Boolean    @default(true)
-  sortOrder Int        @default(0)
-  createdAt DateTime   @default(now())
+  id            String     @id @default(cuid())
+  name          String
+  nameEn        String
+  slug          String     @unique
+  icon          String
+  color         String     @default("#34C759")
+  description   String     @default("")
+  descriptionEn String     @default("")
+  imageUrl      String?
+  isActive      Boolean    @default(true)
+  sortOrder     Int        @default(0)
+  createdAt     DateTime   @default(now())
 
   questions Question[]
 }
@@ -65,6 +70,7 @@ model Question {
   category           Category @relation(fields: [categoryId], references: [id])
   dailySets          DailySetQuestion[]
   history            UserQuestionHistory[]
+  collectionQuestions CollectionQuestion[]
 }
 
 model DailySet {
@@ -128,4 +134,51 @@ model AdminUser {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+}
+
+model Collection {
+  id            String    @id @default(cuid())
+  title         String
+  titleEn       String
+  description   String    @default("")
+  descriptionEn String    @default("")
+  icon          String    @default("📚")
+  imageUrl      String?
+  type          String    @default("thematic")
+  status        String    @default("draft")
+  startDate     DateTime? @db.Date
+  endDate       DateTime? @db.Date
+  sortOrder     Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  questions CollectionQuestion[]
+}
+
+model CollectionQuestion {
+  id           String     @id @default(cuid())
+  collectionId String
+  questionId   String
+  sortOrder    Int
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id])
+
+  @@unique([collectionId, questionId])
+}
+
+model UserCollectionProgress {
+  id             String   @id @default(cuid())
+  userId         String
+  collectionType String
+  referenceId    String?
+  difficulty     String?
+  correctAnswers Int
+  totalQuestions Int
+  completedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, collectionType])
+  @@index([userId, referenceId])
 }
