@@ -95,11 +95,18 @@ export class DailySetsService {
       };
     }
 
-    // Fallback: generate from random approved questions
+    // Fallback: generate from random approved questions using random offset
+    const totalApproved = await this.prisma.question.count({
+      where: { status: 'approved' },
+    });
+    const maxSkip = Math.max(0, totalApproved - CARDS_PER_DAILY_SET);
+    const randomSkip = Math.floor(Math.random() * (maxSkip + 1));
+
     const fallbackQuestions = await this.prisma.question.findMany({
       where: { status: 'approved' },
+      skip: randomSkip,
       take: CARDS_PER_DAILY_SET,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { id: 'asc' },
       select: {
         id: true,
         statement: true,
@@ -114,7 +121,7 @@ export class DailySetsService {
       },
     });
 
-    // Shuffle the fallback questions for randomness
+    // Shuffle for additional randomness
     for (let i = fallbackQuestions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [fallbackQuestions[i], fallbackQuestions[j]] = [
@@ -233,7 +240,7 @@ export class DailySetsService {
       lastPlayed.setHours(0, 0, 0, 0);
 
       const diffTime = today.getTime() - lastPlayed.getTime();
-      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) {
         throw new BadRequestException('You have already played today');
@@ -250,13 +257,15 @@ export class DailySetsService {
 
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Update user streak (question history and stats are already handled per-card by answerQuestion)
+        // Update user streak and stats
         await tx.user.update({
           where: { id: userId },
           data: {
             currentStreak: newCurrentStreak,
             bestStreak: newBestStreak,
             lastPlayedDate: today,
+            totalGamesPlayed: { increment: 1 },
+            totalCorrectAnswers: { increment: correctAnswers },
           },
         });
 
@@ -314,8 +323,8 @@ export class DailySetsService {
       },
     });
     const percentile =
-      totalPlayersToday > 1
-        ? Math.round((lowerCount / (totalPlayersToday - 1)) * 100)
+      totalPlayersToday > 0
+        ? Math.round((lowerCount / totalPlayersToday) * 100)
         : 100;
 
     return {

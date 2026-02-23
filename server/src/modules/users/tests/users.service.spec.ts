@@ -17,6 +17,10 @@ describe('UsersService', () => {
       count: jest.fn(),
       findMany: jest.fn(),
     },
+    leaderboardEntry: {
+      aggregate: jest.fn(),
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -112,8 +116,6 @@ describe('UsersService', () => {
     it('returns correct stats', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         totalGamesPlayed: 50,
-        totalCorrectAnswers: 40,
-        currentStreak: 7,
         bestStreak: 14,
       });
 
@@ -121,24 +123,32 @@ describe('UsersService', () => {
         .mockResolvedValueOnce(50) // total
         .mockResolvedValueOnce(40); // correct
 
-      mockPrisma.userQuestionHistory.findMany.mockResolvedValue(
-        Array.from({ length: 35 }).map((_, i) => ({ questionId: `q-${i}` })),
-      );
+      mockPrisma.leaderboardEntry.aggregate.mockResolvedValue({
+        _avg: { score: 85.5 },
+      });
+
+      mockPrisma.leaderboardEntry.findMany.mockResolvedValue([
+        { dailySet: { date: new Date('2026-02-20') } },
+        { dailySet: { date: new Date('2026-02-21') } },
+      ]);
+
+      mockPrisma.userQuestionHistory.findMany.mockResolvedValue([
+        { answeredAt: new Date('2026-02-20T10:00:00Z') },
+        { answeredAt: new Date('2026-02-21T15:00:00Z') },
+      ]);
 
       const stats = await service.getUserStats('user-1');
 
       expect(stats.totalGames).toBe(50);
-      expect(stats.correctPercentage).toBe(80);
-      expect(stats.currentStreak).toBe(7);
-      expect(stats.longestStreak).toBe(14);
-      expect(stats.factsLearned).toBe(35);
+      expect(stats.correctPercent).toBe(80);
+      expect(stats.bestStreak).toBe(14);
+      expect(stats.avgScore).toBe(85.5);
+      expect(stats.activityMap).toBeDefined();
     });
 
     it('returns 0% when no games played', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         totalGamesPlayed: 0,
-        totalCorrectAnswers: 0,
-        currentStreak: 0,
         bestStreak: 0,
       });
 
@@ -146,12 +156,18 @@ describe('UsersService', () => {
         .mockResolvedValueOnce(0)
         .mockResolvedValueOnce(0);
 
+      mockPrisma.leaderboardEntry.aggregate.mockResolvedValue({
+        _avg: { score: null },
+      });
+
+      mockPrisma.leaderboardEntry.findMany.mockResolvedValue([]);
       mockPrisma.userQuestionHistory.findMany.mockResolvedValue([]);
 
       const stats = await service.getUserStats('user-1');
 
-      expect(stats.correctPercentage).toBe(0);
-      expect(stats.factsLearned).toBe(0);
+      expect(stats.correctPercent).toBe(0);
+      expect(stats.avgScore).toBe(0);
+      expect(stats.activityMap).toEqual({});
     });
   });
 

@@ -93,7 +93,7 @@ export class LeaderboardService {
       ? { dailySetId: { in: dailySetIds } }
       : {};
 
-    // Top 100 by correctAnswers DESC
+    // Aggregate all users' scores (no limit — we need full list for correct ranking)
     const aggregated = await this.prisma.leaderboardEntry.groupBy({
       by: ['userId'],
       where: entryWhere,
@@ -103,65 +103,50 @@ export class LeaderboardService {
         totalTimeSeconds: true,
       },
       _count: { _all: true },
-      orderBy: {
-        _sum: { correctAnswers: 'desc' },
-      },
-      take: 100,
     });
 
-    // Total unique players
-    const totalPlayersResult = await this.prisma.leaderboardEntry.groupBy({
-      by: ['userId'],
-      where: entryWhere,
+    // Sort in memory with tiebreaker: correctAnswers DESC, then totalTimeSeconds ASC (faster = better)
+    aggregated.sort((a, b) => {
+      const correctDiff =
+        (b._sum.correctAnswers ?? 0) - (a._sum.correctAnswers ?? 0);
+      if (correctDiff !== 0) return correctDiff;
+      return (a._sum.totalTimeSeconds ?? 0) - (b._sum.totalTimeSeconds ?? 0);
     });
 
-    // Fetch nicknames
-    const userIds = aggregated.map((a) => a.userId);
+    const totalPlayers = aggregated.length;
+
+    // Find user position from the full sorted list
+    let userPosition: number | null = null;
+    const userIndex = aggregated.findIndex((agg) => agg.userId === userId);
+    if (userIndex !== -1) {
+      userPosition = userIndex + 1;
+    }
+
+    // Take top 100 for display
+    const top100 = aggregated.slice(0, 100);
+
+    // Fetch nicknames for top 100
+    const userIds = top100.map((a) => a.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, nickname: true },
     });
     const userMap = new Map(users.map((u) => [u.id, u.nickname]));
 
-    const entries: LeaderboardEntryResult[] = aggregated.map((agg, index) => ({
+    const entries: LeaderboardEntryResult[] = top100.map((agg, index) => ({
       rank: index + 1,
       userId: agg.userId,
       nickname: userMap.get(agg.userId) ?? null,
       correctAnswers: agg._sum.correctAnswers ?? 0,
-      totalQuestions: agg._count._all * CARDS_PER_DAILY_SET,
+      totalQuestions: (agg._count._all ?? 0) * CARDS_PER_DAILY_SET,
       score: agg._sum.score ?? 0,
       totalTimeSeconds: agg._sum.totalTimeSeconds ?? 0,
     }));
 
-    // User position
-    let userPosition: number | null = null;
-    const userAgg = await this.prisma.leaderboardEntry.groupBy({
-      by: ['userId'],
-      where: { userId, ...entryWhere },
-      _sum: { correctAnswers: true },
-    });
-
-    if (userAgg.length > 0) {
-      const userCorrect = userAgg[0]._sum.correctAnswers ?? 0;
-
-      const higherUsers = await this.prisma.leaderboardEntry.groupBy({
-        by: ['userId'],
-        where: entryWhere,
-        _sum: { correctAnswers: true },
-        having: {
-          correctAnswers: {
-            _sum: { gt: userCorrect },
-          },
-        },
-      });
-
-      userPosition = higherUsers.length + 1;
-    }
-
     return {
       entries,
       userPosition,
-      totalPlayers: totalPlayersResult.length,
+      totalPlayers,
     };
   }
 }
