@@ -35,11 +35,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   value: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 22,
+    fontFamily: 'Nunito_700Bold',
   },
   label: {
     fontSize: 11,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: 'Nunito_500Medium',
   },
 });

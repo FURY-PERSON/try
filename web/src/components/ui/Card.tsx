@@ -5,7 +5,7 @@ type CardProps = React.HTMLAttributes<HTMLDivElement>;
 export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
-      className={cn('bg-surface rounded-xl border border-border p-6', className)}
+      className={cn('bg-surface rounded-xl p-6 shadow-sm', className)}
       {...props}
     >
       {children}
@@ -15,7 +15,7 @@ export function Card({ className, children, ...props }: CardProps) {
 
 export function CardTitle({ className, children, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
-    <h3 className={cn('text-lg font-bold text-text-primary', className)} {...props}>
+    <h3 className={cn('text-base font-semibold text-text-primary', className)} {...props}>
       {children}
     </h3>
   );

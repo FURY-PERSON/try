@@ -25,7 +25,7 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
   sourceUrl,
   onNext,
 }) => {
-  const { colors, borderRadius } = useThemeContext();
+  const { colors, borderRadius, elevation } = useThemeContext();
   const { t } = useTranslation();
 
   const handleSourcePress = () => {
@@ -46,13 +46,13 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
         styles.container,
         {
           backgroundColor: colors.surface,
-          borderColor: resultColor,
-          borderRadius: borderRadius.xl,
+          borderRadius: borderRadius.xxl,
+          ...elevation.md,
         },
       ]}
     >
-      <View style={[styles.resultBadge, { backgroundColor: resultColor + '20' }]}>
-        <MaterialCommunityIcons name={resultIcon} size={28} color={resultColor} />
+      <View style={[styles.resultBadge, { backgroundColor: resultColor + '15' }]}>
+        <MaterialCommunityIcons name={resultIcon} size={24} color={resultColor} />
         <Text style={[styles.resultText, { color: resultColor }]}>{resultText}</Text>
       </View>
 
@@ -60,7 +60,7 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
         «{statement}»
       </Text>
 
-      <View style={[styles.truthBadge, { backgroundColor: truthColor + '15' }]}>
+      <View style={[styles.truthBadge, { backgroundColor: truthColor + '12' }]}>
         <Text style={[styles.truthText, { color: truthColor }]}>
           {t('game.thisIs')} {truthLabel}
         </Text>
@@ -72,11 +72,11 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
 
       {source && (
         <Pressable onPress={handleSourcePress} style={styles.sourceRow}>
-          <Feather name="link" size={12} color={colors.textSecondary} />
+          <Feather name="link" size={12} color={colors.textTertiary} />
           <Text
             style={[
               styles.sourceText,
-              { color: colors.textSecondary },
+              { color: colors.textTertiary },
               sourceUrl && styles.sourceLink,
             ]}
           >
@@ -99,7 +99,6 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    borderWidth: 2,
     marginHorizontal: 24,
   },
   resultBadge: {
@@ -107,18 +106,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 20,
     marginBottom: 16,
   },
   resultText: {
-    fontSize: 18,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 17,
+    fontFamily: 'Nunito_700Bold',
   },
   statement: {
-    fontSize: 16,
-    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 15,
+    fontFamily: 'Nunito_500Medium',
     fontStyle: 'italic',
     textAlign: 'center',
     lineHeight: 22,
@@ -126,19 +125,19 @@ const styles = StyleSheet.create({
   },
   truthBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
     borderRadius: 16,
     marginBottom: 16,
   },
   truthText: {
     fontSize: 15,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: 'Nunito_600SemiBold',
   },
   explanation: {
-    fontSize: 16,
-    fontFamily: 'Nunito_500Medium',
-    lineHeight: 24,
+    fontSize: 15,
+    fontFamily: 'Nunito_400Regular',
+    lineHeight: 22,
   },
   sourceRow: {
     flexDirection: 'row',
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     fontSize: 11,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: 'Nunito_500Medium',
   },
   sourceLink: {
     textDecorationLine: 'underline',

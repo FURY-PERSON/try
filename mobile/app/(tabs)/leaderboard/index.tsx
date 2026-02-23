@@ -23,7 +23,7 @@ export default function LeaderboardScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
+        <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
           {t('leaderboard.title')}
         </Text>
       </View>
@@ -58,7 +58,7 @@ export default function LeaderboardScreen() {
       {isLoading ? (
         <View style={styles.skeletons}>
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} width="100%" height={60} shape="card" style={{ marginBottom: 8 }} />
+            <Skeleton key={i} width="100%" height={56} shape="card" style={{ marginBottom: 8 }} />
           ))}
         </View>
       ) : isError ? (
@@ -90,16 +90,18 @@ export default function LeaderboardScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    height: 56,
+    minHeight: 44,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+  largeTitle: {
+    fontSize: 34,
+    fontFamily: 'Nunito_700Bold',
+    letterSpacing: 0.37,
   },
   tabs: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 12,
     marginBottom: 16,
     flexWrap: 'wrap',
   },
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   positionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Nunito_600SemiBold',
   },
 });

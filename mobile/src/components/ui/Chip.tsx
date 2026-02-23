@@ -28,7 +28,7 @@ export const Chip: FC<ChipProps> = ({
     blue: colors.blue,
     orange: colors.orange,
     purple: colors.purple,
-    default: colors.border,
+    default: colors.textSecondary,
   };
 
   const activeColor = variantColor[variant];
@@ -44,13 +44,14 @@ export const Chip: FC<ChipProps> = ({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={[
+      style={({ pressed }) => [
         styles.container,
         {
           borderRadius: borderRadius.full,
-          borderColor: selected ? activeColor : colors.border,
-          backgroundColor: selected ? activeColor : 'transparent',
+          borderColor: selected ? activeColor : colors.separator,
+          backgroundColor: selected ? activeColor : colors.surfaceVariant,
         },
+        pressed && styles.pressed,
       ]}
     >
       <Text
@@ -69,12 +70,15 @@ export const Chip: FC<ChipProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 2,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   label: {
     fontSize: 13,
     fontFamily: 'Nunito_600SemiBold',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

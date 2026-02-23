@@ -30,15 +30,16 @@ export default function ProfileScreen() {
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('profile.title')}
           </Text>
           <Pressable
             onPress={() => router.push('/(tabs)/profile/settings')}
             accessibilityLabel="Settings"
             accessibilityRole="button"
+            hitSlop={8}
           >
-            <Feather name="settings" size={24} color={colors.textSecondary} />
+            <Feather name="settings" size={22} color={colors.textSecondary} />
           </Pressable>
         </View>
 
@@ -53,17 +54,17 @@ export default function ProfileScreen() {
 
         <View style={styles.statCards}>
           <StatCard
-            icon={<MaterialCommunityIcons name="fire" size={24} color={colors.orange} />}
+            icon={<MaterialCommunityIcons name="fire" size={22} color={colors.orange} />}
             value={streak}
             label={t('profile.streak')}
           />
           <StatCard
-            icon={<Feather name="star" size={24} color={colors.gold} />}
+            icon={<Feather name="star" size={22} color={colors.gold} />}
             value={totalScore}
             label={t('profile.score')}
           />
           <StatCard
-            icon={<MaterialCommunityIcons name="book-open-variant" size={24} color={colors.blue} />}
+            icon={<MaterialCommunityIcons name="book-open-variant" size={22} color={colors.blue} />}
             value={factsLearned}
             label={t('profile.facts')}
           />
@@ -115,20 +116,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 56,
+    minHeight: 44,
   },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+  largeTitle: {
+    fontSize: 34,
+    fontFamily: 'Nunito_700Bold',
+    letterSpacing: 0.37,
   },
   avatarSection: {
     alignItems: 'center',
     gap: 12,
-    marginTop: 8,
+    marginTop: 12,
   },
   nickname: {
-    fontSize: 18,
-    fontFamily: 'Nunito_700Bold',
+    fontSize: 17,
+    fontFamily: 'Nunito_600SemiBold',
   },
   statCards: {
     flexDirection: 'row',
@@ -138,5 +140,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
+    lineHeight: 25,
   },
 });

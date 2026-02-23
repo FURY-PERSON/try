@@ -7,29 +7,30 @@ export const spacing = {
   xxl: 24,
   xxxl: 32,
   xxxxl: 48,
-  screenPadding: 16,
-  sectionGap: 24,
+  screenPadding: 20,
+  sectionGap: 28,
 } as const;
 
 export const borderRadius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 24,
+  md: 10,
+  lg: 12,
+  xl: 16,
+  xxl: 20,
   full: 9999,
 } as const;
 
+// Kept for backwards compatibility — values are now zero/minimal
 export const duoShadow = {
   button: {
-    borderBottomWidth: 4,
+    borderBottomWidth: 0,
   },
   card: {
-    borderWidth: 2,
-    borderBottomWidth: 4,
+    borderWidth: 0,
+    borderBottomWidth: 0,
   },
   cardFlat: {
-    borderWidth: 2,
+    borderWidth: 0,
   },
 } as const;
 
@@ -40,23 +41,23 @@ export const elevation = {
   },
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
 } as const;

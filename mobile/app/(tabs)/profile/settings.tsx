@@ -21,7 +21,7 @@ export default function SettingsScreen() {
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('settings.title')}
           </Text>
         </View>
@@ -110,12 +110,13 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    height: 56,
+    minHeight: 44,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+  largeTitle: {
+    fontSize: 34,
+    fontFamily: 'Nunito_700Bold',
+    letterSpacing: 0.37,
   },
   chipRow: {
     flexDirection: 'row',

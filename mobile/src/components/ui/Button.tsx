@@ -27,12 +27,10 @@ type ButtonProps = {
   accessibilityLabel?: string;
 };
 
-const PRESS_DEPTH = 4;
-
 const sizeMap: Record<ButtonSize, { height: number; paddingH: number; fontSize: number }> = {
-  sm: { height: 40, paddingH: 16, fontSize: 14 },
-  md: { height: 50, paddingH: 20, fontSize: 16 },
-  lg: { height: 56, paddingH: 24, fontSize: 17 },
+  sm: { height: 36, paddingH: 16, fontSize: 14 },
+  md: { height: 44, paddingH: 20, fontSize: 16 },
+  lg: { height: 50, paddingH: 24, fontSize: 17 },
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -57,26 +55,24 @@ export const Button: FC<ButtonProps> = ({
     if (disabled) {
       return {
         bg: colors.surfaceVariant,
-        shadow: colors.borderDark,
-        text: colors.textSecondary,
-        border: colors.border,
+        text: colors.textTertiary,
       };
     }
     switch (variant) {
       case 'primary':
-        return { bg: colors.primary, shadow: colors.primaryDark, text: colors.textOnPrimary, border: 'transparent' };
+        return { bg: colors.primary, text: colors.textOnPrimary };
       case 'secondary':
-        return { bg: colors.surface, shadow: colors.borderDark, text: colors.textPrimary, border: colors.border };
+        return { bg: colors.surfaceVariant, text: colors.textPrimary };
       case 'danger':
-        return { bg: colors.red, shadow: colors.redDark, text: colors.textOnPrimary, border: 'transparent' };
+        return { bg: colors.red, text: colors.textOnPrimary };
       case 'blue':
-        return { bg: colors.blue, shadow: colors.blueDark, text: colors.textOnPrimary, border: 'transparent' };
+        return { bg: colors.blue, text: colors.textOnPrimary };
       case 'orange':
-        return { bg: colors.orange, shadow: colors.orangeDark, text: colors.textOnPrimary, border: 'transparent' };
+        return { bg: colors.orange, text: colors.textOnPrimary };
       case 'ghost':
-        return { bg: 'transparent', shadow: 'transparent', text: colors.textPrimary, border: 'transparent' };
+        return { bg: 'transparent', text: colors.primary };
       default:
-        return { bg: colors.primary, shadow: colors.primaryDark, text: colors.textOnPrimary, border: 'transparent' };
+        return { bg: colors.primary, text: colors.textOnPrimary };
     }
   }, [variant, disabled, colors]);
 
@@ -84,16 +80,16 @@ export const Button: FC<ButtonProps> = ({
   const sizeConfig = sizeMap[size];
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: pressed.value * PRESS_DEPTH }],
-    borderBottomWidth: variant === 'ghost' ? 0 : PRESS_DEPTH - pressed.value * PRESS_DEPTH,
+    opacity: 1 - pressed.value * 0.15,
+    transform: [{ scale: 1 - pressed.value * 0.03 }],
   }));
 
   const handlePressIn = () => {
-    pressed.value = withTiming(1, { duration: 50 });
+    pressed.value = withTiming(1, { duration: 100 });
   };
 
   const handlePressOut = () => {
-    pressed.value = withTiming(0, { duration: 100 });
+    pressed.value = withTiming(0, { duration: 200 });
   };
 
   const handlePress = () => {
@@ -115,13 +111,10 @@ export const Button: FC<ButtonProps> = ({
         styles.container,
         {
           backgroundColor: btnColors.bg,
-          borderColor: variant === 'secondary' ? btnColors.border : btnColors.shadow,
-          borderBottomColor: btnColors.shadow,
           borderRadius: br.lg,
-          height: sizeConfig.height + PRESS_DEPTH,
+          height: sizeConfig.height,
           paddingHorizontal: sizeConfig.paddingH,
         },
-        variant !== 'ghost' && { borderWidth: variant === 'secondary' ? 2 : 0 },
         fullWidth && styles.fullWidth,
         style,
         animatedStyle,
@@ -164,7 +157,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   label: {
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: 'Nunito_600SemiBold',
     textAlign: 'center',
   },
   iconLeft: {

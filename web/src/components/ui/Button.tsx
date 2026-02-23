@@ -11,16 +11,16 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-white hover:bg-primary-dark',
-  secondary: 'bg-surface border border-border text-text-primary hover:bg-surface-secondary',
-  danger: 'bg-red text-white hover:bg-red/90',
-  ghost: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary',
+  primary: 'bg-primary text-white hover:bg-primary-dark active:bg-primary-dark',
+  secondary: 'bg-surface border border-border text-text-primary hover:bg-surface-secondary active:bg-surface-secondary',
+  danger: 'bg-red text-white hover:bg-red/90 active:bg-red/80',
+  ghost: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary active:bg-surface-secondary',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-xs',
   md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
+  lg: 'px-5 py-2.5 text-sm',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50 disabled:pointer-events-none',
+          'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50 disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],
           className,

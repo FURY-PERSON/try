@@ -115,7 +115,7 @@ export default function ResultsModal() {
           variant="blue"
           size="lg"
           onPress={handleShare}
-          iconLeft={<Feather name="share-2" size={20} color="#FFFFFF" />}
+          iconLeft={<Feather name="share-2" size={18} color="#FFFFFF" />}
         />
         <Button
           label={t('results.goHome')}
@@ -136,33 +136,35 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
+    gap: 16,
     paddingHorizontal: 32,
   },
   score: {
     fontSize: 48,
-    fontFamily: 'Nunito_900Black',
+    fontFamily: 'Nunito_700Bold',
+    lineHeight: 56,
   },
   message: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontSize: 22,
+    fontFamily: 'Nunito_700Bold',
+    lineHeight: 28,
   },
   percentText: {
-    fontSize: 18,
-    fontFamily: 'Nunito_700Bold',
+    fontSize: 17,
+    fontFamily: 'Nunito_600SemiBold',
     textAlign: 'center',
   },
   positionCard: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
   },
   positionText: {
     fontSize: 15,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: 'Nunito_500Medium',
     textAlign: 'center',
   },
   footer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingBottom: 32,
     gap: 12,
   },

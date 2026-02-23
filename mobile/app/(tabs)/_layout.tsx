@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -16,10 +17,10 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: 2,
-          borderTopColor: colors.border,
-          height: 56,
-          paddingBottom: 4,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.separator,
+          height: 52,
+          paddingBottom: 2,
         },
         tabBarLabelStyle: {
           fontSize: 11,

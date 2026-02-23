@@ -34,8 +34,7 @@ export const Input: FC<InputProps> = ({
   const { colors, borderRadius, typography } = useThemeContext();
   const [focused, setFocused] = useState(false);
 
-  const borderColor = focused ? colors.blue : colors.border;
-  const borderBottomColor = focused ? colors.blueDark : colors.borderDark;
+  const borderColor = focused ? colors.blue : colors.separator;
 
   const handleClear = useCallback(() => {
     onChangeText('');
@@ -49,10 +48,8 @@ export const Input: FC<InputProps> = ({
       style={[
         styles.container,
         {
-          borderWidth: 2,
-          borderBottomWidth: 4,
+          borderWidth: 1,
           borderColor,
-          borderBottomColor,
           borderRadius: borderRadius.lg,
           backgroundColor: colors.surface,
         },
@@ -62,7 +59,7 @@ export const Input: FC<InputProps> = ({
       {(iconLeft ?? isSearch) && (
         <View style={styles.iconLeft}>
           {isSearch ? (
-            <Feather name="search" size={20} color={colors.textSecondary} />
+            <Feather name="search" size={18} color={colors.textSecondary} />
           ) : (
             iconLeft
           )}
@@ -72,7 +69,7 @@ export const Input: FC<InputProps> = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textTertiary}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         autoFocus={autoFocus}
@@ -95,7 +92,7 @@ export const Input: FC<InputProps> = ({
           accessibilityLabel="Clear input"
           accessibilityRole="button"
         >
-          <Feather name="x-circle" size={20} color={colors.textSecondary} />
+          <Feather name="x-circle" size={18} color={colors.textTertiary} />
         </Pressable>
       )}
     </View>
@@ -106,15 +103,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    minHeight: 50,
+    paddingHorizontal: 12,
+    minHeight: 44,
   },
   iconLeft: {
     marginRight: 8,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   iconRight: {
     marginLeft: 8,

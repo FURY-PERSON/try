@@ -5,9 +5,10 @@ import type { FC } from 'react';
 
 type DividerProps = {
   marginVertical?: number;
+  inset?: boolean;
 };
 
-export const Divider: FC<DividerProps> = ({ marginVertical = 16 }) => {
+export const Divider: FC<DividerProps> = ({ marginVertical = 0, inset = false }) => {
   const { colors } = useThemeContext();
 
   return (
@@ -15,9 +16,10 @@ export const Divider: FC<DividerProps> = ({ marginVertical = 16 }) => {
       style={[
         styles.divider,
         {
-          backgroundColor: colors.border,
+          backgroundColor: colors.separator,
           marginVertical,
         },
+        inset && styles.inset,
       ]}
     />
   );
@@ -25,7 +27,10 @@ export const Divider: FC<DividerProps> = ({ marginVertical = 16 }) => {
 
 const styles = StyleSheet.create({
   divider: {
-    height: 2,
+    height: StyleSheet.hairlineWidth,
     width: '100%',
+  },
+  inset: {
+    marginLeft: 16,
   },
 });

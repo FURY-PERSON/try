@@ -35,7 +35,7 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   onSwipe,
   disabled = false,
 }) => {
-  const { colors, borderRadius } = useThemeContext();
+  const { colors, borderRadius, elevation } = useThemeContext();
   const { t } = useTranslation();
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -108,21 +108,35 @@ export const SwipeCard: FC<SwipeCardProps> = ({
             styles.card,
             {
               backgroundColor: colors.surface,
-              borderColor: colors.border,
-              borderRadius: borderRadius.xl,
+              borderRadius: borderRadius.xxl,
+              ...elevation.md,
             },
             cardStyle,
           ]}
         >
-          <Animated.View style={[styles.overlay, styles.factOverlay, factOverlayStyle]}>
-            <Text style={styles.overlayText}>{t('game.fact')}</Text>
+          <Animated.View
+            style={[
+              styles.overlay,
+              styles.factOverlay,
+              { borderColor: colors.primary, backgroundColor: colors.primary + '18' },
+              factOverlayStyle,
+            ]}
+          >
+            <Text style={[styles.overlayText, { color: colors.primary }]}>{t('game.fact')}</Text>
           </Animated.View>
 
-          <Animated.View style={[styles.overlay, styles.fakeOverlay, fakeOverlayStyle]}>
-            <Text style={styles.overlayText}>{t('game.fake')}</Text>
+          <Animated.View
+            style={[
+              styles.overlay,
+              styles.fakeOverlay,
+              { borderColor: colors.red, backgroundColor: colors.red + '18' },
+              fakeOverlayStyle,
+            ]}
+          >
+            <Text style={[styles.overlayText, { color: colors.red }]}>{t('game.fake')}</Text>
           </Animated.View>
 
-          <Text style={[styles.counter, { color: colors.textSecondary }]}>
+          <Text style={[styles.counter, { color: colors.textTertiary }]}>
             {cardIndex + 1} / {totalCards}
           </Text>
 
@@ -135,12 +149,12 @@ export const SwipeCard: FC<SwipeCardProps> = ({
           </Text>
 
           <View style={styles.swipeHints}>
-            <View style={[styles.hintBadge, { backgroundColor: colors.red + '20' }]}>
+            <View style={[styles.hintBadge, { backgroundColor: colors.red + '12' }]}>
               <Text style={[styles.hintText, { color: colors.red }]}>
                 ← {t('game.fake')}
               </Text>
             </View>
-            <View style={[styles.hintBadge, { backgroundColor: colors.primary + '20' }]}>
+            <View style={[styles.hintBadge, { backgroundColor: colors.primary + '12' }]}>
               <Text style={[styles.hintText, { color: colors.primary }]}>
                 {t('game.fact')} →
               </Text>
@@ -162,47 +176,36 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH - 48,
     minHeight: 300,
     padding: 28,
-    borderWidth: 2,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
     justifyContent: 'center',
   },
   overlay: {
     position: 'absolute',
     top: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 8,
-    borderWidth: 3,
+    borderWidth: 2,
     zIndex: 10,
   },
   factOverlay: {
     right: 20,
-    backgroundColor: '#58CC0220',
-    borderColor: '#58CC02',
   },
   fakeOverlay: {
     left: 20,
-    backgroundColor: '#FF4B4B20',
-    borderColor: '#FF4B4B',
   },
   overlayText: {
-    fontSize: 20,
-    fontFamily: 'Nunito_900Black',
-    color: '#FFFFFF',
+    fontSize: 18,
+    fontFamily: 'Nunito_700Bold',
   },
   counter: {
     fontSize: 13,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: 'Nunito_500Medium',
     textAlign: 'center',
     marginBottom: 8,
   },
   category: {
     fontSize: 13,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: 'Nunito_600SemiBold',
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -226,6 +229,6 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 13,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: 'Nunito_600SemiBold',
   },
 });

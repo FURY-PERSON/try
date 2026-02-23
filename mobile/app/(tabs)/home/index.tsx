@@ -17,7 +17,7 @@ import { useGameStore } from '@/features/game/stores/useGameStore';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 
 export default function HomeScreen() {
-  const { colors, spacing } = useThemeContext();
+  const { colors, spacing, typography } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const streak = useUserStore((s) => s.currentStreak);
@@ -35,7 +35,7 @@ export default function HomeScreen() {
     return (
       <Screen>
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: colors.primary }]}>{t('home.title')}</Text>
+          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>{t('home.title')}</Text>
           <StreakBadge days={streak} />
         </View>
         <View style={styles.skeletons}>
@@ -63,12 +63,11 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: colors.primary }]}>{t('home.title')}</Text>
+          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>{t('home.title')}</Text>
           <StreakBadge days={streak} />
         </View>
 
-        <Card variant="highlighted" style={{ marginTop: spacing.sectionGap }}>
-          <Text style={[styles.cardEmoji, { color: colors.textPrimary }]}>🎯</Text>
+        <Card variant="highlighted" style={{ marginTop: spacing.xl }}>
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
             {t('home.dailySet')}
           </Text>
@@ -108,32 +107,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 56,
+    minHeight: 44,
   },
-  logo: {
-    fontSize: 24,
-    fontFamily: 'Nunito_800ExtraBold',
+  largeTitle: {
+    fontSize: 34,
+    fontFamily: 'Nunito_700Bold',
+    letterSpacing: 0.37,
   },
   skeletons: {
     marginTop: 24,
   },
-  cardEmoji: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
   cardTitle: {
     fontSize: 20,
     fontFamily: 'Nunito_700Bold',
+    lineHeight: 25,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 15,
     fontFamily: 'Nunito_600SemiBold',
+    lineHeight: 20,
     marginBottom: 4,
   },
   cardDesc: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Nunito_400Regular',
+    lineHeight: 20,
     marginBottom: 16,
   },
   progressRow: {

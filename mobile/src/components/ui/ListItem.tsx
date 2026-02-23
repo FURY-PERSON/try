@@ -29,7 +29,7 @@ export const ListItem: FC<ListItemProps> = ({
   onPress,
   accessibilityLabel,
 }) => {
-  const { colors, borderRadius, duoShadow } = useThemeContext();
+  const { colors, borderRadius, elevation } = useThemeContext();
 
   const isCard = variant === 'card';
 
@@ -39,13 +39,9 @@ export const ListItem: FC<ListItemProps> = ({
         styles.container,
         {
           backgroundColor: colors.surface,
-          borderRadius: borderRadius.lg,
+          borderRadius: isCard ? borderRadius.lg : 0,
         },
-        isCard && {
-          ...duoShadow.card,
-          borderColor: colors.border,
-          borderBottomColor: colors.borderDark,
-        },
+        isCard && elevation.sm,
       ]}
     >
       {left && <View style={styles.left}>{left}</View>}
@@ -60,7 +56,7 @@ export const ListItem: FC<ListItemProps> = ({
       )}
       {right}
       {showChevron && (
-        <Feather name="chevron-right" size={20} color={colors.textSecondary} />
+        <Feather name="chevron-right" size={18} color={colors.textTertiary} />
       )}
     </View>
   );
@@ -71,6 +67,7 @@ export const ListItem: FC<ListItemProps> = ({
         onPress={onPress}
         accessibilityLabel={accessibilityLabel ?? title}
         accessibilityRole="button"
+        style={({ pressed }) => pressed && styles.pressed}
       >
         {content}
       </Pressable>
@@ -84,8 +81,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 11,
     paddingHorizontal: 16,
+    minHeight: 44,
   },
   left: {
     marginRight: 12,
@@ -94,8 +92,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontFamily: 'Nunito_700Bold',
+    fontSize: 17,
+    fontFamily: 'Nunito_400Regular',
     lineHeight: 22,
   },
   subtitle: {
@@ -107,6 +105,9 @@ const styles = StyleSheet.create({
   rightText: {
     fontSize: 15,
     fontFamily: 'Nunito_400Regular',
-    marginRight: 8,
+    marginRight: 4,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

@@ -50,9 +50,9 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor: colors.orange,
+          backgroundColor: colors.orange + '18',
           paddingHorizontal: isMd ? 14 : 10,
-          paddingVertical: isMd ? 8 : 4,
+          paddingVertical: isMd ? 7 : 4,
         },
       ]}
     >
@@ -60,10 +60,10 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         <MaterialCommunityIcons
           name="fire"
           size={isMd ? 20 : 16}
-          color="#FFFFFF"
+          color={colors.orange}
         />
       </Animated.View>
-      <Text style={[styles.text, isMd && styles.textMd]}>{days}</Text>
+      <Text style={[styles.text, { color: colors.orange }, isMd && styles.textMd]}>{days}</Text>
     </View>
   );
 };
@@ -76,9 +76,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   text: {
-    color: '#FFFFFF',
     fontSize: 14,
-    fontFamily: 'Nunito_900Black',
+    fontFamily: 'Nunito_700Bold',
   },
   textMd: {
     fontSize: 18,

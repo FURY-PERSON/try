@@ -23,20 +23,21 @@ export const Card: FC<CardProps> = ({
   style,
   accessibilityLabel,
 }) => {
-  const { colors, borderRadius, duoShadow } = useThemeContext();
+  const { colors, borderRadius, elevation } = useThemeContext();
 
-  const borderStyle: ViewStyle =
-    variant === 'flat'
+  const variantStyle: ViewStyle =
+    variant === 'highlighted'
       ? {
-          ...duoShadow.cardFlat,
-          borderColor: colors.border,
+          borderWidth: 1.5,
+          borderColor: highlightColor ?? colors.primary,
         }
-      : {
-          ...duoShadow.card,
-          borderColor: variant === 'highlighted' ? (highlightColor ?? colors.primary) : colors.border,
-          borderBottomColor:
-            variant === 'highlighted' ? (highlightColor ?? colors.primaryDark) : colors.borderDark,
-        };
+      : variant === 'flat'
+        ? {
+            backgroundColor: colors.surfaceVariant,
+          }
+        : {
+            ...elevation.sm,
+          };
 
   const content = (
     <View
@@ -46,7 +47,7 @@ export const Card: FC<CardProps> = ({
           backgroundColor: colors.surface,
           borderRadius: borderRadius.xl,
         },
-        borderStyle,
+        variantStyle,
         style,
       ]}
     >
@@ -60,6 +61,7 @@ export const Card: FC<CardProps> = ({
         onPress={onPress}
         accessibilityLabel={accessibilityLabel}
         accessibilityRole="button"
+        style={({ pressed }) => pressed && styles.pressed}
       >
         {content}
       </Pressable>
@@ -71,6 +73,9 @@ export const Card: FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 16,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
