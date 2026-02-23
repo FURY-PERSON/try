@@ -30,6 +30,97 @@ export class CollectionsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  async getPublishedList(userId: string) {
+    const now = new Date();
+
+    const collections = await this.prisma.collection.findMany({
+      where: {
+        status: 'published',
+        OR: [{ startDate: null }, { startDate: { lte: now } }],
+        AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+      },
+      orderBy: { sortOrder: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        titleEn: true,
+        description: true,
+        descriptionEn: true,
+        icon: true,
+        imageUrl: true,
+        type: true,
+        _count: { select: { questions: true } },
+      },
+    });
+
+    // Check which collections this user has completed
+    const completedProgress = await this.prisma.userCollectionProgress.findMany({
+      where: {
+        userId,
+        collectionType: 'collection',
+        referenceId: { in: collections.map((c) => c.id) },
+      },
+      select: { referenceId: true },
+    });
+    const completedIds = new Set(completedProgress.map((p) => p.referenceId));
+
+    return collections.map((c) => ({
+      ...c,
+      completed: completedIds.has(c.id),
+    }));
+  }
+
+  async getById(userId: string, id: string) {
+    const now = new Date();
+
+    const collection = await this.prisma.collection.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        titleEn: true,
+        description: true,
+        descriptionEn: true,
+        icon: true,
+        imageUrl: true,
+        type: true,
+        startDate: true,
+        endDate: true,
+        _count: { select: { questions: true } },
+      },
+    });
+
+    if (!collection || collection.startDate && now < collection.startDate) {
+      throw new NotFoundException('Collection not found');
+    }
+    if (collection.endDate && now > collection.endDate) {
+      throw new NotFoundException('Collection has expired');
+    }
+
+    // Check completion status
+    const progress = await this.prisma.userCollectionProgress.findFirst({
+      where: {
+        userId,
+        collectionType: 'collection',
+        referenceId: id,
+      },
+      orderBy: { completedAt: 'desc' },
+      select: { correctAnswers: true, totalQuestions: true, completedAt: true },
+    });
+
+    return {
+      ...collection,
+      completed: !!progress,
+      lastResult: progress
+        ? {
+            correctAnswers: progress.correctAnswers,
+            totalQuestions: progress.totalQuestions,
+            completedAt: progress.completedAt,
+          }
+        : null,
+    };
+  }
+
   async start(userId: string, dto: StartCollectionDto) {
     const count = dto.count ?? 10;
 

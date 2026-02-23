@@ -4,6 +4,7 @@ import {
   HelpCircle,
   Calendar,
   FolderTree,
+  Library,
   Sparkles,
   LogOut,
 } from 'lucide-react';
@@ -16,6 +17,7 @@ const NAV_ITEMS = [
   { to: '/questions/generate', icon: Sparkles, label: 'AI Генерация' },
   { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
   { to: '/categories', icon: FolderTree, label: 'Категории' },
+  { to: '/collections', icon: Library, label: 'Подборки' },
 ];
 
 export function AppLayout() {

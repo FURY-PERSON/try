@@ -34,10 +34,10 @@ export default function ResultsModal() {
 
   React.useEffect(() => {
     showIfReady();
-    analytics.logEvent('game_complete', {
-      score: correctCount,
-      total: totalCards,
+    analytics.logEvent('collection_complete', {
       type: collectionType,
+      correctCount,
+      total: totalCards,
     });
   }, [showIfReady, correctCount, totalCards, collectionType]);
 

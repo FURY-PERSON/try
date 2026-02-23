@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -26,6 +26,7 @@ import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
+import { analytics } from '@/services/analytics';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CategoryWithCount, CollectionSummary } from '@/shared';
 
@@ -46,6 +47,14 @@ export default function HomeScreen() {
   const categories = feed?.categories ?? [];
   const collections = feed?.collections ?? [];
 
+  useEffect(() => {
+    if (daily?.isLocked && daily.unlocksAt) {
+      const diffMs = new Date(daily.unlocksAt).getTime() - Date.now();
+      const daysUntilUnlock = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      analytics.logEvent('daily_locked_viewed', { daysUntilUnlock });
+    }
+  }, [daily?.isLocked, daily?.unlocksAt]);
+
   const handleStartDaily = () => {
     if (dailyData && !daily?.isLocked) {
       startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET);
@@ -62,7 +71,7 @@ export default function HomeScreen() {
         count: 10,
       });
       startCollectionSession(session.sessionId, 'category', session.questions.length);
-      // Store questions in game route params
+      analytics.logEvent('collection_start', { type: 'category', referenceId: categoryId, questionCount: session.questions.length });
       router.push({
         pathname: '/game/card',
         params: { questions: JSON.stringify(session.questions), mode: 'collection' },
@@ -83,6 +92,7 @@ export default function HomeScreen() {
         count: 10,
       });
       startCollectionSession(session.sessionId, 'difficulty', session.questions.length);
+      analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
       router.push({
         pathname: '/game/card',
         params: { questions: JSON.stringify(session.questions), mode: 'collection' },
@@ -94,24 +104,9 @@ export default function HomeScreen() {
     }
   }, [startCollectionSession, router]);
 
-  const handleStartCollection = useCallback(async (collectionId: string) => {
-    setLoadingCollection(collectionId);
-    try {
-      const session = await collectionsApi.start({
-        type: 'collection',
-        collectionId,
-      });
-      startCollectionSession(session.sessionId, 'collection', session.questions.length);
-      router.push({
-        pathname: '/game/card',
-        params: { questions: JSON.stringify(session.questions), mode: 'collection' },
-      });
-    } catch {
-      // Silently fail
-    } finally {
-      setLoadingCollection(null);
-    }
-  }, [startCollectionSession, router]);
+  const handleOpenCollection = useCallback((collectionId: string) => {
+    router.push({ pathname: '/collection/[id]', params: { id: collectionId } });
+  }, [router]);
 
   // Lockout timer text
   const getLockoutText = () => {
@@ -292,7 +287,7 @@ export default function HomeScreen() {
                   language={language}
                   colors={colors}
                   loading={loadingCollection === item.id}
-                  onPress={() => handleStartCollection(item.id)}
+                  onPress={() => handleOpenCollection(item.id)}
                 />
               )}
             />

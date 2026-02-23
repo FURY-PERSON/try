@@ -129,6 +129,19 @@
     "title100": "100 days! Incredible!",
     "desc": "Keep up the great work!"
   },
+  "collection": {
+    "notFound": "Collection not found",
+    "questions": "Questions",
+    "type": "Type",
+    "types": {
+      "featured": "Featured",
+      "seasonal": "Seasonal",
+      "thematic": "Thematic"
+    },
+    "completed": "Completed!",
+    "lastScore": "Score: {{correct}}/{{total}}",
+    "playAgain": "Play Again"
+  },
   "error": {
     "title": "Oops! Something went wrong",
     "generic": "An error occurred. Try again later.",

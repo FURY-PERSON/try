@@ -17,7 +17,11 @@ type AnalyticsEvent =
   | 'streak_milestone'
   | 'nickname_set'
   | 'settings_changed'
-  | 'share_result';
+  | 'share_result'
+  | 'collection_start'
+  | 'collection_complete'
+  | 'collection_detail_viewed'
+  | 'daily_locked_viewed';
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 

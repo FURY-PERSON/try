@@ -101,6 +101,30 @@ export type CreateCategoryDto = {
 
 export type UpdateCategoryDto = Partial<CreateCategoryDto>;
 
+export type CreateCollectionDto = {
+  title: string;
+  titleEn: string;
+  description?: string;
+  descriptionEn?: string;
+  icon?: string;
+  type?: 'featured' | 'seasonal' | 'thematic';
+  questionIds: string[];
+  startDate?: string;
+  endDate?: string;
+  sortOrder?: number;
+};
+
+export type UpdateCollectionDto = Partial<CreateCollectionDto> & {
+  status?: 'draft' | 'published';
+};
+
+export type CollectionQueryDto = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  type?: string;
+};
+
 export type GenerateQuestionsDto = {
   category: string;
   difficulty: number;

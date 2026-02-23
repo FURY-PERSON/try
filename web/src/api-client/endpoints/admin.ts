@@ -5,6 +5,8 @@ import type {
   DailySet,
   DailySetWithQuestions,
   Category,
+  Collection,
+  CollectionWithQuestions,
   ApiResponse,
   PaginatedResponse,
 } from '../../shared';
@@ -20,6 +22,9 @@ import type {
   DailySetQueryDto,
   CreateCategoryDto,
   UpdateCategoryDto,
+  CreateCollectionDto,
+  UpdateCollectionDto,
+  CollectionQueryDto,
   GenerateQuestionsDto,
   GenerateIllustrationDto,
   GenerateQuestionsResult,
@@ -103,6 +108,25 @@ export function createAdminEndpoints(http: AxiosInstance) {
       },
       delete(id: string) {
         return http.delete(`/admin/categories/${id}`);
+      },
+    },
+
+    // ── Collections ──
+    collections: {
+      list(params?: CollectionQueryDto) {
+        return http.get<PaginatedResponse<Collection>>('/admin/collections', { params });
+      },
+      getById(id: string) {
+        return http.get<ApiResponse<CollectionWithQuestions>>(`/admin/collections/${id}`);
+      },
+      create(dto: CreateCollectionDto) {
+        return http.post<ApiResponse<Collection>>('/admin/collections', dto);
+      },
+      update(id: string, dto: UpdateCollectionDto) {
+        return http.patch<ApiResponse<Collection>>(`/admin/collections/${id}`, dto);
+      },
+      delete(id: string) {
+        return http.delete(`/admin/collections/${id}`);
       },
     },
 

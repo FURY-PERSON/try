@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Param,
   Body,
@@ -16,6 +17,26 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller('v1/collections')
 export class CollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
+
+  @Get()
+  @UseGuards(DeviceAuthGuard)
+  @ApiOperation({ summary: 'List published collections' })
+  @ApiHeader({ name: 'x-device-id', required: true })
+  async list(@CurrentUser() user: { id: string }) {
+    return this.collectionsService.getPublishedList(user.id);
+  }
+
+  @Get(':id')
+  @UseGuards(DeviceAuthGuard)
+  @ApiOperation({ summary: 'Get collection details with questions' })
+  @ApiHeader({ name: 'x-device-id', required: true })
+  @ApiParam({ name: 'id', description: 'Collection ID' })
+  async getById(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+  ) {
+    return this.collectionsService.getById(user.id, id);
+  }
 
   @Post('start')
   @UseGuards(DeviceAuthGuard)

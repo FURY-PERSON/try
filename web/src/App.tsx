@@ -10,6 +10,7 @@ import { QuestionCreatePage } from '@/pages/QuestionCreatePage';
 import { DailySetsPage } from '@/pages/DailySetsPage';
 import { DailySetCreatePage } from '@/pages/DailySetCreatePage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
+import { CollectionsPage } from '@/pages/CollectionsPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -38,6 +39,7 @@ export function App() {
         <Route path="daily-sets" element={<DailySetsPage />} />
         <Route path="daily-sets/create" element={<DailySetCreatePage />} />
         <Route path="categories" element={<CategoriesPage />} />
+        <Route path="collections" element={<CollectionsPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
