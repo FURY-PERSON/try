@@ -4,18 +4,16 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import {
-  PaginationQueryDto,
-  createPaginatedResponse,
-} from '@/common/dto/pagination.dto';
+import { createPaginatedResponse } from '@/common/dto/pagination.dto';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
+import { CollectionQueryDto } from './dto/collection-query.dto';
 
 @Injectable()
 export class AdminCollectionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: PaginationQueryDto & { status?: string; type?: string }) {
+  async findAll(query: CollectionQueryDto) {
     const where: Record<string, unknown> = {};
 
     if (query.status) {

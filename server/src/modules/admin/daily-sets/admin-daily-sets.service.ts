@@ -98,6 +98,7 @@ export class AdminDailySetsService {
         date: dateValue,
         theme: dto.theme,
         themeEn: dto.themeEn,
+        status: dto.status ?? 'draft',
         questions: {
           create: dto.questionIds.map((questionId, index) => ({
             questionId,
@@ -170,6 +171,7 @@ export class AdminDailySetsService {
     if (dto.theme !== undefined) updateData.theme = dto.theme;
     if (dto.themeEn !== undefined) updateData.themeEn = dto.themeEn;
     if (dto.date !== undefined) updateData.date = new Date(dto.date);
+    if (dto.status !== undefined) updateData.status = dto.status;
 
     return this.prisma.dailySet.update({
       where: { id },

@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsArray, IsOptional, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import { IsString, IsDateString, IsArray, IsOptional, IsEnum, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateDailySetDto {
@@ -19,6 +19,14 @@ export class UpdateDailySetDto {
   @IsOptional()
   @IsString()
   themeEn?: string;
+
+  @ApiPropertyOptional({
+    enum: ['draft', 'scheduled', 'published'],
+    description: 'Status of the daily set',
+  })
+  @IsOptional()
+  @IsEnum(['draft', 'scheduled', 'published'])
+  status?: string;
 
   @ApiPropertyOptional({
     example: ['cuid1', 'cuid2', 'cuid3', 'cuid4', 'cuid5'],

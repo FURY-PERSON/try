@@ -2,10 +2,12 @@ import {
   IsString,
   IsDateString,
   IsArray,
+  IsOptional,
+  IsEnum,
   ArrayMinSize,
   ArrayMaxSize,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDailySetDto {
   @ApiProperty({
@@ -27,6 +29,15 @@ export class CreateDailySetDto {
     example: ['id1', 'id2', 'id3', 'id4', 'id5', 'id6', 'id7', 'id8', 'id9', 'id10', 'id11', 'id12', 'id13', 'id14', 'id15'],
     description: 'Array of exactly 15 statement IDs',
   })
+  @ApiPropertyOptional({
+    enum: ['draft', 'scheduled', 'published'],
+    default: 'draft',
+    description: 'Initial status of the daily set',
+  })
+  @IsOptional()
+  @IsEnum(['draft', 'scheduled', 'published'])
+  status?: string;
+
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(15)

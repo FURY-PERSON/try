@@ -20,7 +20,7 @@ import { AdminJwtGuard } from '../auth/admin-jwt.guard';
 import { AdminCollectionsService } from './admin-collections.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
-import { PaginationQueryDto } from '@/common/dto/pagination.dto';
+import { CollectionQueryDto } from './dto/collection-query.dto';
 
 @ApiTags('admin/collections')
 @ApiBearerAuth()
@@ -34,11 +34,7 @@ export class AdminCollectionsController {
   @Get()
   @ApiOperation({ summary: 'List all collections (paginated)' })
   @ApiResponse({ status: 200, description: 'Paginated list of collections' })
-  @ApiQuery({ name: 'status', required: false, enum: ['draft', 'published'] })
-  @ApiQuery({ name: 'type', required: false, enum: ['featured', 'seasonal', 'thematic'] })
-  async findAll(
-    @Query() query: PaginationQueryDto & { status?: string; type?: string },
-  ) {
+  async findAll(@Query() query: CollectionQueryDto) {
     return this.adminCollectionsService.findAll(query);
   }
 
