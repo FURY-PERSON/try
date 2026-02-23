@@ -21,7 +21,9 @@ type AnalyticsEvent =
   | 'collection_start'
   | 'collection_complete'
   | 'collection_detail_viewed'
-  | 'daily_locked_viewed';
+  | 'daily_locked_viewed'
+  | 'home_section_scroll'
+  | 'home_filter_applied';
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 

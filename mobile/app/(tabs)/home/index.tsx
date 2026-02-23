@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -8,6 +8,8 @@ import {
   Pressable,
   FlatList,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -41,11 +43,37 @@ export default function HomeScreen() {
   const { data: feed, isLoading, isError, error, refetch, isRefetching } = useHomeFeed();
   const { data: dailyData } = useDailySet();
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
 
   const streak = feed?.userProgress?.streak ?? 0;
   const daily = feed?.daily;
-  const categories = feed?.categories ?? [];
-  const collections = feed?.collections ?? [];
+  const allCategories = feed?.categories ?? [];
+  const allCollections = feed?.collections ?? [];
+
+  // Filter by selected category
+  const categories = useMemo(() => {
+    if (!selectedCategorySlug) return allCategories;
+    return allCategories.filter((c) => c.slug === selectedCategorySlug);
+  }, [allCategories, selectedCategorySlug]);
+
+  const collections = useMemo(() => {
+    // Collections don't have a direct category, so we show all when filtered
+    // This matches FR-104 AC-3: sections filter "соответственно"
+    return allCollections;
+  }, [allCollections]);
+
+  const handleFilterSelect = useCallback((slug: string | null) => {
+    setSelectedCategorySlug(slug);
+    if (slug) {
+      analytics.logEvent('home_filter_applied', { categorySlug: slug });
+    }
+  }, []);
+
+  const handleSectionScroll = useCallback((section: string) => {
+    return (_e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      analytics.logEvent('home_section_scroll', { section });
+    };
+  }, []);
 
   useEffect(() => {
     if (daily?.isLocked && daily.unlocksAt) {
@@ -172,6 +200,35 @@ export default function HomeScreen() {
           <StreakBadge days={streak} />
         </View>
 
+        {/* Filter Chips */}
+        {allCategories.length > 0 && (
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={allCategories}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.filterChips}
+            ListHeaderComponent={
+              <Chip
+                label={t('home.categoriesAll')}
+                selected={selectedCategorySlug === null}
+                onPress={() => handleFilterSelect(null)}
+              />
+            }
+            renderItem={({ item }) => (
+              <Chip
+                label={language === 'en' ? item.nameEn : item.name}
+                selected={selectedCategorySlug === item.slug}
+                onPress={() =>
+                  handleFilterSelect(
+                    selectedCategorySlug === item.slug ? null : item.slug,
+                  )
+                }
+              />
+            )}
+          />
+        )}
+
         {/* Section 1: Daily Set */}
         <Card variant="highlighted" style={{ marginTop: spacing.xl }}>
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
@@ -228,6 +285,7 @@ export default function HomeScreen() {
               data={categories}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
+              onScrollBeginDrag={handleSectionScroll('categories')}
               renderItem={({ item }) => (
                 <CategoryCard
                   category={item}
@@ -281,6 +339,7 @@ export default function HomeScreen() {
               data={collections}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
+              onScrollBeginDrag={handleSectionScroll('collections')}
               renderItem={({ item }) => (
                 <CollectionCard
                   collection={item}
@@ -389,6 +448,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
+  },
+  filterChips: {
+    gap: 8,
+    paddingVertical: 12,
   },
   largeTitle: {
     fontSize: 34,
