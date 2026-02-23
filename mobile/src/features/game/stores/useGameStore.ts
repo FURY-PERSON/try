@@ -2,13 +2,24 @@ import { create } from 'zustand';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CardResult, DailySetProgress, SubmissionResult } from '../types';
 
+export type CollectionType = 'daily' | 'category' | 'difficulty' | 'collection';
+
 type GameStoreState = {
   dailyProgress: DailySetProgress;
   isPlaying: boolean;
   currentCardStartTime: number | null;
   submissionResult: SubmissionResult | null;
 
+  // Collection session tracking
+  sessionId: string | null;
+  collectionType: CollectionType;
+
   startDailySet: (dailySetId: string | null, totalCards: number) => void;
+  startCollectionSession: (
+    sessionId: string,
+    collectionType: CollectionType,
+    totalCards: number,
+  ) => void;
   startCard: () => void;
   submitCardResult: (result: CardResult) => void;
   setSubmissionResult: (result: SubmissionResult) => void;
@@ -28,6 +39,8 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   isPlaying: false,
   currentCardStartTime: null,
   submissionResult: null,
+  sessionId: null,
+  collectionType: 'daily' as CollectionType,
 
   startDailySet: (dailySetId: string | null, totalCards: number) => {
     set({
@@ -40,6 +53,28 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       },
       isPlaying: true,
       submissionResult: null,
+      sessionId: null,
+      collectionType: 'daily',
+    });
+  },
+
+  startCollectionSession: (
+    sessionId: string,
+    collectionType: CollectionType,
+    totalCards: number,
+  ) => {
+    set({
+      dailyProgress: {
+        dailySetId: null,
+        currentCardIndex: 0,
+        totalCards,
+        results: [],
+        completed: false,
+      },
+      isPlaying: true,
+      submissionResult: null,
+      sessionId,
+      collectionType,
     });
   },
 
@@ -75,6 +110,8 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       isPlaying: false,
       currentCardStartTime: null,
       submissionResult: null,
+      sessionId: null,
+      collectionType: 'daily',
     });
   },
 }));

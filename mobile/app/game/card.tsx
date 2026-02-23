@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Screen } from '@/components/layout/Screen';
 import { GameHeader } from '@/features/game/components/GameHeader';
 import { SwipeCard } from '@/features/game/components/SwipeCard';
@@ -11,19 +11,52 @@ import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useCardGame } from '@/features/game/hooks/useCardGame';
 import { useUserStore } from '@/stores/useUserStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useGameStore } from '@/features/game/stores/useGameStore';
+import type { DailySetQuestion } from '@/shared';
 
 export default function CardScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ questions?: string; mode?: string }>();
   const streak = useUserStore((s) => s.currentStreak);
   const language = useSettingsStore((s) => s.language);
-  const { data, isLoading, isError, error, refetch } = useDailySet();
+  const collectionType = useGameStore((s) => s.collectionType);
 
-  const questions = React.useMemo(() => {
-    if (!data?.questions) return [];
-    return [...data.questions].sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [data]);
+  const isCollectionMode = params.mode === 'collection';
 
-  const dailySetId = data?.id ?? null;
+  // For collections, questions come via route params
+  const collectionQuestions: DailySetQuestion[] = useMemo(() => {
+    if (!isCollectionMode || !params.questions) return [];
+    try {
+      const parsed = JSON.parse(params.questions);
+      // Collection questions may not have isTrue/explanation — they get revealed after answer
+      return parsed.map((q: Record<string, unknown>, i: number) => ({
+        id: q.id,
+        statement: q.statement ?? '',
+        isTrue: q.isTrue ?? false,
+        explanation: q.explanation ?? '',
+        source: q.source ?? '',
+        sourceUrl: q.sourceUrl ?? null,
+        language: q.language ?? 'ru',
+        categoryId: q.categoryId ?? '',
+        difficulty: q.difficulty ?? 3,
+        illustrationUrl: q.illustrationUrl ?? null,
+        sortOrder: i + 1,
+      }));
+    } catch {
+      return [];
+    }
+  }, [isCollectionMode, params.questions]);
+
+  // For daily mode, fetch from API
+  const { data: dailyData, isLoading, isError, error, refetch } = useDailySet();
+
+  const questions = useMemo(() => {
+    if (isCollectionMode) return collectionQuestions;
+    if (!dailyData?.questions) return [];
+    return [...dailyData.questions].sort((a, b) => a.sortOrder - b.sortOrder);
+  }, [isCollectionMode, collectionQuestions, dailyData]);
+
+  const dailySetId = isCollectionMode ? null : (dailyData?.id ?? null);
 
   const {
     currentQuestion,
@@ -43,7 +76,8 @@ export default function CardScreen() {
     }
   }, [isComplete, feedback, router]);
 
-  if (isLoading) {
+  // Loading state only for daily mode
+  if (!isCollectionMode && isLoading) {
     return (
       <Screen>
         <Skeleton width="100%" height={48} shape="rectangle" />
@@ -52,7 +86,7 @@ export default function CardScreen() {
     );
   }
 
-  if (isError) {
+  if (!isCollectionMode && isError) {
     return (
       <Screen>
         <ErrorState message={error?.message} onRetry={refetch} />

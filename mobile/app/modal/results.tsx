@@ -21,7 +21,7 @@ export default function ResultsModal() {
   const { t } = useTranslation();
   const router = useRouter();
   const streak = useUserStore((s) => s.currentStreak);
-  const { dailyProgress, resetDailyProgress } = useGameStore();
+  const { dailyProgress, resetDailyProgress, collectionType } = useGameStore();
   const submissionResult = useGameStore((s) => s.submissionResult);
   const { showIfReady } = useInterstitialAd();
 
@@ -30,14 +30,16 @@ export default function ResultsModal() {
   const totalCards = dailyProgress.totalCards;
   const resultBools = results.map((r) => r.correct);
   const messageKey = getResultMessage(correctCount, totalCards);
+  const isDaily = collectionType === 'daily';
 
   React.useEffect(() => {
     showIfReady();
-    analytics.logEvent('daily_set_complete', {
+    analytics.logEvent('game_complete', {
       score: correctCount,
       total: totalCards,
+      type: collectionType,
     });
-  }, [showIfReady, correctCount, totalCards]);
+  }, [showIfReady, correctCount, totalCards, collectionType]);
 
   const scoreColor =
     correctCount === totalCards
@@ -73,7 +75,7 @@ export default function ResultsModal() {
           {t(`results.${messageKey}`)}
         </Text>
 
-        {submissionResult && (
+        {submissionResult && submissionResult.correctPercent > 0 && (
           <Text style={[styles.percentText, { color: colors.primary }]}>
             {t('results.correctPercent', {
               percent: submissionResult.correctPercent,
@@ -81,11 +83,14 @@ export default function ResultsModal() {
           </Text>
         )}
 
-        <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+        {isDaily && (
+          <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+        )}
 
         <DailyResultCard results={resultBools} />
 
-        {submissionResult ? (
+        {/* Leaderboard position only for daily sets */}
+        {isDaily && submissionResult && submissionResult.totalPlayers > 0 ? (
           <Card variant="flat" style={styles.positionCard}>
             <Text
               style={[styles.positionText, { color: colors.textSecondary }]}
@@ -95,7 +100,7 @@ export default function ResultsModal() {
               })}
             </Text>
           </Card>
-        ) : (
+        ) : isDaily ? (
           <Card variant="flat" style={styles.positionCard}>
             <Text
               style={[styles.positionText, { color: colors.textSecondary }]}
@@ -106,7 +111,7 @@ export default function ResultsModal() {
               })}
             </Text>
           </Card>
-        )}
+        ) : null}
       </View>
 
       <View style={styles.footer}>

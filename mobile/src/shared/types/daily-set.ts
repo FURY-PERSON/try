@@ -26,4 +26,11 @@ export type DailySetWithQuestions = {
   status: string;
   questions: DailySetQuestion[];
   completed?: boolean;
+  isLocked?: boolean;
+  unlocksAt?: string | null;
+  userEntry?: {
+    score: number;
+    correctAnswers: number;
+    totalTimeSeconds: number;
+  } | null;
 };
