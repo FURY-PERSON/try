@@ -65,7 +65,8 @@
     "correct": "Correct!",
     "incorrect": "Incorrect",
     "swipeRight": "Swipe right — fact",
-    "swipeLeft": "Swipe left — fake"
+    "swipeLeft": "Swipe left — fake",
+    "swipeHint": "swipe to answer"
   },
   "fact": {
     "title": "Explanation",

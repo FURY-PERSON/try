@@ -12,6 +12,7 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -28,6 +29,7 @@ import { getResultMessage } from '@/features/game/utils';
 import { analytics } from '@/services/analytics';
 
 export default function ResultsModal() {
+  const insets = useSafeAreaInsets();
   const { colors, gradients, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -105,7 +107,7 @@ export default function ResultsModal() {
   };
 
   return (
-    <Screen style={styles.screen}>
+    <Screen style={[styles.screen, { paddingTop: insets.top }]}>
       {/* Performance gradient header */}
       <LinearGradient
         colors={[bgGradient[0] + '30', bgGradient[1] + '10', 'transparent']}

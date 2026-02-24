@@ -12,6 +12,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
@@ -20,6 +21,7 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function StreakMilestoneModal() {
+  const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -68,14 +70,14 @@ export default function StreakMilestoneModal() {
   }));
 
   return (
-    <Screen style={styles.screen}>
+    <Screen style={styles.screen} backgroundColor={gradients.warm[0]}>
       <LinearGradient
         colors={gradients.warm}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.gradient}
       >
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top }]}>
           <Animated.View style={fireStyle}>
             <MaterialCommunityIcons name="fire" size={120} color="#FFFFFF" />
           </Animated.View>

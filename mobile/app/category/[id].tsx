@@ -5,11 +5,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
+import { IconFromName } from '@/components/ui/IconFromName';
 import { categoriesApi } from '@/features/home/api/categoriesApi';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
@@ -19,6 +21,7 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function CategoryDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, gradients, spacing, borderRadius, elevation } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -79,7 +82,7 @@ export default function CategoryDetailScreen() {
 
   if (isLoading) {
     return (
-      <Screen>
+      <Screen style={{ paddingTop: insets.top }}>
         <View style={styles.center}>
           <Skeleton width={80} height={80} shape="rectangle" />
           <Skeleton width="60%" height={28} shape="rectangle" style={{ marginTop: 16 }} />
@@ -91,7 +94,7 @@ export default function CategoryDetailScreen() {
 
   if (isError || !category) {
     return (
-      <Screen>
+      <Screen style={{ paddingTop: insets.top }}>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: colors.textSecondary }]}>
             {t('category.notFound')}
@@ -110,17 +113,17 @@ export default function CategoryDetailScreen() {
   const categoryColor = category.color || colors.primary;
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} backgroundColor={categoryColor + '25'}>
       {/* Gradient Hero Header */}
       <AnimatedEntrance delay={0}>
         <LinearGradient
           colors={[categoryColor + '25', categoryColor + '08', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.heroHeader}
+          style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
           <View style={[styles.iconCircle, { backgroundColor: categoryColor + '20', ...elevation.md }]}>
-            <Text style={styles.icon}>{category.icon}</Text>
+            <IconFromName name={category.icon} size={44} color={categoryColor} />
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{name}</Text>
           {description ? (

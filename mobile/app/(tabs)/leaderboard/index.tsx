@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Chip } from '@/components/ui/Chip';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
@@ -16,6 +17,7 @@ import { fontFamily } from '@/theme/typography';
 type Period = 'weekly' | 'monthly' | 'yearly' | 'alltime';
 
 export default function LeaderboardScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>('weekly');
@@ -25,7 +27,7 @@ export default function LeaderboardScreen() {
   return (
     <Screen>
       <AnimatedEntrance delay={0}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('leaderboard.title')}
           </Text>

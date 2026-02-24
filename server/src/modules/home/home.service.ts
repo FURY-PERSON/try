@@ -32,7 +32,7 @@ export class HomeService {
 
   private async getDailyStatus(userId: string) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     // Find today's published daily set
     const dailySet = await this.prisma.dailySet.findUnique({

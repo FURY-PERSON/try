@@ -16,7 +16,7 @@ export class DailySetsService {
 
   async getTodaySet(userId: string) {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     // Check weekly lockout: did user complete any daily set in the last 7 days?
     const sevenDaysAgo = new Date();
@@ -300,7 +300,7 @@ export class DailySetsService {
 
     // Calculate streak (weekly cadence: playing within 14 days maintains streak)
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     let newCurrentStreak: number;
 

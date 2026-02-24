@@ -21,6 +21,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -29,6 +30,7 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { IconFromName } from '@/components/ui/IconFromName';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useGameStore } from '@/features/game/stores/useGameStore';
@@ -51,6 +53,7 @@ export default function HomeScreen() {
   const startDailySet = useGameStore((s) => s.startDailySet);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
 
+  const insets = useSafeAreaInsets();
   const { data: feed, isLoading, isError, error, refetch, isRefetching } = useHomeFeed();
   const { data: dailyData } = useDailySet();
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
@@ -143,7 +146,7 @@ export default function HomeScreen() {
   if (isLoading) {
     return (
       <Screen>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>{t('home.title')}</Text>
           <StreakBadge days={0} />
         </View>
@@ -175,7 +178,7 @@ export default function HomeScreen() {
   ];
 
   return (
-    <Screen>
+    <Screen padded={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -185,7 +188,7 @@ export default function HomeScreen() {
       >
         {/* Header */}
         <AnimatedEntrance delay={0}>
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingHorizontal: spacing.screenPadding, paddingTop: insets.top }]}>
             <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
               {t('home.title')}
             </Text>
@@ -201,7 +204,7 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               data={allCategories}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.filterChips}
+              contentContainerStyle={[styles.filterChips, { paddingHorizontal: spacing.screenPadding }]}
               ListHeaderComponent={
                 <Chip
                   label={t('home.categoriesAll')}
@@ -238,6 +241,7 @@ export default function HomeScreen() {
                 borderColor: colors.primary + '20',
                 ...elevation.xl,
                 marginTop: spacing.xl,
+                marginHorizontal: spacing.screenPadding,
               },
             ]}
           >
@@ -285,37 +289,39 @@ export default function HomeScreen() {
         </AnimatedEntrance>
 
         {/* Section 2: Categories */}
-        {categories.length > 0 && (
+        {allCategories.length > 0 && (
           <AnimatedEntrance delay={200}>
             <View style={{ marginTop: spacing.sectionGap }}>
-              <Text style={[styles.sectionOverline, { color: colors.primary }]}>
+              <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
                 {t('home.categories').toUpperCase()}
               </Text>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={categories}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
-                onScrollBeginDrag={handleSectionScroll('categories')}
-                renderItem={({ item }) => (
-                  <CategoryCard
-                    category={item}
-                    language={language}
-                    colors={colors}
-                    borderRadius={borderRadius}
-                    elevation={elevation}
-                    onPress={() => handleOpenCategory(item.id)}
-                  />
-                )}
-              />
+              <View style={styles.categoriesContainer}>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={categories}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
+                  onScrollBeginDrag={handleSectionScroll('categories')}
+                  renderItem={({ item }) => (
+                    <CategoryCard
+                      category={item}
+                      language={language}
+                      colors={colors}
+                      borderRadius={borderRadius}
+                      elevation={elevation}
+                      onPress={() => handleOpenCategory(item.id)}
+                    />
+                  )}
+                />
+              </View>
             </View>
           </AnimatedEntrance>
         )}
 
         {/* Section 3: Difficulty */}
         <AnimatedEntrance delay={300}>
-          <View style={{ marginTop: spacing.sectionGap }}>
+          <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
             <Text style={[styles.sectionOverline, { color: colors.primary }]}>
               {t('home.difficulty').toUpperCase()}
             </Text>
@@ -342,7 +348,7 @@ export default function HomeScreen() {
         {collections.length > 0 && (
           <AnimatedEntrance delay={400}>
             <View style={{ marginTop: spacing.sectionGap }}>
-              <Text style={[styles.sectionOverline, { color: colors.primary }]}>
+              <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
                 {t('home.featured').toUpperCase()}
               </Text>
               <FlatList
@@ -350,7 +356,7 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 data={collections}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
+                contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
                 onScrollBeginDrag={handleSectionScroll('collections')}
                 renderItem={({ item }) => (
                   <CollectionCard
@@ -368,7 +374,7 @@ export default function HomeScreen() {
           </AnimatedEntrance>
         )}
 
-        <View style={{ marginTop: spacing.sectionGap }}>
+        <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
           <AdBanner placement="home_bottom" />
         </View>
       </ScrollView>
@@ -420,7 +426,7 @@ function CategoryCard({
         ]}
       >
         <View style={[styles.categoryAccent, { backgroundColor: category.color ?? colors.primary }]} />
-        <Text style={styles.categoryIcon}>{category.icon}</Text>
+        <IconFromName name={category.icon} size={32} color={category.color ?? colors.primary} />
         <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
           {name}
         </Text>
@@ -547,7 +553,7 @@ function CollectionCard({
           },
         ]}
       >
-        <Text style={styles.collectionIcon}>{collection.icon}</Text>
+        <IconFromName name={collection.icon} size={32} color={colors.primary} />
         <Text style={[styles.collectionTitle, { color: colors.textPrimary }]} numberOfLines={2}>
           {title}
         </Text>
@@ -620,6 +626,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 8,
   },
+  categoriesContainer: {
+    height: 160,
+  },
   // Category cards
   categoryCard: {
     width: 140,
@@ -636,8 +645,10 @@ const styles = StyleSheet.create({
     right: 0,
     height: 3,
   },
-  categoryIcon: {
-    fontSize: 32,
+  categoryIconWrap: {
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   categoryName: {
     fontSize: 14,
@@ -659,6 +670,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     gap: 6,
+    flex: 1,
   },
   difficultyGradientDot: {
     width: 36,
@@ -685,8 +697,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 6,
   },
-  collectionIcon: {
-    fontSize: 32,
+  collectionIconWrap: {
+    height: 36,
+    justifyContent: 'center',
   },
   collectionTitle: {
     fontSize: 15,

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +15,7 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function NicknameModal() {
+  const insets = useSafeAreaInsets();
   const { colors, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -42,7 +44,7 @@ export default function NicknameModal() {
   };
 
   return (
-    <Screen edges={['bottom', 'left', 'right']} style={styles.screen}>
+    <Screen style={[styles.screen, { paddingTop: insets.top }]}>
       <View style={styles.content}>
         <AnimatedEntrance delay={0} direction="up">
           <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>

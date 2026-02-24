@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Avatar } from '@/components/ui/Avatar';
 import { Card } from '@/components/ui/Card';
@@ -20,6 +21,7 @@ import { fontFamily } from '@/theme/typography';
 import { formatPercent } from '@/utils/format';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, spacing, gradients, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -38,7 +40,7 @@ export default function ProfileScreen() {
             colors={gradients.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 0, y: 1 }}
-            style={styles.profileHeader}
+            style={[styles.profileHeader, { paddingTop: insets.top + 8 }]}
           >
             <View style={styles.headerTopRow}>
               <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>

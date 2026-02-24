@@ -1,30 +1,31 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useThemeContext } from '@/theme';
 import type { FC, ReactNode } from 'react';
-import type { ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 type ScreenProps = {
   children: ReactNode;
-  edges?: ('top' | 'bottom' | 'left' | 'right')[];
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   padded?: boolean;
+  backgroundColor?: string;
 };
 
 export const Screen: FC<ScreenProps> = ({
   children,
-  edges = ['top', 'left', 'right'],
   style,
   padded = true,
+  backgroundColor: bgOverride,
 }) => {
   const { colors, spacing, isDark } = useThemeContext();
 
   return (
-    <SafeAreaView
-      edges={edges}
-      style={[styles.container, { backgroundColor: colors.background }]}
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: bgOverride ?? colors.background },
+      ]}
     >
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <View
@@ -36,7 +37,7 @@ export const Screen: FC<ScreenProps> = ({
       >
         {children}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

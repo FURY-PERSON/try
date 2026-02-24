@@ -20,6 +20,7 @@ import type { SwipeDirection } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
+const CARD_WIDTH = SCREEN_WIDTH - 48;
 
 type SwipeCardProps = {
   statement: string;
@@ -28,6 +29,8 @@ type SwipeCardProps = {
   totalCards: number;
   onSwipe: (direction: SwipeDirection) => void;
   disabled?: boolean;
+  nextStatement?: string;
+  nextCategoryName?: string;
 };
 
 export const SwipeCard: FC<SwipeCardProps> = ({
@@ -37,6 +40,8 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   totalCards,
   onSwipe,
   disabled = false,
+  nextStatement,
+  nextCategoryName,
 }) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -82,7 +87,6 @@ export const SwipeCard: FC<SwipeCardProps> = ({
     };
   });
 
-  // Glow effect based on swipe direction
   const cardGlowStyle = useAnimatedStyle(() => {
     const glowColor = interpolateColor(
       translateX.value,
@@ -115,51 +119,74 @@ export const SwipeCard: FC<SwipeCardProps> = ({
     return { opacity };
   });
 
-  // Stack cards behind
-  const stackCard1Style = {
-    transform: [{ scale: 0.95 }, { translateY: 8 }],
-    opacity: 0.6,
-  };
-  const stackCard2Style = {
-    transform: [{ scale: 0.9 }, { translateY: 16 }],
-    opacity: 0.3,
-  };
+  const remainingCards = totalCards - cardIndex;
 
   return (
     <View style={styles.wrapper}>
-      {/* Background stack cards */}
-      {cardIndex + 2 < totalCards && (
+      {/* Third card in stack — empty placeholder */}
+      {remainingCards > 2 && (
         <View
           style={[
             styles.stackCard,
-            styles.card,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
               borderWidth: 1,
               borderColor: colors.border,
+              transform: [{ scale: 0.92 }],
+              top: 24,
+              opacity: 0.4,
             },
-            stackCard2Style,
-          ]}
-        />
-      )}
-      {cardIndex + 1 < totalCards && (
-        <View
-          style={[
-            styles.stackCard,
-            styles.card,
-            {
-              backgroundColor: colors.surface,
-              borderRadius: borderRadius.xxl,
-              borderWidth: 1,
-              borderColor: colors.border,
-            },
-            stackCard1Style,
           ]}
         />
       )}
 
-      {/* Main card */}
+      {/* Second card in stack — shows next question content */}
+      {remainingCards > 1 && (
+        <View
+          style={[
+            styles.stackCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: borderRadius.xxl,
+              borderWidth: 1,
+              borderColor: colors.border,
+              transform: [{ scale: 0.96 }],
+              top: 12,
+              opacity: 0.85,
+              overflow: 'hidden',
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={gradients.primary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.topAccent, { borderTopLeftRadius: borderRadius.xxl, borderTopRightRadius: borderRadius.xxl }]}
+          />
+          {nextStatement ? (
+            <View style={styles.stackContent}>
+              <Text style={[styles.counter, { color: colors.textTertiary }]}>
+                {cardIndex + 2} / {totalCards}
+              </Text>
+              {nextCategoryName ? (
+                <View style={[styles.categoryBadge, { backgroundColor: colors.primary + '12' }]}>
+                  <Text style={[styles.category, { color: colors.primary }]}>
+                    {nextCategoryName}
+                  </Text>
+                </View>
+              ) : null}
+              <Text style={[styles.statementQuote, { color: colors.primary }]}>«</Text>
+              <Text style={[styles.statement, { color: colors.textPrimary }]} numberOfLines={3}>
+                {nextStatement}
+              </Text>
+              <Text style={[styles.statementQuote, styles.quoteEnd, { color: colors.primary }]}>»</Text>
+            </View>
+          ) : null}
+        </View>
+      )}
+
+      {/* Main interactive card */}
       <GestureDetector gesture={gesture}>
         <Animated.View
           style={[
@@ -173,7 +200,6 @@ export const SwipeCard: FC<SwipeCardProps> = ({
             cardGlowStyle,
           ]}
         >
-          {/* Decorative top gradient line */}
           <LinearGradient
             colors={gradients.primary}
             start={{ x: 0, y: 0 }}
@@ -219,19 +245,6 @@ export const SwipeCard: FC<SwipeCardProps> = ({
               {statement}
             </Text>
             <Text style={[styles.statementQuote, styles.quoteEnd, { color: colors.primary }]}>»</Text>
-
-            <View style={styles.swipeHints}>
-              <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
-                <Text style={[styles.hintText, { color: colors.red }]}>
-                  ← {t('game.fake')}
-                </Text>
-              </View>
-              <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
-                <Text style={[styles.hintText, { color: colors.emerald }]}>
-                  {t('game.fact')} →
-                </Text>
-              </View>
-            </View>
           </View>
         </Animated.View>
       </GestureDetector>
@@ -241,17 +254,17 @@ export const SwipeCard: FC<SwipeCardProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   stackCard: {
     position: 'absolute',
-    width: SCREEN_WIDTH - 48,
-    minHeight: 300,
+    width: CARD_WIDTH,
+    left: 0,
+    bottom: 0,
+    height: '100%',
   },
   card: {
-    width: SCREEN_WIDTH - 48,
+    width: CARD_WIDTH,
     minHeight: 300,
     overflow: 'hidden',
   },
@@ -260,7 +273,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   cardContent: {
-    padding: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  stackContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
     flex: 1,
     justifyContent: 'center',
   },
@@ -316,19 +336,5 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     lineHeight: 32,
     textAlign: 'center',
-  },
-  swipeHints: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 32,
-  },
-  hintBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  hintText: {
-    fontSize: 13,
-    fontFamily: fontFamily.semiBold,
   },
 });

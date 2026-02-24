@@ -1,17 +1,15 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Linking, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Linking, Pressable, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withDelay,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
-import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
 
 type ExplanationCardProps = {
@@ -21,7 +19,6 @@ type ExplanationCardProps = {
   explanation: string;
   source: string;
   sourceUrl?: string;
-  onNext: () => void;
 };
 
 export const ExplanationCard: FC<ExplanationCardProps> = ({
@@ -31,7 +28,6 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
   explanation,
   source,
   sourceUrl,
-  onNext,
 }) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -84,7 +80,12 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
         <Text style={styles.resultText}>{resultText}</Text>
       </LinearGradient>
 
-      <View style={styles.body}>
+      <ScrollView
+        style={styles.scrollBody}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         <Text style={[styles.statement, { color: colors.textSecondary }]}>
           «{statement}»
         </Text>
@@ -113,23 +114,21 @@ export const ExplanationCard: FC<ExplanationCardProps> = ({
             </Text>
           </Pressable>
         )}
-
-        <Button
-          label={`${t('common.next')} →`}
-          variant={userAnsweredCorrectly ? 'success' : 'primary'}
-          size="lg"
-          onPress={onNext}
-          style={{ marginTop: 20 }}
-        />
-      </View>
+      </ScrollView>
     </Animated.View>
   );
 };
 
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
+    marginHorizontal: 4,
+    maxHeight: SCREEN_HEIGHT * 0.7,
     overflow: 'hidden',
+  },
+  scrollBody: {
+    flexGrow: 0,
   },
   resultBanner: {
     flexDirection: 'row',

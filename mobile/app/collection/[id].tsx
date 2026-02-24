@@ -5,11 +5,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
+import { IconFromName } from '@/components/ui/IconFromName';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -18,6 +20,7 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function CollectionDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, gradients, spacing, borderRadius, elevation } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -77,7 +80,7 @@ export default function CollectionDetailScreen() {
 
   if (isLoading) {
     return (
-      <Screen>
+      <Screen style={{ paddingTop: insets.top }}>
         <View style={styles.center}>
           <Skeleton width={64} height={64} shape="rectangle" />
           <Skeleton width="60%" height={28} shape="rectangle" style={{ marginTop: 16 }} />
@@ -89,7 +92,7 @@ export default function CollectionDetailScreen() {
 
   if (isError || !collection) {
     return (
-      <Screen>
+      <Screen style={{ paddingTop: insets.top }}>
         <View style={styles.center}>
           <Text style={[styles.errorText, { color: colors.textSecondary }]}>
             {t('collection.notFound')}
@@ -106,17 +109,17 @@ export default function CollectionDetailScreen() {
   }
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} backgroundColor={gradients.hero[0]}>
       {/* Gradient Hero Header */}
       <AnimatedEntrance delay={0}>
         <LinearGradient
           colors={gradients.hero}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.heroHeader}
+          style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
           <View style={[styles.iconContainer, { ...elevation.md }]}>
-            <Text style={styles.icon}>{collection.icon}</Text>
+            <IconFromName name={collection.icon} size={44} color={colors.primary} />
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
           {description ? (

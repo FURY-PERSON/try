@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
@@ -11,17 +12,18 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 export default function OnboardingStep3() {
+  const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
   const { t } = useTranslation();
   const { finish } = useOnboarding();
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} backgroundColor={gradients.hero[0]}>
       <LinearGradient
         colors={gradients.hero}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={styles.container}
+        style={[styles.container, { paddingTop: insets.top }]}
       >
         <View style={styles.content}>
           <AnimatedEntrance delay={0} direction="up">

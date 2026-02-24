@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
 import { Chip } from '@/components/ui/Chip';
@@ -14,6 +15,7 @@ import { fontFamily } from '@/theme/typography';
 import { APP_VERSION } from '@/constants/config';
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const { colors, spacing } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -22,7 +24,7 @@ export default function SettingsScreen() {
   return (
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top }]}>
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('settings.title')}
           </Text>
