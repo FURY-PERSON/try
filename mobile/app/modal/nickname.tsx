@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Feather } from '@expo/vector-icons';
 import { Screen } from '@/components/layout/Screen';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useUserStore } from '@/stores/useUserStore';
 import { profileApi } from '@/features/profile/api/profileApi';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function NicknameModal() {
-  const { colors } = useThemeContext();
+  const { colors, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const currentNickname = useUserStore((s) => s.nickname);
@@ -41,40 +44,54 @@ export default function NicknameModal() {
   return (
     <Screen edges={['bottom', 'left', 'right']} style={styles.screen}>
       <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
-          {t('nickname.title')}
-        </Text>
+        <AnimatedEntrance delay={0} direction="up">
+          <View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
+            <Feather name="edit-3" size={32} color={colors.primary} />
+          </View>
+        </AnimatedEntrance>
 
-        <Input
-          variant="answer"
-          value={value}
-          onChangeText={setValue}
-          placeholder={t('nickname.placeholder')}
-          autoFocus
-          maxLength={16}
-        />
+        <AnimatedEntrance delay={100} direction="up">
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            {t('nickname.title')}
+          </Text>
+        </AnimatedEntrance>
 
-        <Text style={[styles.hint, { color: colors.textSecondary }]}>
-          {t('nickname.hint')}
-        </Text>
+        <AnimatedEntrance delay={200} direction="up">
+          <Input
+            variant="answer"
+            value={value}
+            onChangeText={setValue}
+            placeholder={t('nickname.placeholder')}
+            autoFocus
+            maxLength={16}
+          />
+        </AnimatedEntrance>
+
+        <AnimatedEntrance delay={300} direction="up">
+          <Text style={[styles.hint, { color: colors.textTertiary }]}>
+            {t('nickname.hint')}
+          </Text>
+        </AnimatedEntrance>
       </View>
 
-      <View style={styles.footer}>
-        <Button
-          label={t('common.save')}
-          variant="primary"
-          size="lg"
-          disabled={!isValid}
-          loading={loading}
-          onPress={handleSave}
-        />
-        <Button
-          label={t('common.cancel')}
-          variant="ghost"
-          size="md"
-          onPress={() => router.back()}
-        />
-      </View>
+      <AnimatedEntrance delay={400} direction="up">
+        <View style={styles.footer}>
+          <Button
+            label={t('common.save')}
+            variant="primary"
+            size="lg"
+            disabled={!isValid}
+            loading={loading}
+            onPress={handleSave}
+          />
+          <Button
+            label={t('common.cancel')}
+            variant="ghost"
+            size="md"
+            onPress={() => router.back()}
+          />
+        </View>
+      </AnimatedEntrance>
     </Screen>
   );
 }
@@ -85,16 +102,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
-    gap: 16,
+    gap: 20,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fontFamily.extraBold,
     textAlign: 'center',
+    letterSpacing: -0.3,
   },
   hint: {
     fontSize: 13,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   footer: {

@@ -9,38 +9,50 @@ export const fontFamily = {
   black: 'Nunito_900Black',
 } as const;
 
-// Apple HIG-inspired type scale using Nunito
+// Midnight Scholar type scale — Nunito
 export const typography: Record<string, TextStyle> = {
-  // Large Title — used for top-level screen titles
-  largeTitle: { fontSize: 34, lineHeight: 41, fontFamily: fontFamily.bold, letterSpacing: 0.37 },
+  // Hero — dramatic score numbers, streak milestones
+  hero: { fontSize: 56, lineHeight: 64, fontFamily: fontFamily.black, letterSpacing: -1.5 },
 
-  // Display — used for hero numbers and big callouts
-  displayLarge: { fontSize: 34, lineHeight: 42, fontFamily: fontFamily.bold },
-  displayMedium: { fontSize: 28, lineHeight: 36, fontFamily: fontFamily.bold },
+  // Large Title — top-level screen titles
+  largeTitle: { fontSize: 32, lineHeight: 38, fontFamily: fontFamily.bold, letterSpacing: -0.5 },
+
+  // Display — big callouts, hero cards
+  displayLarge: { fontSize: 28, lineHeight: 34, fontFamily: fontFamily.bold, letterSpacing: -0.3 },
+  displayMedium: { fontSize: 24, lineHeight: 30, fontFamily: fontFamily.bold, letterSpacing: -0.2 },
 
   // Headlines
-  headlineLarge: { fontSize: 22, lineHeight: 28, fontFamily: fontFamily.bold },
-  headlineMedium: { fontSize: 20, lineHeight: 25, fontFamily: fontFamily.semiBold },
+  headlineLarge: { fontSize: 20, lineHeight: 26, fontFamily: fontFamily.bold },
+  headlineMedium: { fontSize: 18, lineHeight: 24, fontFamily: fontFamily.semiBold },
 
   // Titles
   titleLarge: { fontSize: 17, lineHeight: 22, fontFamily: fontFamily.semiBold },
-  titleMedium: { fontSize: 16, lineHeight: 21, fontFamily: fontFamily.semiBold },
+  titleMedium: { fontSize: 15, lineHeight: 20, fontFamily: fontFamily.semiBold },
 
   // Body
-  bodyLarge: { fontSize: 17, lineHeight: 22, fontFamily: fontFamily.regular },
-  bodyMedium: { fontSize: 15, lineHeight: 20, fontFamily: fontFamily.regular },
+  bodyLarge: { fontSize: 16, lineHeight: 24, fontFamily: fontFamily.regular },
+  bodyMedium: { fontSize: 14, lineHeight: 20, fontFamily: fontFamily.regular },
   bodySmall: { fontSize: 13, lineHeight: 18, fontFamily: fontFamily.regular },
 
-  // Labels & Captions
-  labelLarge: { fontSize: 15, lineHeight: 20, fontFamily: fontFamily.semiBold },
-  labelMedium: { fontSize: 13, lineHeight: 18, fontFamily: fontFamily.medium },
-  labelSmall: { fontSize: 11, lineHeight: 13, fontFamily: fontFamily.medium },
+  // Labels
+  labelLarge: { fontSize: 14, lineHeight: 18, fontFamily: fontFamily.semiBold, letterSpacing: 0.2 },
+  labelMedium: { fontSize: 12, lineHeight: 16, fontFamily: fontFamily.medium, letterSpacing: 0.3 },
+  labelSmall: { fontSize: 11, lineHeight: 14, fontFamily: fontFamily.medium, letterSpacing: 0.5 },
 
-  // Scores — used for game results
-  scoreXL: { fontSize: 48, lineHeight: 56, fontFamily: fontFamily.bold },
-  scoreLG: { fontSize: 36, lineHeight: 44, fontFamily: fontFamily.bold },
+  // Scores — game results
+  scoreXL: { fontSize: 48, lineHeight: 56, fontFamily: fontFamily.black, letterSpacing: -1 },
+  scoreLG: { fontSize: 36, lineHeight: 44, fontFamily: fontFamily.bold, letterSpacing: -0.5 },
 
-  // Caption
+  // Captions
   caption1: { fontSize: 12, lineHeight: 16, fontFamily: fontFamily.regular },
-  caption2: { fontSize: 11, lineHeight: 13, fontFamily: fontFamily.regular },
+  caption2: { fontSize: 11, lineHeight: 14, fontFamily: fontFamily.regular },
+
+  // Overline — section labels, category tags
+  overline: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: fontFamily.bold,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
 } as const;

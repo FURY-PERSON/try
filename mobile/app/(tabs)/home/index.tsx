@@ -12,6 +12,12 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
@@ -19,6 +25,7 @@ import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
@@ -29,12 +36,15 @@ import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CategoryWithCount, CollectionSummary } from '@/shared';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export default function HomeScreen() {
-  const { colors, spacing } = useThemeContext();
+  const { colors, spacing, gradients, elevation, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const language = useSettingsStore((s) => s.language);
@@ -51,15 +61,12 @@ export default function HomeScreen() {
   const allCategories = feed?.categories ?? [];
   const allCollections = feed?.collections ?? [];
 
-  // Filter by selected category
   const categories = useMemo(() => {
     if (!selectedCategorySlug) return allCategories;
     return allCategories.filter((c) => c.slug === selectedCategorySlug);
   }, [allCategories, selectedCategorySlug]);
 
   const collections = useMemo(() => {
-    // Collections don't have a direct category, so we show all when filtered
-    // This matches FR-104 AC-3: sections filter "соответственно"
     return allCollections;
   }, [allCollections]);
 
@@ -121,7 +128,6 @@ export default function HomeScreen() {
     router.push({ pathname: '/collection/[id]', params: { id: collectionId } });
   }, [router]);
 
-  // Lockout timer text
   const getLockoutText = () => {
     if (!daily?.unlocksAt) return '';
     const unlocksAt = new Date(daily.unlocksAt);
@@ -160,12 +166,12 @@ export default function HomeScreen() {
 
   const difficultyCards: Array<{
     key: 'easy' | 'medium' | 'hard';
-    color: string;
+    gradient: [string, string];
     icon: string;
   }> = [
-    { key: 'easy', color: colors.primary, icon: '🟢' },
-    { key: 'medium', color: colors.orange, icon: '🟡' },
-    { key: 'hard', color: colors.red, icon: '🔴' },
+    { key: 'easy', gradient: gradients.success, icon: '🟢' },
+    { key: 'medium', gradient: gradients.warm, icon: '🟡' },
+    { key: 'hard', gradient: gradients.danger, icon: '🔴' },
   ];
 
   return (
@@ -178,163 +184,188 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
-            {t('home.title')}
-          </Text>
-          <StreakBadge days={streak} />
-        </View>
+        <AnimatedEntrance delay={0}>
+          <View style={styles.header}>
+            <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
+              {t('home.title')}
+            </Text>
+            <StreakBadge days={streak} />
+          </View>
+        </AnimatedEntrance>
 
         {/* Filter Chips */}
         {allCategories.length > 0 && (
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={allCategories}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.filterChips}
-            ListHeaderComponent={
-              <Chip
-                label={t('home.categoriesAll')}
-                selected={selectedCategorySlug === null}
-                onPress={() => handleFilterSelect(null)}
-              />
-            }
-            renderItem={({ item }) => (
-              <Chip
-                label={language === 'en' ? item.nameEn : item.name}
-                selected={selectedCategorySlug === item.slug}
-                onPress={() =>
-                  handleFilterSelect(
-                    selectedCategorySlug === item.slug ? null : item.slug,
-                  )
-                }
-              />
-            )}
-          />
+          <AnimatedEntrance delay={50}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={allCategories}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.filterChips}
+              ListHeaderComponent={
+                <Chip
+                  label={t('home.categoriesAll')}
+                  selected={selectedCategorySlug === null}
+                  onPress={() => handleFilterSelect(null)}
+                />
+              }
+              renderItem={({ item }) => (
+                <Chip
+                  label={language === 'en' ? item.nameEn : item.name}
+                  selected={selectedCategorySlug === item.slug}
+                  onPress={() =>
+                    handleFilterSelect(
+                      selectedCategorySlug === item.slug ? null : item.slug,
+                    )
+                  }
+                />
+              )}
+            />
+          </AnimatedEntrance>
         )}
 
-        {/* Section 1: Daily Set */}
-        <Card variant="highlighted" style={{ marginTop: spacing.xl }}>
-          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-            {t('home.dailySet')}
-          </Text>
-          {daily?.set?.theme && (
-            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
-              {t('home.dailyTheme', {
-                theme: language === 'en' ? daily.set.themeEn : daily.set.theme,
-              })}
+        {/* Section 1: Hero Daily Set */}
+        <AnimatedEntrance delay={100}>
+          <LinearGradient
+            colors={gradients.card}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[
+              styles.heroCard,
+              {
+                borderRadius: borderRadius.xxl,
+                borderWidth: 1,
+                borderColor: colors.primary + '20',
+                ...elevation.xl,
+                marginTop: spacing.xl,
+              },
+            ]}
+          >
+            <Text style={[styles.heroOverline, { color: colors.primary }]}>
+              {t('home.dailySet').toUpperCase()}
             </Text>
-          )}
+            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
+              {daily?.set?.theme
+                ? language === 'en'
+                  ? daily.set.themeEn
+                  : daily.set.theme
+                : t('home.dailySet')}
+            </Text>
 
-          {daily?.isLocked ? (
-            <>
-              {daily.lastResult && (
-                <Text style={[styles.cardDesc, { color: colors.primary }]}>
-                  {t('home.completed')} {daily.lastResult.correctAnswers}/{CARDS_PER_DAILY_SET}
+            {daily?.isLocked ? (
+              <>
+                {daily.lastResult && (
+                  <Text style={[styles.heroDesc, { color: colors.emerald }]}>
+                    {t('home.completed')} {daily.lastResult.correctAnswers}/{CARDS_PER_DAILY_SET}
+                  </Text>
+                )}
+                <Text style={[styles.lockText, { color: colors.textTertiary }]}>
+                  {getLockoutText()}
                 </Text>
-              )}
-              <Text style={[styles.lockText, { color: colors.textTertiary }]}>
-                {getLockoutText()}
+              </>
+            ) : daily?.set ? (
+              <>
+                <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
+                  {t('home.dailyDesc')}
+                </Text>
+                <Button
+                  label={t('common.play')}
+                  variant="primary"
+                  size="lg"
+                  onPress={handleStartDaily}
+                  iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
+                />
+              </>
+            ) : (
+              <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
+                {t('home.empty')}
               </Text>
-            </>
-          ) : daily?.set ? (
-            <>
-              <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
-                {t('home.dailyDesc')}
-              </Text>
-              <Button
-                label={t('common.play')}
-                variant="primary"
-                size="lg"
-                onPress={handleStartDaily}
-                iconLeft={<Text style={{ fontSize: 16 }}>▶</Text>}
-              />
-            </>
-          ) : (
-            <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
-              {t('home.empty')}
-            </Text>
-          )}
-        </Card>
+            )}
+          </LinearGradient>
+        </AnimatedEntrance>
 
         {/* Section 2: Categories */}
         {categories.length > 0 && (
-          <View style={{ marginTop: spacing.sectionGap }}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              {t('home.categories')}
-            </Text>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={categories}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
-              onScrollBeginDrag={handleSectionScroll('categories')}
-              renderItem={({ item }) => (
-                <CategoryCard
-                  category={item}
-                  language={language}
-                  colors={colors}
-                  onPress={() => handleOpenCategory(item.id)}
-                />
-              )}
-            />
-          </View>
+          <AnimatedEntrance delay={200}>
+            <View style={{ marginTop: spacing.sectionGap }}>
+              <Text style={[styles.sectionOverline, { color: colors.primary }]}>
+                {t('home.categories').toUpperCase()}
+              </Text>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={categories}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
+                onScrollBeginDrag={handleSectionScroll('categories')}
+                renderItem={({ item }) => (
+                  <CategoryCard
+                    category={item}
+                    language={language}
+                    colors={colors}
+                    borderRadius={borderRadius}
+                    elevation={elevation}
+                    onPress={() => handleOpenCategory(item.id)}
+                  />
+                )}
+              />
+            </View>
+          </AnimatedEntrance>
         )}
 
         {/* Section 3: Difficulty */}
-        <View style={{ marginTop: spacing.sectionGap }}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            {t('home.difficulty')}
-          </Text>
-          <View style={styles.difficultyRow}>
-            {difficultyCards.map(({ key, color, icon }) => (
-              <Pressable
-                key={key}
-                style={[styles.difficultyCard, { backgroundColor: colors.surface }]}
-                onPress={() => handleStartDifficulty(key)}
-                disabled={loadingCollection === key}
-              >
-                <Text style={styles.difficultyIcon}>{icon}</Text>
-                <Text style={[styles.difficultyTitle, { color: colors.textPrimary }]}>
-                  {t(`home.${key}`)}
-                </Text>
-                <Text style={[styles.difficultyDesc, { color: colors.textSecondary }]}>
-                  {t(`home.${key}Desc`)}
-                </Text>
-                {loadingCollection === key && (
-                  <ActivityIndicator size="small" color={color} style={{ marginTop: 4 }} />
-                )}
-              </Pressable>
-            ))}
+        <AnimatedEntrance delay={300}>
+          <View style={{ marginTop: spacing.sectionGap }}>
+            <Text style={[styles.sectionOverline, { color: colors.primary }]}>
+              {t('home.difficulty').toUpperCase()}
+            </Text>
+            <View style={styles.difficultyRow}>
+              {difficultyCards.map(({ key, gradient, icon }) => (
+                <DifficultyCard
+                  key={key}
+                  diffKey={key}
+                  gradient={gradient}
+                  icon={icon}
+                  colors={colors}
+                  borderRadius={borderRadius}
+                  elevation={elevation}
+                  loading={loadingCollection === key}
+                  onPress={() => handleStartDifficulty(key)}
+                  t={t}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        </AnimatedEntrance>
 
         {/* Section 4: Featured Collections */}
         {collections.length > 0 && (
-          <View style={{ marginTop: spacing.sectionGap }}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              {t('home.featured')}
-            </Text>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={collections}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
-              onScrollBeginDrag={handleSectionScroll('collections')}
-              renderItem={({ item }) => (
-                <CollectionCard
-                  collection={item}
-                  language={language}
-                  colors={colors}
-                  loading={loadingCollection === item.id}
-                  onPress={() => handleOpenCollection(item.id)}
-                />
-              )}
-            />
-          </View>
+          <AnimatedEntrance delay={400}>
+            <View style={{ marginTop: spacing.sectionGap }}>
+              <Text style={[styles.sectionOverline, { color: colors.primary }]}>
+                {t('home.featured').toUpperCase()}
+              </Text>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={collections}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ gap: 12, paddingVertical: 8 }}
+                onScrollBeginDrag={handleSectionScroll('collections')}
+                renderItem={({ item }) => (
+                  <CollectionCard
+                    collection={item}
+                    language={language}
+                    colors={colors}
+                    borderRadius={borderRadius}
+                    elevation={elevation}
+                    loading={loadingCollection === item.id}
+                    onPress={() => handleOpenCollection(item.id)}
+                  />
+                )}
+              />
+            </View>
+          </AnimatedEntrance>
         )}
 
         <View style={{ marginTop: spacing.sectionGap }}>
@@ -351,34 +382,123 @@ function CategoryCard({
   category,
   language,
   colors,
+  borderRadius: br,
+  elevation: elev,
   onPress,
 }: {
   category: CategoryWithCount;
   language: string;
   colors: Record<string, string>;
+  borderRadius: Record<string, number>;
+  elevation: Record<string, Record<string, unknown>>;
   onPress: () => void;
 }) {
   const name = language === 'en' ? category.nameEn : category.name;
   const { t } = useTranslation();
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <Pressable
+    <AnimatedPressable
+      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={onPress}
-      style={[
-        styles.categoryCard,
-        { backgroundColor: colors.surface, borderColor: category.color + '30' },
-      ]}
+      style={animStyle}
     >
-      <Text style={styles.categoryIcon}>{category.icon}</Text>
-      <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
-        {name}
-      </Text>
-      <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
-        {category.availableCount > 0
-          ? t('home.questionsAvailable', { count: category.availableCount })
-          : t('home.allDone')}
-      </Text>
-    </Pressable>
+      <View
+        style={[
+          styles.categoryCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderRadius: br.xl,
+            ...elev.sm,
+          },
+        ]}
+      >
+        <View style={[styles.categoryAccent, { backgroundColor: category.color ?? colors.primary }]} />
+        <Text style={styles.categoryIcon}>{category.icon}</Text>
+        <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
+          {name}
+        </Text>
+        <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+          {category.availableCount > 0
+            ? t('home.questionsAvailable', { count: category.availableCount })
+            : t('home.allDone')}
+        </Text>
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+function DifficultyCard({
+  diffKey,
+  gradient,
+  icon,
+  colors,
+  borderRadius: br,
+  elevation: elev,
+  loading,
+  onPress,
+  t,
+}: {
+  diffKey: 'easy' | 'medium' | 'hard';
+  gradient: [string, string];
+  icon: string;
+  colors: Record<string, string>;
+  borderRadius: Record<string, number>;
+  elevation: Record<string, Record<string, unknown>>;
+  loading: boolean;
+  onPress: () => void;
+  t: (key: string) => string;
+}) {
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPress={onPress}
+      disabled={loading}
+      style={[{ flex: 1 }, animStyle]}
+    >
+      <View
+        style={[
+          styles.difficultyCard,
+          {
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: br.xl,
+            ...elev.sm,
+          },
+        ]}
+      >
+        <View style={[styles.difficultyGradientDot]}>
+          <LinearGradient
+            colors={gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.difficultyDotInner}
+          />
+        </View>
+        <Text style={[styles.difficultyTitle, { color: colors.textPrimary }]}>
+          {t(`home.${diffKey}`)}
+        </Text>
+        <Text style={[styles.difficultyDesc, { color: colors.textSecondary }]}>
+          {t(`home.${diffKey}Desc`)}
+        </Text>
+        {loading && (
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 4 }} />
+        )}
+      </View>
+    </AnimatedPressable>
   );
 }
 
@@ -386,39 +506,62 @@ function CollectionCard({
   collection,
   language,
   colors,
+  borderRadius: br,
+  elevation: elev,
   loading,
   onPress,
 }: {
   collection: CollectionSummary;
   language: string;
   colors: Record<string, string>;
+  borderRadius: Record<string, number>;
+  elevation: Record<string, Record<string, unknown>>;
   loading: boolean;
   onPress: () => void;
 }) {
   const title = language === 'en' ? collection.titleEn : collection.title;
   const desc = language === 'en' ? collection.descriptionEn : collection.description;
   const { t } = useTranslation();
+  const scale = useSharedValue(1);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <Pressable
+    <AnimatedPressable
+      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={onPress}
       disabled={loading}
-      style={[styles.collectionCard, { backgroundColor: colors.surface }]}
+      style={animStyle}
     >
-      <Text style={styles.collectionIcon}>{collection.icon}</Text>
-      <Text style={[styles.collectionTitle, { color: colors.textPrimary }]} numberOfLines={2}>
-        {title}
-      </Text>
-      {desc ? (
-        <Text style={[styles.collectionDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-          {desc}
+      <View
+        style={[
+          styles.collectionCard,
+          {
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: br.xl,
+            ...elev.sm,
+          },
+        ]}
+      >
+        <Text style={styles.collectionIcon}>{collection.icon}</Text>
+        <Text style={[styles.collectionTitle, { color: colors.textPrimary }]} numberOfLines={2}>
+          {title}
         </Text>
-      ) : null}
-      <Text style={[styles.collectionCount, { color: colors.textTertiary }]}>
-        {t('home.questionsCount', { count: collection._count.questions })}
-      </Text>
-      {loading && <ActivityIndicator size="small" color={colors.primary} />}
-    </Pressable>
+        {desc ? (
+          <Text style={[styles.collectionDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+            {desc}
+          </Text>
+        ) : null}
+        <Text style={[styles.collectionCount, { color: colors.textTertiary }]}>
+          {t('home.questionsCount', { count: collection._count.questions })}
+        </Text>
+        {loading && <ActivityIndicator size="small" color={colors.primary} />}
+      </View>
+    </AnimatedPressable>
   );
 }
 
@@ -434,63 +577,76 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   largeTitle: {
-    fontSize: 34,
-    fontFamily: 'Nunito_700Bold',
-    letterSpacing: 0.37,
+    fontSize: 32,
+    fontFamily: fontFamily.bold,
+    letterSpacing: -0.5,
   },
   skeletons: {
     marginTop: 24,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito_700Bold',
-    lineHeight: 25,
-    marginBottom: 4,
+  // Hero Daily Card
+  heroCard: {
+    padding: 24,
   },
-  cardSubtitle: {
-    fontSize: 15,
-    fontFamily: 'Nunito_600SemiBold',
-    lineHeight: 20,
-    marginBottom: 4,
+  heroOverline: {
+    fontSize: 11,
+    fontFamily: fontFamily.bold,
+    letterSpacing: 1.5,
+    marginBottom: 8,
   },
-  cardDesc: {
+  heroTitle: {
+    fontSize: 24,
+    fontFamily: fontFamily.bold,
+    lineHeight: 30,
+    letterSpacing: -0.2,
+    marginBottom: 8,
+  },
+  heroDesc: {
     fontSize: 15,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     lineHeight: 20,
     marginBottom: 16,
   },
   lockText: {
     fontSize: 15,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     lineHeight: 20,
     marginTop: 4,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontFamily: 'Nunito_700Bold',
-    lineHeight: 28,
-    marginBottom: 4,
+  // Section headers
+  sectionOverline: {
+    fontSize: 11,
+    fontFamily: fontFamily.bold,
+    letterSpacing: 1.5,
+    marginBottom: 8,
   },
   // Category cards
   categoryCard: {
-    width: 120,
-    padding: 12,
-    borderRadius: 16,
+    width: 140,
+    padding: 16,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    overflow: 'hidden',
+  },
+  categoryAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   categoryIcon: {
-    fontSize: 28,
+    fontSize: 32,
   },
   categoryName: {
     fontSize: 14,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     textAlign: 'center',
   },
   categoryCount: {
-    fontSize: 12,
-    fontFamily: 'Nunito_400Regular',
+    fontSize: 11,
+    fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   // Difficulty cards
@@ -500,29 +656,33 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   difficultyCard: {
-    flex: 1,
     padding: 16,
-    borderRadius: 16,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  difficultyIcon: {
-    fontSize: 24,
+  difficultyGradientDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  difficultyDotInner: {
+    flex: 1,
   },
   difficultyTitle: {
     fontSize: 15,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
   },
   difficultyDesc: {
-    fontSize: 12,
-    fontFamily: 'Nunito_400Regular',
+    fontSize: 11,
+    fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   // Collection cards
   collectionCard: {
-    width: 160,
+    width: 180,
     padding: 16,
-    borderRadius: 16,
     gap: 6,
   },
   collectionIcon: {
@@ -530,16 +690,16 @@ const styles = StyleSheet.create({
   },
   collectionTitle: {
     fontSize: 15,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
     lineHeight: 20,
   },
   collectionDesc: {
     fontSize: 13,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     lineHeight: 18,
   },
   collectionCount: {
-    fontSize: 12,
-    fontFamily: 'Nunito_400Regular',
+    fontSize: 11,
+    fontFamily: fontFamily.regular,
   },
 });

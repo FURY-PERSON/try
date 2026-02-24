@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Screen } from '@/components/layout/Screen';
 import { GameHeader } from '@/features/game/components/GameHeader';
@@ -7,11 +8,13 @@ import { SwipeCard } from '@/features/game/components/SwipeCard';
 import { ExplanationCard } from '@/features/game/components/ExplanationCard';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useCardGame } from '@/features/game/hooks/useCardGame';
 import { useUserStore } from '@/stores/useUserStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
+import { useThemeContext } from '@/theme';
 import type { DailySetQuestion } from '@/shared';
 
 export default function CardScreen() {
@@ -21,6 +24,7 @@ export default function CardScreen() {
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
   const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);
+  const { gradients } = useThemeContext();
 
   const isCollectionMode = params.mode === 'collection';
 
@@ -105,36 +109,57 @@ export default function CardScreen() {
       : '';
 
   return (
-    <Screen>
-      <GameHeader progress={progress} streak={streak} />
+    <Screen padded={false}>
+      <LinearGradient
+        colors={gradients.card}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.gradient}
+      >
+        <View style={styles.padded}>
+          <GameHeader progress={progress} streak={streak} />
+        </View>
 
-      <View style={styles.content}>
-        {feedback ? (
-          <ExplanationCard
-            statement={feedback.statement}
-            isTrue={feedback.isTrue}
-            userAnsweredCorrectly={feedback.userAnsweredCorrectly}
-            explanation={feedback.explanation}
-            source={feedback.source}
-            sourceUrl={feedback.sourceUrl}
-            onNext={handleNextCard}
-          />
-        ) : currentQuestion ? (
-          <SwipeCard
-            statement={currentQuestion.statement}
-            categoryName={categoryName}
-            cardIndex={currentIndex}
-            totalCards={totalCards}
-            onSwipe={handleSwipe}
-            disabled={isSubmitting}
-          />
-        ) : null}
-      </View>
+        <View style={styles.content}>
+          {feedback ? (
+            <AnimatedEntrance delay={0} direction="up">
+              <View style={styles.padded}>
+                <ExplanationCard
+                  statement={feedback.statement}
+                  isTrue={feedback.isTrue}
+                  userAnsweredCorrectly={feedback.userAnsweredCorrectly}
+                  explanation={feedback.explanation}
+                  source={feedback.source}
+                  sourceUrl={feedback.sourceUrl}
+                  onNext={handleNextCard}
+                />
+              </View>
+            </AnimatedEntrance>
+          ) : currentQuestion ? (
+            <View style={styles.padded}>
+              <SwipeCard
+                statement={currentQuestion.statement}
+                categoryName={categoryName}
+                cardIndex={currentIndex}
+                totalCards={totalCards}
+                onSwipe={handleSwipe}
+                disabled={isSubmitting}
+              />
+            </View>
+          ) : null}
+        </View>
+      </LinearGradient>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
+  padded: {
+    paddingHorizontal: 20,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',

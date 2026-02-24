@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
 type OnboardingSlideProps = {
@@ -34,22 +35,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   illustrationContainer: {
-    width: 250,
-    height: 250,
+    width: 220,
+    height: 220,
     marginBottom: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fontFamily.extraBold,
     lineHeight: 36,
     textAlign: 'center',
     marginBottom: 12,
+    letterSpacing: -0.3,
   },
   description: {
     fontSize: 17,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     lineHeight: 24,
     textAlign: 'center',
   },

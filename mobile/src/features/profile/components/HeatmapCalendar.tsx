@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { useTranslation } from 'react-i18next';
 import type { FC } from 'react';
 
@@ -12,8 +13,9 @@ const WEEKS = 52;
 const CELL_SIZE = 12;
 const CELL_GAP = 2;
 
-const LIGHT_COLORS = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
-const DARK_COLORS = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
+// Indigo-based palette (Midnight Scholar)
+const LIGHT_COLORS = ['#F1F5F9', '#C7D2FE', '#A5B4FC', '#818CF8', '#6366F1'];
+const DARK_COLORS = ['#1E293B', '#312E81', '#4338CA', '#6366F1', '#818CF8'];
 
 const MONTHS_RU = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -41,11 +43,9 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
 
   const { grid, monthLabels } = useMemo(() => {
     const today = new Date();
-    const todayDay = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
-    // Adjust so Monday=0
+    const todayDay = today.getDay();
     const todayDayMon = todayDay === 0 ? 6 : todayDay - 1;
 
-    // Start from the Monday of (WEEKS-1) weeks ago relative to the current week's Monday
     const currentMonday = new Date(today);
     currentMonday.setDate(currentMonday.getDate() - todayDayMon);
 
@@ -63,8 +63,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         const date = new Date(startDate);
         date.setDate(date.getDate() + w * 7 + d);
         const key = date.toISOString().split('T')[0] ?? '';
-
-        // Check if this is a future date
         const isFuture = date > today;
 
         week.push({
@@ -72,7 +70,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
           count: isFuture ? -1 : (activityMap[key] ?? 0),
         });
 
-        // Track month labels: show label at the first Monday of each new month
         if (d === 0) {
           const month = date.getMonth();
           if (month !== lastMonth) {
@@ -93,7 +90,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
 
   return (
     <View>
-      {/* Month labels row */}
       <View style={{ flexDirection: 'row' }}>
         <View style={{ width: labelColumnWidth }} />
         <ScrollView
@@ -104,7 +100,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
             scrollRef.current?.scrollToEnd({ animated: false })
           }
         >
-          {/* Month labels */}
           <View style={[styles.monthRow, { width: gridWidth }]}>
             {monthLabels.map((ml, i) => (
               <Text
@@ -122,7 +117,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
             ))}
           </View>
 
-          {/* Grid */}
           <View style={[styles.grid, { width: gridWidth }]}>
             {grid.map((week, weekIndex) => (
               <View key={weekIndex} style={styles.weekColumn}>
@@ -136,6 +130,7 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
                           day.count < 0
                             ? 'transparent'
                             : levelColors[getLevel(day.count)],
+                        borderRadius: 3,
                       },
                     ]}
                   />
@@ -146,7 +141,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         </ScrollView>
       </View>
 
-      {/* Day labels overlay — positioned over the grid */}
       <View style={[styles.dayLabelsOverlay, { top: 16, left: 0, width: labelColumnWidth }]}>
         {dayLabels.map((label, i) => (
           <Text
@@ -164,7 +158,6 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         ))}
       </View>
 
-      {/* Legend */}
       <View style={styles.legend}>
         <Text style={[styles.legendText, { color: colors.textSecondary }]}>
           {t('profile.activityLess')}
@@ -172,7 +165,7 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         {levelColors.map((color, i) => (
           <View
             key={i}
-            style={[styles.legendCell, { backgroundColor: color }]}
+            style={[styles.legendCell, { backgroundColor: color, borderRadius: 3 }]}
           />
         ))}
         <Text style={[styles.legendText, { color: colors.textSecondary }]}>
@@ -191,7 +184,7 @@ const styles = StyleSheet.create({
   },
   monthLabel: {
     fontSize: 9,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     position: 'absolute',
     top: 0,
   },
@@ -205,14 +198,13 @@ const styles = StyleSheet.create({
   cell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
-    borderRadius: 2,
   },
   dayLabelsOverlay: {
     position: 'absolute',
   },
   dayLabel: {
     fontSize: 9,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     position: 'absolute',
     lineHeight: CELL_SIZE,
   },
@@ -225,12 +217,11 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 10,
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: fontFamily.regular,
     marginHorizontal: 2,
   },
   legendCell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
-    borderRadius: 2,
   },
 });

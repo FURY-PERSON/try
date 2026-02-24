@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
 type StreakBadgeProps = {
@@ -24,9 +25,10 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
 }) => {
   const { colors } = useThemeContext();
   const rotation = useSharedValue(0);
+  const glowScale = useSharedValue(1);
 
   useEffect(() => {
-    if (animated) {
+    if (animated && days > 0) {
       rotation.value = withRepeat(
         withSequence(
           withTiming(-5, { duration: 100 }),
@@ -36,39 +38,78 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         3,
         false,
       );
+      glowScale.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 1000 }),
+          withTiming(1, { duration: 1000 }),
+        ),
+        -1,
+        true,
+      );
     }
-  }, [animated, rotation]);
+  }, [animated, days, rotation, glowScale]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
+    opacity: 0.3,
   }));
 
   const isMd = size === 'md';
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.orange + '18',
-          paddingHorizontal: isMd ? 14 : 10,
-          paddingVertical: isMd ? 7 : 4,
-        },
-      ]}
-    >
-      <Animated.View style={animatedStyle}>
-        <MaterialCommunityIcons
-          name="fire"
-          size={isMd ? 20 : 16}
-          color={colors.orange}
+    <View style={styles.outerWrap}>
+      {days > 0 && (
+        <Animated.View
+          style={[
+            styles.glow,
+            {
+              backgroundColor: colors.streakFire,
+              borderRadius: 9999,
+              width: isMd ? 52 : 42,
+              height: isMd ? 28 : 22,
+            },
+            glowAnimatedStyle,
+          ]}
         />
-      </Animated.View>
-      <Text style={[styles.text, { color: colors.orange }, isMd && styles.textMd]}>{days}</Text>
+      )}
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.streakFire + '20',
+            paddingHorizontal: isMd ? 14 : 10,
+            paddingVertical: isMd ? 7 : 4,
+          },
+        ]}
+      >
+        <Animated.View style={iconAnimatedStyle}>
+          <MaterialCommunityIcons
+            name="fire"
+            size={isMd ? 20 : 16}
+            color={colors.streakFire}
+          />
+        </Animated.View>
+        <Text style={[styles.text, { color: colors.streakFire }, isMd && styles.textMd]}>
+          {days}
+        </Text>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glow: {
+    position: 'absolute',
+  },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -77,7 +118,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 14,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
   },
   textMd: {
     fontSize: 18,

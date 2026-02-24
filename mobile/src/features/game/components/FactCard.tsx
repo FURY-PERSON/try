@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, Linking, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
 
@@ -24,7 +26,7 @@ export const FactCard: FC<FactCardProps> = ({
   onNext,
   onShare,
 }) => {
-  const { colors, borderRadius, spacing } = useThemeContext();
+  const { colors, borderRadius, spacing, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
 
   const handleSourcePress = () => {
@@ -41,57 +43,65 @@ export const FactCard: FC<FactCardProps> = ({
           backgroundColor: colors.factCard,
           borderColor: colors.factCardBorder,
           borderRadius: borderRadius.xl,
+          ...elevation.md,
         },
       ]}
     >
-      <View style={styles.header}>
-        <MaterialCommunityIcons name="book-open-variant" size={28} color={colors.gold} />
-        <Text style={[styles.title, { color: colors.gold }]}>{t('fact.title')}</Text>
-      </View>
+      <LinearGradient
+        colors={gradients.warm}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.headerGradient, { borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl }]}
+      >
+        <MaterialCommunityIcons name="book-open-variant" size={24} color="#FFFFFF" />
+        <Text style={styles.title}>{t('fact.title')}</Text>
+      </LinearGradient>
 
-      {illustrationUrl && (
-        <Image
-          source={{ uri: illustrationUrl }}
-          style={[styles.illustration, { borderRadius: borderRadius.lg }]}
-          contentFit="cover"
-          transition={300}
-        />
-      )}
+      <View style={styles.body}>
+        {illustrationUrl && (
+          <Image
+            source={{ uri: illustrationUrl }}
+            style={[styles.illustration, { borderRadius: borderRadius.lg }]}
+            contentFit="cover"
+            transition={300}
+          />
+        )}
 
-      <Text style={[styles.factText, { color: colors.textPrimary }]}>{explanation}</Text>
+        <Text style={[styles.factText, { color: colors.textPrimary }]}>{explanation}</Text>
 
-      {source && (
-        <Pressable onPress={handleSourcePress} style={styles.sourceRow}>
-          <Feather name="link" size={12} color={colors.textSecondary} />
-          <Text
-            style={[
-              styles.sourceText,
-              { color: colors.textSecondary },
-              sourceUrl && styles.sourceLink,
-            ]}
-          >
-            {source}
-          </Text>
-        </Pressable>
-      )}
+        {source && (
+          <Pressable onPress={handleSourcePress} style={styles.sourceRow}>
+            <Feather name="link" size={12} color={colors.textSecondary} />
+            <Text
+              style={[
+                styles.sourceText,
+                { color: colors.textSecondary },
+                sourceUrl && styles.sourceLink,
+              ]}
+            >
+              {source}
+            </Text>
+          </Pressable>
+        )}
 
-      <View style={styles.actions}>
-        <Button
-          label={t('common.share')}
-          variant="ghost"
-          size="md"
-          fullWidth={false}
-          onPress={onShare}
-          iconLeft={<Feather name="share-2" size={16} color={colors.blue} />}
-        />
-        <View style={{ width: spacing.md }} />
-        <Button
-          label={`${t('common.next')} →`}
-          variant="primary"
-          size="md"
-          fullWidth={false}
-          onPress={onNext}
-        />
+        <View style={styles.actions}>
+          <Button
+            label={t('common.share')}
+            variant="ghost"
+            size="md"
+            fullWidth={false}
+            onPress={onShare}
+            iconLeft={<Feather name="share-2" size={16} color={colors.primary} />}
+          />
+          <View style={{ width: spacing.md }} />
+          <Button
+            label={`${t('common.next')} →`}
+            variant="primary"
+            size="md"
+            fullWidth={false}
+            onPress={onNext}
+          />
+        </View>
       </View>
     </View>
   );
@@ -99,18 +109,23 @@ export const FactCard: FC<FactCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
-    borderWidth: 2,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
-  header: {
+  headerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
   title: {
-    fontSize: 20,
-    fontFamily: 'Nunito_700Bold',
+    fontSize: 18,
+    fontFamily: fontFamily.bold,
+    color: '#FFFFFF',
+  },
+  body: {
+    padding: 20,
   },
   illustration: {
     width: '100%',
@@ -118,8 +133,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   factText: {
-    fontSize: 17,
-    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+    fontFamily: fontFamily.semiBold,
     lineHeight: 24,
   },
   sourceRow: {
@@ -130,7 +145,7 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     fontSize: 11,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
   },
   sourceLink: {
     textDecorationLine: 'underline',

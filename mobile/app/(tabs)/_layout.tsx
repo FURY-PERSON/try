@@ -1,12 +1,12 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 
 export default function TabsLayout() {
-  const { colors } = useThemeContext();
+  const { colors, elevation } = useThemeContext();
   const { t } = useTranslation();
 
   return (
@@ -14,17 +14,22 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: colors.separator,
-          height: 52,
-          paddingBottom: 2,
+          borderTopWidth: 0,
+          height: 60,
+          paddingBottom: 4,
+          paddingTop: 4,
+          ...elevation.md,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontFamily: 'Nunito_600SemiBold',
+          fontFamily: fontFamily.semiBold,
+          marginTop: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
         },
       }}
     >

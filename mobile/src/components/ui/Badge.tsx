@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
-type BadgeVariant = 'primary' | 'red' | 'orange' | 'blue';
+type BadgeVariant = 'primary' | 'red' | 'orange' | 'blue' | 'emerald';
 
 type BadgeProps = {
   count: number;
@@ -18,6 +19,7 @@ export const Badge: FC<BadgeProps> = ({ count, variant = 'red' }) => {
     red: colors.red,
     orange: colors.orange,
     blue: colors.blue,
+    emerald: colors.emerald,
   };
 
   if (count <= 0) return null;
@@ -46,7 +48,7 @@ const styles = StyleSheet.create({
   text: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     lineHeight: 16,
   },
 });

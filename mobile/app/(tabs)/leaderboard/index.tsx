@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/components/layout/Screen';
 import { Chip } from '@/components/ui/Chip';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -10,11 +11,12 @@ import { AdBanner } from '@/components/ads/AdBanner';
 import { LeaderboardList } from '@/features/leaderboard/components/LeaderboardList';
 import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 
 type Period = 'weekly' | 'monthly' | 'yearly' | 'alltime';
 
 export default function LeaderboardScreen() {
-  const { colors, spacing } = useThemeContext();
+  const { colors, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>('weekly');
   const { data, isLoading, isError, error, refetch } = useLeaderboard(period);
@@ -22,38 +24,40 @@ export default function LeaderboardScreen() {
 
   return (
     <Screen>
-      <View style={styles.header}>
-        <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
-          {t('leaderboard.title')}
-        </Text>
-      </View>
+      <AnimatedEntrance delay={0}>
+        <View style={styles.header}>
+          <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
+            {t('leaderboard.title')}
+          </Text>
+        </View>
+      </AnimatedEntrance>
 
-      <View style={styles.tabs}>
-        <Chip
-          label={t('leaderboard.weekly')}
-          variant="primary"
-          selected={period === 'weekly'}
-          onPress={() => setPeriod('weekly')}
-        />
-        <Chip
-          label={t('leaderboard.monthly')}
-          variant="primary"
-          selected={period === 'monthly'}
-          onPress={() => setPeriod('monthly')}
-        />
-        <Chip
-          label={t('leaderboard.yearly')}
-          variant="primary"
-          selected={period === 'yearly'}
-          onPress={() => setPeriod('yearly')}
-        />
-        <Chip
-          label={t('leaderboard.allTime')}
-          variant="primary"
-          selected={period === 'alltime'}
-          onPress={() => setPeriod('alltime')}
-        />
-      </View>
+      <AnimatedEntrance delay={50}>
+        <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.lg }]}>
+          {(['weekly', 'monthly', 'yearly', 'alltime'] as Period[]).map((p) => (
+            <View
+              key={p}
+              style={[
+                styles.segment,
+                period === p && {
+                  backgroundColor: colors.surface,
+                  borderRadius: borderRadius.sm,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  { color: period === p ? colors.primary : colors.textSecondary },
+                ]}
+                onPress={() => setPeriod(p)}
+              >
+                {t(`leaderboard.${p === 'alltime' ? 'allTime' : p}`)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </AnimatedEntrance>
 
       {isLoading ? (
         <View style={styles.skeletons}>
@@ -66,19 +70,21 @@ export default function LeaderboardScreen() {
       ) : entries.length === 0 ? (
         <EmptyState title={t('leaderboard.empty')} />
       ) : (
-        <>
-          <LeaderboardList data={entries} />
-          {data?.userPosition && (
-            <View style={styles.positionFooter}>
-              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
-                {t('leaderboard.position', {
-                  position: data.userPosition,
-                  total: data.totalPlayers,
-                })}
-              </Text>
-            </View>
-          )}
-        </>
+        <AnimatedEntrance delay={100}>
+          <>
+            <LeaderboardList data={entries} />
+            {data?.userPosition && (
+              <View style={[styles.positionFooter, { backgroundColor: colors.primary + '10', borderRadius: borderRadius.lg }]}>
+                <Text style={[styles.positionText, { color: colors.primary }]}>
+                  {t('leaderboard.position', {
+                    position: data.userPosition,
+                    total: data.totalPlayers,
+                  })}
+                </Text>
+              </View>
+            )}
+          </>
+        </AnimatedEntrance>
       )}
 
       <View style={{ marginTop: spacing.lg }}>
@@ -94,26 +100,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   largeTitle: {
-    fontSize: 34,
-    fontFamily: 'Nunito_700Bold',
-    letterSpacing: 0.37,
+    fontSize: 32,
+    fontFamily: fontFamily.bold,
+    letterSpacing: -0.5,
   },
-  tabs: {
+  segmentedControl: {
     flexDirection: 'row',
-    gap: 8,
+    padding: 4,
     marginTop: 12,
     marginBottom: 16,
-    flexWrap: 'wrap',
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentText: {
+    fontSize: 13,
+    fontFamily: fontFamily.semiBold,
   },
   skeletons: {
     marginTop: 8,
   },
   positionFooter: {
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     alignItems: 'center',
+    marginTop: 8,
   },
   positionText: {
     fontSize: 15,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
   },
 });

@@ -1,5 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, TextInput, StyleSheet, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
@@ -19,6 +25,8 @@ type InputProps = {
   accessibilityLabel?: string;
 } & Omit<TextInputProps, 'style' | 'value' | 'onChangeText'>;
 
+const AnimatedView = Animated.createAnimatedComponent(View);
+
 export const Input: FC<InputProps> = ({
   variant = 'default',
   value,
@@ -33,8 +41,17 @@ export const Input: FC<InputProps> = ({
 }) => {
   const { colors, borderRadius, typography } = useThemeContext();
   const [focused, setFocused] = useState(false);
+  const focusAnim = useSharedValue(0);
 
-  const borderColor = focused ? colors.blue : colors.separator;
+  const handleFocus = () => {
+    setFocused(true);
+    focusAnim.value = withTiming(1, { duration: 200 });
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+    focusAnim.value = withTiming(0, { duration: 200 });
+  };
 
   const handleClear = useCallback(() => {
     onChangeText('');
@@ -43,23 +60,31 @@ export const Input: FC<InputProps> = ({
   const isAnswer = variant === 'answer';
   const isSearch = variant === 'search';
 
+  const borderAnimatedStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(
+      focusAnim.value,
+      [0, 1],
+      [colors.border, colors.primary],
+    ),
+    borderWidth: 1.5,
+  }));
+
   return (
-    <View
+    <AnimatedView
       style={[
         styles.container,
         {
-          borderWidth: 1,
-          borderColor,
           borderRadius: borderRadius.lg,
           backgroundColor: colors.surface,
         },
+        borderAnimatedStyle,
         style,
       ]}
     >
       {(iconLeft ?? isSearch) && (
         <View style={styles.iconLeft}>
           {isSearch ? (
-            <Feather name="search" size={18} color={colors.textSecondary} />
+            <Feather name="search" size={18} color={focused ? colors.primary : colors.textSecondary} />
           ) : (
             iconLeft
           )}
@@ -70,8 +95,8 @@ export const Input: FC<InputProps> = ({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textTertiary}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         autoFocus={autoFocus}
         maxLength={maxLength}
         accessibilityLabel={accessibilityLabel ?? placeholder}
@@ -95,7 +120,7 @@ export const Input: FC<InputProps> = ({
           <Feather name="x-circle" size={18} color={colors.textTertiary} />
         </Pressable>
       )}
-    </View>
+    </AnimatedView>
   );
 };
 
@@ -103,17 +128,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    minHeight: 44,
+    paddingHorizontal: 14,
+    minHeight: 48,
   },
   iconLeft: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   iconRight: {
-    marginLeft: 8,
+    marginLeft: 10,
   },
 });

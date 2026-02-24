@@ -5,10 +5,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
 
-type ProgressBarVariant = 'primary' | 'blue' | 'orange' | 'gold';
+type ProgressBarVariant = 'primary' | 'blue' | 'orange' | 'gold' | 'success';
 
 type ProgressBarProps = {
   progress: number;
@@ -17,20 +18,23 @@ type ProgressBarProps = {
   animated?: boolean;
 };
 
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
+
 export const ProgressBar: FC<ProgressBarProps> = ({
   progress,
   variant = 'primary',
   height = 10,
   animated = true,
 }) => {
-  const { colors, borderRadius } = useThemeContext();
+  const { colors, borderRadius, gradients } = useThemeContext();
   const widthPercent = useSharedValue(0);
 
-  const variantColor: Record<ProgressBarVariant, string> = {
-    primary: colors.primary,
-    blue: colors.blue,
-    orange: colors.orange,
-    gold: colors.gold,
+  const variantGradient: Record<ProgressBarVariant, [string, string]> = {
+    primary: gradients.primary,
+    blue: [colors.blue, colors.blueDark],
+    orange: [colors.orange, colors.orangeDark],
+    gold: [colors.gold, colors.goldDark],
+    success: gradients.success,
   };
 
   useEffect(() => {
@@ -57,18 +61,22 @@ export const ProgressBar: FC<ProgressBarProps> = ({
           backgroundColor: colors.surfaceVariant,
           borderRadius: borderRadius.full,
           height,
+          borderWidth: 1,
+          borderColor: colors.border,
         },
       ]}
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
     >
-      <Animated.View
+      <AnimatedLinearGradient
+        colors={variantGradient[variant]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={[
           styles.fill,
           {
-            backgroundColor: variantColor[variant],
             borderRadius: borderRadius.full,
-            height,
+            height: height - 2,
           },
           fillStyle,
         ]}

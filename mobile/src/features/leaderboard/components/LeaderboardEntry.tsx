@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType } from '@/shared';
 import type { FC } from 'react';
 
@@ -23,27 +25,74 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
   rank,
   isCurrentUser = false,
 }) => {
-  const { colors } = useThemeContext();
+  const { colors, gradients, elevation, borderRadius } = useThemeContext();
   const isTop3 = rank <= 3;
   const medal = MEDAL_EMOJI[rank];
 
+  if (isTop3) {
+    const podiumGradient: [string, string] =
+      rank === 1
+        ? [colors.gold + '20', colors.gold + '08']
+        : rank === 2
+          ? [colors.textTertiary + '15', colors.textTertiary + '05']
+          : [colors.orange + '15', colors.orange + '05'];
+
+    const podiumBorderColor =
+      rank === 1 ? colors.gold : rank === 2 ? colors.textTertiary : colors.orange;
+
+    return (
+      <View style={[styles.topCard, { ...elevation.md, borderRadius: borderRadius.xl }]}>
+        <LinearGradient
+          colors={podiumGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[
+            styles.topCardInner,
+            {
+              borderRadius: borderRadius.xl,
+              borderWidth: 1.5,
+              borderColor: podiumBorderColor + '40',
+            },
+          ]}
+        >
+          <View style={styles.row}>
+            <Text style={[styles.rankTop, { color: colors.textPrimary }]}>
+              {medal}
+            </Text>
+            <Avatar nickname={entry.nickname ?? '?'} size="sm" />
+            <Text
+              style={[
+                styles.nickname,
+                { color: isCurrentUser ? colors.primary : colors.textPrimary },
+              ]}
+              numberOfLines={1}
+            >
+              {entry.nickname ?? '???'}
+            </Text>
+            <Text style={[styles.scoreTop, { color: colors.textPrimary }]}>
+              {entry.correctAnswers}
+            </Text>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
+
   return (
     <Card
-      variant={isTop3 ? 'highlighted' : isCurrentUser ? 'highlighted' : 'flat'}
-      highlightColor={
-        rank === 1 ? colors.gold : rank === 2 ? colors.border : rank === 3 ? colors.orange : colors.blue
-      }
+      variant={isCurrentUser ? 'highlighted' : 'flat'}
+      highlightColor={colors.primary}
       style={styles.card}
     >
       <View style={styles.row}>
         <Text style={[styles.rank, { color: colors.textSecondary }]}>
-          {medal ?? `#${rank}`}
+          #{rank}
         </Text>
         <Avatar nickname={entry.nickname ?? '?'} size="sm" />
         <Text
           style={[
             styles.nickname,
-            { color: isCurrentUser ? colors.blue : colors.textPrimary },
+            { color: isCurrentUser ? colors.primary : colors.textPrimary },
           ]}
           numberOfLines={1}
         >
@@ -58,6 +107,13 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
 };
 
 const styles = StyleSheet.create({
+  topCard: {
+    marginBottom: 8,
+  },
+  topCardInner: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
   card: {
     marginBottom: 8,
     paddingVertical: 12,
@@ -68,19 +124,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  rankTop: {
+    width: 32,
+    fontSize: 20,
+    textAlign: 'center',
+  },
   rank: {
     width: 32,
-    fontSize: 15,
-    fontFamily: 'Nunito_700Bold',
+    fontSize: 14,
+    fontFamily: fontFamily.bold,
     textAlign: 'center',
   },
   nickname: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
+  },
+  scoreTop: {
+    fontSize: 20,
+    fontFamily: fontFamily.extraBold,
+    letterSpacing: -0.3,
   },
   score: {
     fontSize: 17,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fontFamily.extraBold,
   },
 });

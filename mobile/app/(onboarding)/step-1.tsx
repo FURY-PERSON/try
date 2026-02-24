@@ -1,16 +1,19 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useOnboarding } from '@/features/onboarding/hooks/useOnboarding';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 
 export default function OnboardingStep1() {
-  const { colors } = useThemeContext();
+  const { colors, gradients } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const { skip } = useOnboarding();
@@ -20,8 +23,13 @@ export default function OnboardingStep1() {
   }, []);
 
   return (
-    <Screen>
-      <View style={styles.container}>
+    <Screen padded={false}>
+      <LinearGradient
+        colors={gradients.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.container}
+      >
         <Pressable onPress={skip} style={styles.skipButton}>
           <Text style={[styles.skipText, { color: colors.textSecondary }]}>
             {t('common.skip')} →
@@ -29,32 +37,48 @@ export default function OnboardingStep1() {
         </Pressable>
 
         <View style={styles.content}>
-          <View style={[styles.illustration, { backgroundColor: colors.primaryLight }]}>
-            <MaterialCommunityIcons name="check-decagram" size={80} color={colors.primary} />
-          </View>
+          <AnimatedEntrance delay={0} direction="up">
+            <View style={styles.illustrationWrapper}>
+              <LinearGradient
+                colors={[colors.primary + '25', colors.primary + '08']}
+                style={styles.illustration}
+              >
+                <MaterialCommunityIcons name="check-decagram" size={80} color={colors.primary} />
+              </LinearGradient>
+            </View>
+          </AnimatedEntrance>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            {t('onboarding.step1Title')}
-          </Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
-            {t('onboarding.step1Desc')}
-          </Text>
+          <AnimatedEntrance delay={150} direction="up">
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              {t('onboarding.step1Title')}
+            </Text>
+          </AnimatedEntrance>
+
+          <AnimatedEntrance delay={300} direction="up">
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
+              {t('onboarding.step1Desc')}
+            </Text>
+          </AnimatedEntrance>
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.dots}>
-            <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-            <View style={[styles.dot, { backgroundColor: colors.border }]} />
-            <View style={[styles.dot, { backgroundColor: colors.border }]} />
+        <AnimatedEntrance delay={450} direction="up">
+          <View style={styles.footer}>
+            <View style={styles.dots}>
+              <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
+            </View>
+            <View style={styles.buttonPadded}>
+              <Button
+                label={t('common.continue')}
+                variant="primary"
+                size="lg"
+                onPress={() => router.push('/(onboarding)/step-2')}
+              />
+            </View>
           </View>
-          <Button
-            label={t('common.continue')}
-            variant="primary"
-            size="lg"
-            onPress={() => router.push('/(onboarding)/step-2')}
-          />
-        </View>
-      </View>
+        </AnimatedEntrance>
+      </LinearGradient>
     </Screen>
   );
 }
@@ -69,7 +93,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 15,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
   },
   content: {
     flex: 1,
@@ -77,25 +101,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
+  illustrationWrapper: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
   illustration: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
-    opacity: 0.2,
   },
   title: {
     fontSize: 28,
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fontFamily.extraBold,
     lineHeight: 36,
     textAlign: 'center',
     marginBottom: 12,
+    letterSpacing: -0.3,
   },
   description: {
     fontSize: 17,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     lineHeight: 24,
     textAlign: 'center',
   },
@@ -103,6 +130,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 32,
     gap: 16,
+  },
+  buttonPadded: {
+    paddingHorizontal: 4,
   },
   dots: {
     flexDirection: 'row',
@@ -112,6 +142,10 @@ const styles = StyleSheet.create({
   dot: {
     width: 8,
     height: 8,
+    borderRadius: 4,
+  },
+  dotActive: {
+    width: 24,
     borderRadius: 4,
   },
 });

@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { Button } from '@/components/ui/Button';
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 
 type EmptyStateProps = {
   title: string;
   description?: string;
+  icon?: ReactNode;
   actionLabel?: string;
   onAction?: () => void;
 };
@@ -14,13 +17,17 @@ type EmptyStateProps = {
 export const EmptyState: FC<EmptyStateProps> = ({
   title,
   description,
+  icon,
   actionLabel,
   onAction,
 }) => {
-  const { colors } = useThemeContext();
+  const { colors, borderRadius } = useThemeContext();
 
   return (
     <View style={styles.container}>
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.xxl }]}>
+        {icon ?? <Feather name="inbox" size={32} color={colors.textTertiary} />}
+      </View>
       <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
       {description && (
         <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
@@ -41,20 +48,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 48,
   },
+  iconContainer: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 20,
-    fontFamily: 'Nunito_700Bold',
-    lineHeight: 28,
+    fontFamily: fontFamily.bold,
+    lineHeight: 26,
     textAlign: 'center',
   },
   description: {
-    fontSize: 15,
-    fontFamily: 'Nunito_400Regular',
-    lineHeight: 22,
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    lineHeight: 20,
     textAlign: 'center',
     marginTop: 8,
   },
   action: {
-    marginTop: 20,
+    marginTop: 24,
   },
 });

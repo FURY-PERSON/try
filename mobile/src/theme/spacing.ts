@@ -17,21 +17,8 @@ export const borderRadius = {
   lg: 12,
   xl: 16,
   xxl: 20,
+  xxxl: 24,
   full: 9999,
-} as const;
-
-// Kept for backwards compatibility — values are now zero/minimal
-export const duoShadow = {
-  button: {
-    borderBottomWidth: 0,
-  },
-  card: {
-    borderWidth: 0,
-    borderBottomWidth: 0,
-  },
-  cardFlat: {
-    borderWidth: 0,
-  },
 } as const;
 
 export const elevation = {
@@ -40,24 +27,31 @@ export const elevation = {
     elevation: 0,
   },
   sm: {
-    shadowColor: '#000',
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
     elevation: 2,
   },
-  lg: {
-    shadowColor: '#000',
+  md: {
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     elevation: 4,
+  },
+  lg: {
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  xl: {
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
+    elevation: 12,
   },
 } as const;

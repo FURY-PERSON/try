@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -35,68 +37,68 @@ const getInitials = (name: string): string => {
 };
 
 export const Avatar: FC<AvatarProps> = ({ nickname, imageUrl, size = 'md' }) => {
-  const { colors } = useThemeContext();
+  const { colors, gradients, elevation } = useThemeContext();
   const dimension = sizeMap[size];
+  const showShadow = size === 'lg' || size === 'xl';
 
   if (imageUrl) {
     return (
-      <Image
-        source={{ uri: imageUrl }}
-        style={[
-          styles.image,
-          {
-            width: dimension,
-            height: dimension,
-            borderRadius: dimension / 2,
-            borderColor: colors.primary,
-          },
-        ]}
-        contentFit="cover"
-        transition={200}
-        accessibilityLabel={nickname ?? 'Avatar'}
-      />
+      <View style={showShadow ? elevation.md : undefined}>
+        <Image
+          source={{ uri: imageUrl }}
+          style={[
+            styles.image,
+            {
+              width: dimension,
+              height: dimension,
+              borderRadius: dimension / 2,
+              borderColor: colors.border,
+            },
+          ]}
+          contentFit="cover"
+          transition={200}
+          accessibilityLabel={nickname ?? 'Avatar'}
+        />
+      </View>
     );
   }
 
   const initials = nickname ? getInitials(nickname) : '?';
 
   return (
-    <View
-      style={[
-        styles.fallback,
-        {
-          width: dimension,
-          height: dimension,
-          borderRadius: dimension / 2,
-          backgroundColor: colors.primary,
-          borderColor: colors.primaryDark,
-        },
-      ]}
-      accessibilityLabel={nickname ?? 'Avatar'}
-    >
-      <Text
+    <View style={showShadow ? elevation.md : undefined}>
+      <LinearGradient
+        colors={gradients.primary}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[
-          styles.initials,
-          { fontSize: fontSizeMap[size] },
+          styles.fallback,
+          {
+            width: dimension,
+            height: dimension,
+            borderRadius: dimension / 2,
+          },
         ]}
+        accessibilityLabel={nickname ?? 'Avatar'}
       >
-        {initials}
-      </Text>
+        <Text style={[styles.initials, { fontSize: fontSizeMap[size] }]}>
+          {initials}
+        </Text>
+      </LinearGradient>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   image: {
-    borderWidth: 3,
+    borderWidth: 2,
   },
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
   },
   initials: {
     color: '#FFFFFF',
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: fontFamily.extraBold,
   },
 });

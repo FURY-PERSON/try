@@ -8,3 +8,5 @@ export { Avatar } from './Avatar';
 export { Switch } from './Switch';
 export { Divider } from './Divider';
 export { ListItem } from './ListItem';
+export { GradientBackground } from './GradientBackground';
+export { AnimatedEntrance } from './AnimatedEntrance';

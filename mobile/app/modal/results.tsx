@@ -1,23 +1,34 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { DailyResultCard } from '@/features/game/components/DailyResultCard';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { shareResult } from '@/utils/share';
 import { getResultMessage } from '@/features/game/utils';
 import { analytics } from '@/services/analytics';
 
 export default function ResultsModal() {
-  const { colors } = useThemeContext();
+  const { colors, gradients, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const streak = useUserStore((s) => s.currentStreak);
@@ -31,8 +42,14 @@ export default function ResultsModal() {
   const resultBools = results.map((r) => r.correct);
   const messageKey = getResultMessage(correctCount, totalCards);
   const isDaily = collectionType === 'daily';
+  const percent = totalCards > 0 ? correctCount / totalCards : 0;
 
-  React.useEffect(() => {
+  // Animated count-up for score
+  const displayCount = useSharedValue(0);
+  const scoreScale = useSharedValue(0.5);
+  const scoreOpacity = useSharedValue(0);
+
+  useEffect(() => {
     showIfReady();
     analytics.logEvent('collection_complete', {
       type: collectionType,
@@ -41,11 +58,33 @@ export default function ResultsModal() {
     });
   }, [showIfReady, correctCount, totalCards, collectionType]);
 
+  useEffect(() => {
+    scoreOpacity.value = withTiming(1, { duration: 300 });
+    scoreScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    displayCount.value = withTiming(correctCount, {
+      duration: 800,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [correctCount]);
+
+  const scoreAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scoreScale.value }],
+    opacity: scoreOpacity.value,
+  }));
+
+  // Performance-based gradient
+  const bgGradient =
+    percent >= 0.8
+      ? gradients.success
+      : percent >= 0.5
+        ? gradients.primary
+        : gradients.warm;
+
   const scoreColor =
     correctCount === totalCards
       ? colors.gold
       : correctCount >= totalCards * 0.8
-        ? colors.primary
+        ? colors.emerald
         : correctCount >= totalCards * 0.5
           ? colors.blue
           : colors.orange;
@@ -67,68 +106,91 @@ export default function ResultsModal() {
 
   return (
     <Screen style={styles.screen}>
+      {/* Performance gradient header */}
+      <LinearGradient
+        colors={[bgGradient[0] + '30', bgGradient[1] + '10', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={styles.headerGradient}
+      />
+
       <View style={styles.content}>
-        <Text style={[styles.score, { color: scoreColor }]}>
-          {correctCount}/{totalCards}
-        </Text>
-        <Text style={[styles.message, { color: colors.textPrimary }]}>
-          {t(`results.${messageKey}`)}
-        </Text>
+        <AnimatedEntrance delay={0} direction="up">
+          <Animated.View style={[styles.scoreContainer, scoreAnimatedStyle]}>
+            <Text style={[styles.score, { color: scoreColor }]}>
+              {correctCount}/{totalCards}
+            </Text>
+          </Animated.View>
+        </AnimatedEntrance>
+
+        <AnimatedEntrance delay={100} direction="up">
+          <Text style={[styles.message, { color: colors.textPrimary }]}>
+            {t(`results.${messageKey}`)}
+          </Text>
+        </AnimatedEntrance>
 
         {submissionResult && submissionResult.correctPercent > 0 && (
-          <Text style={[styles.percentText, { color: colors.primary }]}>
-            {t('results.correctPercent', {
-              percent: submissionResult.correctPercent,
-            })}
-          </Text>
+          <AnimatedEntrance delay={200} direction="up">
+            <Text style={[styles.percentText, { color: colors.primary }]}>
+              {t('results.correctPercent', {
+                percent: submissionResult.correctPercent,
+              })}
+            </Text>
+          </AnimatedEntrance>
         )}
 
         {isDaily && (
-          <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+          <AnimatedEntrance delay={300} direction="up">
+            <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+          </AnimatedEntrance>
         )}
 
-        <DailyResultCard results={resultBools} />
+        <AnimatedEntrance delay={400} direction="up">
+          <DailyResultCard results={resultBools} />
+        </AnimatedEntrance>
 
         {/* Leaderboard position only for daily sets */}
         {isDaily && submissionResult && submissionResult.totalPlayers > 0 ? (
-          <Card variant="flat" style={styles.positionCard}>
-            <Text
-              style={[styles.positionText, { color: colors.textSecondary }]}
-            >
-              {t('results.percentile', {
-                percent: submissionResult.percentile,
-              })}
-            </Text>
-          </Card>
+          <AnimatedEntrance delay={500} direction="up">
+            <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
+              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
+                {t('results.percentile', {
+                  percent: submissionResult.percentile,
+                })}
+              </Text>
+            </Card>
+          </AnimatedEntrance>
         ) : isDaily ? (
-          <Card variant="flat" style={styles.positionCard}>
-            <Text
-              style={[styles.positionText, { color: colors.textSecondary }]}
-            >
-              {t('results.position', {
-                position: '—',
-                total: '—',
-              })}
-            </Text>
-          </Card>
+          <AnimatedEntrance delay={500} direction="up">
+            <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
+              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
+                {t('results.position', {
+                  position: '—',
+                  total: '—',
+                })}
+              </Text>
+            </Card>
+          </AnimatedEntrance>
         ) : null}
       </View>
 
-      <View style={styles.footer}>
-        <Button
-          label={t('common.share')}
-          variant="blue"
-          size="lg"
-          onPress={handleShare}
-          iconLeft={<Feather name="share-2" size={18} color="#FFFFFF" />}
-        />
-        <Button
-          label={t('results.goHome')}
-          variant="secondary"
-          size="lg"
-          onPress={handleGoHome}
-        />
-      </View>
+      <AnimatedEntrance delay={600} direction="up">
+        <View style={styles.footer}>
+          <Button
+            label={t('common.share')}
+            variant="primary"
+            size="lg"
+            onPress={handleShare}
+            iconLeft={<Feather name="share-2" size={18} color="#FFFFFF" />}
+          />
+          <Button
+            label={t('results.goHome')}
+            variant="secondary"
+            size="lg"
+            onPress={handleGoHome}
+          />
+        </View>
+      </AnimatedEntrance>
     </Screen>
   );
 }
@@ -137,6 +199,13 @@ const styles = StyleSheet.create({
   screen: {
     justifyContent: 'space-between',
   },
+  headerGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 300,
+  },
   content: {
     flex: 1,
     alignItems: 'center',
@@ -144,19 +213,24 @@ const styles = StyleSheet.create({
     gap: 16,
     paddingHorizontal: 32,
   },
+  scoreContainer: {
+    alignItems: 'center',
+  },
   score: {
-    fontSize: 48,
-    fontFamily: 'Nunito_700Bold',
-    lineHeight: 56,
+    fontSize: 56,
+    fontFamily: fontFamily.black,
+    lineHeight: 64,
+    letterSpacing: -1,
   },
   message: {
     fontSize: 22,
-    fontFamily: 'Nunito_700Bold',
+    fontFamily: fontFamily.bold,
     lineHeight: 28,
+    textAlign: 'center',
   },
   percentText: {
     fontSize: 17,
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: fontFamily.semiBold,
     textAlign: 'center',
   },
   positionCard: {
@@ -165,7 +239,7 @@ const styles = StyleSheet.create({
   },
   positionText: {
     fontSize: 15,
-    fontFamily: 'Nunito_500Medium',
+    fontFamily: fontFamily.medium,
     textAlign: 'center',
   },
   footer: {

@@ -11,6 +11,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
+import { fontFamily } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import type { FC } from 'react';
 
@@ -38,12 +39,12 @@ export const Toast: FC<ToastProps> = ({
   duration = 3000,
   onDismiss,
 }) => {
-  const { colors, borderRadius } = useThemeContext();
+  const { colors, borderRadius, elevation } = useThemeContext();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-100);
 
   const variantColor: Record<ToastVariant, string> = {
-    success: colors.primary,
+    success: colors.emerald,
     error: colors.red,
     info: colors.blue,
     warning: colors.orange,
@@ -84,15 +85,17 @@ export const Toast: FC<ToastProps> = ({
         styles.container,
         {
           top: insets.top + 8,
-          backgroundColor: activeColor,
-          borderRadius: borderRadius.lg,
+          backgroundColor: colors.surface,
+          borderRadius: borderRadius.xl,
+          ...elevation.lg,
         },
         animatedStyle,
       ]}
     >
+      <View style={[styles.indicator, { backgroundColor: activeColor }]} />
       <View style={styles.content}>
-        <Feather name={iconMap[variant]} size={20} color="#FFFFFF" />
-        <Text style={styles.message}>{message}</Text>
+        <Feather name={iconMap[variant]} size={20} color={activeColor} />
+        <Text style={[styles.message, { color: colors.textPrimary }]}>{message}</Text>
       </View>
     </Animated.View>
   );
@@ -104,20 +107,23 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     zIndex: 9999,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 4,
-    borderBottomColor: 'rgba(0,0,0,0.15)',
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  indicator: {
+    width: 4,
   },
   content: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   message: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: 'Nunito_600SemiBold',
-    marginLeft: 10,
+    fontSize: 14,
+    fontFamily: fontFamily.semiBold,
+    marginLeft: 12,
     flex: 1,
   },
 });
