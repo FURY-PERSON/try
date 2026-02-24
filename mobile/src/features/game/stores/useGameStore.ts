@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CARDS_PER_DAILY_SET } from '@/shared';
+import type { CollectionSessionQuestion } from '@/shared';
 import type { CardResult, DailySetProgress, SubmissionResult } from '../types';
 
 export type CollectionType = 'daily' | 'category' | 'difficulty' | 'collection';
@@ -13,12 +14,14 @@ type GameStoreState = {
   // Collection session tracking
   sessionId: string | null;
   collectionType: CollectionType;
+  collectionQuestions: CollectionSessionQuestion[];
 
   startDailySet: (dailySetId: string | null, totalCards: number) => void;
   startCollectionSession: (
     sessionId: string,
     collectionType: CollectionType,
     totalCards: number,
+    questions: CollectionSessionQuestion[],
   ) => void;
   startCard: () => void;
   submitCardResult: (result: CardResult) => void;
@@ -41,6 +44,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   submissionResult: null,
   sessionId: null,
   collectionType: 'daily' as CollectionType,
+  collectionQuestions: [],
 
   startDailySet: (dailySetId: string | null, totalCards: number) => {
     set({
@@ -55,6 +59,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       submissionResult: null,
       sessionId: null,
       collectionType: 'daily',
+      collectionQuestions: [],
     });
   },
 
@@ -62,6 +67,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     sessionId: string,
     collectionType: CollectionType,
     totalCards: number,
+    questions: CollectionSessionQuestion[],
   ) => {
     set({
       dailyProgress: {
@@ -75,6 +81,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       submissionResult: null,
       sessionId,
       collectionType,
+      collectionQuestions: questions,
     });
   },
 
@@ -112,6 +119,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       submissionResult: null,
       sessionId: null,
       collectionType: 'daily',
+      collectionQuestions: [],
     });
   },
 }));

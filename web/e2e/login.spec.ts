@@ -53,7 +53,7 @@ test.describe('Login Page', () => {
   });
 
   test('unauthenticated user redirected from protected routes', async ({ page }) => {
-    const protectedRoutes = ['/questions', '/categories', '/daily-sets', '/questions/generate'];
+    const protectedRoutes = ['/questions', '/categories', '/daily-sets', '/questions/generate', '/collections'];
     for (const route of protectedRoutes) {
       await page.goto(route);
       await expect(page).toHaveURL('/login');

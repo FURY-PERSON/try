@@ -8,6 +8,7 @@ import {
   Pressable,
   FlatList,
   ActivityIndicator,
+  Alert,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
@@ -102,14 +103,15 @@ export default function HomeScreen() {
         difficulty,
         count: 10,
       });
-      startCollectionSession(session.sessionId, 'difficulty', session.questions.length);
+      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
       router.push({
         pathname: '/game/card',
-        params: { questions: JSON.stringify(session.questions), mode: 'collection' },
+        params: { mode: 'collection' },
       });
-    } catch {
-      // Silently fail
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error';
+      Alert.alert('Error', message);
     } finally {
       setLoadingCollection(null);
     }

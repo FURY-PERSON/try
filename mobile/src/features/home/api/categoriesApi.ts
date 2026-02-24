@@ -21,9 +21,9 @@ export type CategoryDetail = {
 
 export const categoriesApi = {
   async getById(id: string): Promise<CategoryDetail> {
-    const response = await apiClient.get<CategoryDetail>(
+    const response = await apiClient.get<{ data: CategoryDetail }>(
       `/api/v1/categories/${id}`,
     );
-    return response.data;
+    return response.data.data;
   },
 };

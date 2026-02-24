@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -55,7 +55,7 @@ export default function CategoryDetailScreen() {
         categoryId: id,
         count: 10,
       });
-      startCollectionSession(session.sessionId, 'category', session.questions.length);
+      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions);
       analytics.logEvent('category_start', {
         type: 'category',
         referenceId: id,
@@ -63,10 +63,11 @@ export default function CategoryDetailScreen() {
       });
       router.push({
         pathname: '/game/card',
-        params: { questions: JSON.stringify(session.questions), mode: 'collection' },
+        params: { mode: 'collection' },
       });
-    } catch {
-      // Silently fail — user can retry
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('common.error');
+      Alert.alert(t('common.error'), message);
     } finally {
       setStarting(false);
     }

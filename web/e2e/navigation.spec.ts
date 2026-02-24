@@ -11,7 +11,7 @@ test.describe('Sidebar Navigation', () => {
   });
 
   test('sidebar shows all navigation items', async ({ page }) => {
-    const navItems = ['Дашборд', 'Утверждения', 'AI Генерация', 'Ежедневные наборы', 'Категории'];
+    const navItems = ['Дашборд', 'Утверждения', 'AI Генерация', 'Ежедневные наборы', 'Категории', 'Подборки'];
     for (const item of navItems) {
       await expect(page.locator('aside').getByText(item)).toBeVisible();
     }
@@ -42,6 +42,12 @@ test.describe('Sidebar Navigation', () => {
     await page.locator('aside').getByText('Категории').click();
     await expect(page).toHaveURL('/categories');
     await expect(page.getByText('Категории').first()).toBeVisible();
+  });
+
+  test('navigate to Подборки', async ({ page }) => {
+    await page.locator('aside').getByText('Подборки').click();
+    await expect(page).toHaveURL('/collections');
+    await expect(page.getByText('Подборки').first()).toBeVisible();
   });
 
   test('navigate back to Дашборд', async ({ page }) => {

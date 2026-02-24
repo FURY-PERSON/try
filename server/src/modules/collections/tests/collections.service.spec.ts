@@ -42,8 +42,8 @@ describe('CollectionsService', () => {
         isActive: true,
       });
       mockPrisma.question.findMany.mockResolvedValue([
-        { id: 'q-1', statement: 'S1', language: 'ru', categoryId: 'cat-1', difficulty: 2, illustrationUrl: null },
-        { id: 'q-2', statement: 'S2', language: 'ru', categoryId: 'cat-1', difficulty: 3, illustrationUrl: null },
+        { id: 'q-1', statement: 'S1', isTrue: true, explanation: 'E1', source: 'Src1', sourceUrl: null, language: 'ru', categoryId: 'cat-1', difficulty: 2, illustrationUrl: null },
+        { id: 'q-2', statement: 'S2', isTrue: false, explanation: 'E2', source: 'Src2', sourceUrl: 'http://example.com', language: 'ru', categoryId: 'cat-1', difficulty: 3, illustrationUrl: null },
       ]);
 
       const result = await service.start('user-1', {
@@ -54,7 +54,8 @@ describe('CollectionsService', () => {
 
       expect(result.sessionId).toBeTruthy();
       expect(result.questions).toHaveLength(2);
-      expect(result.questions[0]).not.toHaveProperty('isTrue');
+      expect(result.questions[0]).toHaveProperty('isTrue', true);
+      expect(result.questions[0]).toHaveProperty('explanation', 'E1');
     });
 
     it('throws NotFoundException if category not found', async () => {

@@ -13,6 +13,10 @@ export type CollectionSummary = {
 export type CollectionSessionQuestion = {
   id: string;
   statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl: string | null;
   language: string;
   categoryId: string;
   difficulty: number;

@@ -16,36 +16,31 @@ import type { DailySetQuestion } from '@/shared';
 
 export default function CardScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ questions?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string }>();
   const streak = useUserStore((s) => s.currentStreak);
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
+  const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);
 
   const isCollectionMode = params.mode === 'collection';
 
-  // For collections, questions come via route params
+  // For collections, questions come from game store
   const collectionQuestions: DailySetQuestion[] = useMemo(() => {
-    if (!isCollectionMode || !params.questions) return [];
-    try {
-      const parsed = JSON.parse(params.questions);
-      // Collection questions may not have isTrue/explanation — they get revealed after answer
-      return parsed.map((q: Record<string, unknown>, i: number) => ({
-        id: q.id,
-        statement: q.statement ?? '',
-        isTrue: q.isTrue ?? false,
-        explanation: q.explanation ?? '',
-        source: q.source ?? '',
-        sourceUrl: q.sourceUrl ?? null,
-        language: q.language ?? 'ru',
-        categoryId: q.categoryId ?? '',
-        difficulty: q.difficulty ?? 3,
-        illustrationUrl: q.illustrationUrl ?? null,
-        sortOrder: i + 1,
-      }));
-    } catch {
-      return [];
-    }
-  }, [isCollectionMode, params.questions]);
+    if (!isCollectionMode || storedCollectionQuestions.length === 0) return [];
+    return storedCollectionQuestions.map((q, i) => ({
+      id: q.id,
+      statement: q.statement ?? '',
+      isTrue: q.isTrue ?? false,
+      explanation: q.explanation ?? '',
+      source: q.source ?? '',
+      sourceUrl: q.sourceUrl ?? null,
+      language: q.language ?? 'ru',
+      categoryId: q.categoryId ?? '',
+      difficulty: q.difficulty ?? 3,
+      illustrationUrl: q.illustrationUrl ?? null,
+      sortOrder: i + 1,
+    }));
+  }, [isCollectionMode, storedCollectionQuestions]);
 
   // For daily mode, fetch from API
   const { data: dailyData, isLoading, isError, error, refetch } = useDailySet();
