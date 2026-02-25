@@ -64,6 +64,7 @@ export default function OnboardingStep2() {
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
             </View>
             <View style={styles.buttonPadded}>
               <Button

@@ -5,6 +5,7 @@ import {
   Calendar,
   FolderTree,
   Library,
+  BookOpen,
   Sparkles,
   LogOut,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
   { to: '/categories', icon: FolderTree, label: 'Категории' },
   { to: '/collections', icon: Library, label: 'Подборки' },
+  { to: '/reference', icon: BookOpen, label: 'Справочники' },
 ];
 
 export function AppLayout() {

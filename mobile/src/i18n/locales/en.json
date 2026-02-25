@@ -30,6 +30,10 @@
     "step3Desc": "Statements and explanations are available in Russian and English",
     "langRu": "Russian",
     "langEn": "English",
+    "step4Title": "What should we\ncall you?",
+    "step4Desc": "Choose a nickname and avatar for your profile",
+    "step4TapToChange": "Tap to change",
+    "step4MinChars": "Minimum 3 characters",
     "start": "Start!"
   },
   "home": {
@@ -124,7 +128,8 @@
   "nickname": {
     "title": "Nickname",
     "placeholder": "Enter nickname",
-    "hint": "3 to 16 characters"
+    "hint": "3 to 16 characters",
+    "tapToChangeAvatar": "Tap to change avatar"
   },
   "streakMilestone": {
     "title7": "7 days in a row!",

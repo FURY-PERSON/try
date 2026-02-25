@@ -41,6 +41,9 @@ export const useCardGame = (
   } = useUserStore();
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [liveStreak, setLiveStreak] = useState(
+    useUserStore.getState().currentStreak,
+  );
 
   const currentIndex = dailyProgress.currentCardIndex;
   const currentQuestion = questions[currentIndex];
@@ -148,6 +151,9 @@ export const useCardGame = (
           }
         }
 
+        // Update live streak based on answer
+        setLiveStreak((prev) => (answeredCorrectly ? prev + 1 : 0));
+
         analytics.logEvent('card_answered', {
           questionId: currentQuestion.id,
           correct: answeredCorrectly,
@@ -245,8 +251,8 @@ export const useCardGame = (
             correctAnswers: submission.correctAnswers,
             totalQuestions: submission.totalQuestions,
             totalTimeSeconds: submission.totalTimeSeconds,
-            streak: 0,
-            bestStreak: 0,
+            streak: submission.streak ?? 0,
+            bestStreak: submission.bestStreak ?? 0,
             leaderboardPosition: 0,
             correctPercent: Math.round(
               (submission.correctAnswers / submission.totalQuestions) * 100,
@@ -254,6 +260,7 @@ export const useCardGame = (
             percentile: 0,
             totalPlayers: 0,
           });
+          updateStreak(submission.streak ?? 0);
         }
         incrementGamesPlayed();
         setLastPlayedDate(new Date().toISOString().split('T')[0]);
@@ -281,6 +288,7 @@ export const useCardGame = (
     isSubmitting,
     isComplete,
     progress: currentIndex / dailyProgress.totalCards,
+    liveStreak,
     handleSwipe,
     handleNextCard,
   };

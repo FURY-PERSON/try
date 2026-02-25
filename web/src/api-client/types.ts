@@ -186,6 +186,55 @@ export type UploadResult = {
   url: string;
 };
 
+// ── Reference DTOs ──
+
+export type NicknameAdjective = {
+  id: string;
+  textRu: string;
+  textEn: string;
+  isActive: boolean;
+};
+
+export type NicknameAnimal = {
+  id: string;
+  textRu: string;
+  textEn: string;
+  emoji: string;
+  isActive: boolean;
+};
+
+export type AvatarEmojiItem = {
+  id: string;
+  emoji: string;
+  category: string;
+  isActive: boolean;
+};
+
+export type CreateAdjectiveDto = {
+  textRu: string;
+  textEn: string;
+  isActive?: boolean;
+};
+
+export type UpdateAdjectiveDto = Partial<CreateAdjectiveDto>;
+
+export type CreateAnimalDto = {
+  textRu: string;
+  textEn: string;
+  emoji: string;
+  isActive?: boolean;
+};
+
+export type UpdateAnimalDto = Partial<CreateAnimalDto>;
+
+export type CreateEmojiDto = {
+  emoji: string;
+  category?: string;
+  isActive?: boolean;
+};
+
+export type UpdateEmojiDto = Partial<CreateEmojiDto>;
+
 // ── Client Options ──
 
 export type ApiClientOptions = {

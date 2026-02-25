@@ -29,7 +29,7 @@ export const profileApi = {
     return response.data.data;
   },
 
-  async updateProfile(data: { nickname?: string }): Promise<User> {
+  async updateProfile(data: { nickname?: string; avatarEmoji?: string }): Promise<User> {
     const response = await apiClient.patch<UserResponse>('/api/v1/users/me', data);
     return response.data.data;
   },

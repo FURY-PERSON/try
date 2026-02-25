@@ -23,7 +23,6 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useCardGame } from '@/features/game/hooks/useCardGame';
-import { useUserStore } from '@/stores/useUserStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useThemeContext } from '@/theme';
@@ -36,7 +35,7 @@ const DISMISS_THRESHOLD = SCREEN_WIDTH * 0.2;
 export default function CardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string }>();
-  const streak = useUserStore((s) => s.currentStreak);
+  // streak from store used only as initial value; liveStreak from hook tracks per-answer
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
   const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);
@@ -81,6 +80,7 @@ export default function CardScreen() {
     isSubmitting,
     isComplete,
     progress,
+    liveStreak,
     handleSwipe,
     handleNextCard,
   } = useCardGame(questions, dailySetId);
@@ -183,7 +183,7 @@ export default function CardScreen() {
         style={styles.gradient}
       >
         <View style={[styles.padded, { paddingTop: insets.top }]}>
-          <GameHeader progress={progress} streak={streak} />
+          <GameHeader progress={progress} streak={liveStreak} />
         </View>
 
         {feedback ? (
@@ -202,7 +202,7 @@ export default function CardScreen() {
                 </Animated.View>
               </GestureDetector>
             </View>
-            <View style={styles.bottomButton}>
+            <View style={[styles.bottomButton, { paddingBottom: 16 + insets.bottom }]}>
               <Button
                 label={`${t('common.next')} →`}
                 variant={feedback.userAnsweredCorrectly ? 'success' : 'primary'}

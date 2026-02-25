@@ -33,4 +33,6 @@ export type CollectionSubmitResult = {
   totalQuestions: number;
   totalTimeSeconds: number;
   score: number;
+  streak: number;
+  bestStreak: number;
 };

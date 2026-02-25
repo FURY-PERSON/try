@@ -33,4 +33,12 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   pushEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Emoji avatar for the user',
+    example: '🦊',
+  })
+  @IsOptional()
+  @IsString()
+  avatarEmoji?: string;
 }

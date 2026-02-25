@@ -26,6 +26,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
+  const avatarEmoji = useUserStore((s) => s.avatarEmoji);
   const streak = useUserStore((s) => s.currentStreak);
   const totalScore = useUserStore((s) => s.totalScore);
   const factsLearned = useUserStore((s) => s.factsLearned);
@@ -58,12 +59,16 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.avatarSection}>
-              <Avatar nickname={nickname} size="xl" />
+              <Pressable onPress={() => router.push('/modal/nickname')} style={styles.avatarPressable}>
+                <Avatar nickname={nickname} avatarEmoji={avatarEmoji} size="xl" />
+              </Pressable>
               <Pressable onPress={() => router.push('/modal/nickname')}>
-                <Text style={[styles.nickname, { color: colors.textPrimary }]}>
-                  {nickname ?? 'Player'}
-                </Text>
-                <Feather name="edit-2" size={12} color={colors.textTertiary} style={{ alignSelf: 'center', marginTop: 4 }} />
+                <View style={styles.nicknameRow}>
+                  <Text style={[styles.nickname, { color: colors.textPrimary }]}>
+                    {nickname ?? 'Player'}
+                  </Text>
+                  <Feather name="edit-2" size={12} color={colors.textTertiary} />
+                </View>
               </Pressable>
             </View>
           </LinearGradient>
@@ -171,10 +176,17 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
   },
+  avatarPressable: {
+  },
   nickname: {
     fontSize: 18,
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
+  },
+  nicknameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   statCards: {
     flexDirection: 'row',

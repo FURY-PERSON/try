@@ -16,6 +16,7 @@ type AnalyticsEvent =
   | 'hint_used'
   | 'streak_milestone'
   | 'nickname_set'
+  | 'profile_updated'
   | 'settings_changed'
   | 'share_result'
   | 'collection_start'

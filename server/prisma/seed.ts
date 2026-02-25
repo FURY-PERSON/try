@@ -3,6 +3,92 @@ import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const nicknameAdjectives = [
+  { textRu: 'Быстрый', textEn: 'Swift' },
+  { textRu: 'Умный', textEn: 'Clever' },
+  { textRu: 'Хитрый', textEn: 'Sly' },
+  { textRu: 'Весёлый', textEn: 'Jolly' },
+  { textRu: 'Храбрый', textEn: 'Brave' },
+  { textRu: 'Ловкий', textEn: 'Nimble' },
+  { textRu: 'Мудрый', textEn: 'Wise' },
+  { textRu: 'Дерзкий', textEn: 'Bold' },
+  { textRu: 'Тихий', textEn: 'Quiet' },
+  { textRu: 'Яркий', textEn: 'Bright' },
+  { textRu: 'Смелый', textEn: 'Daring' },
+  { textRu: 'Шустрый', textEn: 'Hasty' },
+  { textRu: 'Грозный', textEn: 'Mighty' },
+  { textRu: 'Нежный', textEn: 'Gentle' },
+  { textRu: 'Дикий', textEn: 'Wild' },
+  { textRu: 'Славный', textEn: 'Noble' },
+  { textRu: 'Милый', textEn: 'Lucky' },
+  { textRu: 'Редкий', textEn: 'Rare' },
+  { textRu: 'Гордый', textEn: 'Proud' },
+  { textRu: 'Хмурый', textEn: 'Keen' },
+];
+
+const nicknameAnimals = [
+  { textRu: 'Лис', textEn: 'Fox', emoji: '🦊' },
+  { textRu: 'Кот', textEn: 'Cat', emoji: '🐱' },
+  { textRu: 'Сова', textEn: 'Owl', emoji: '🦉' },
+  { textRu: 'Волк', textEn: 'Wolf', emoji: '🐺' },
+  { textRu: 'Медведь', textEn: 'Bear', emoji: '🐻' },
+  { textRu: 'Орёл', textEn: 'Eagle', emoji: '🦅' },
+  { textRu: 'Панда', textEn: 'Panda', emoji: '🐼' },
+  { textRu: 'Тигр', textEn: 'Tiger', emoji: '🐯' },
+  { textRu: 'Дельфин', textEn: 'Dolphin', emoji: '🐬' },
+  { textRu: 'Пингвин', textEn: 'Penguin', emoji: '🐧' },
+  { textRu: 'Хамелеон', textEn: 'Chameleon', emoji: '🦎' },
+  { textRu: 'Единорог', textEn: 'Unicorn', emoji: '🦄' },
+  { textRu: 'Дракон', textEn: 'Dragon', emoji: '🐉' },
+  { textRu: 'Ёж', textEn: 'Hedgehog', emoji: '🦔' },
+  { textRu: 'Лев', textEn: 'Lion', emoji: '🦁' },
+  { textRu: 'Кролик', textEn: 'Rabbit', emoji: '🐰' },
+  { textRu: 'Жираф', textEn: 'Giraffe', emoji: '🦒' },
+  { textRu: 'Осьминог', textEn: 'Octopus', emoji: '🐙' },
+  { textRu: 'Фламинго', textEn: 'Flamingo', emoji: '🦩' },
+  { textRu: 'Коала', textEn: 'Koala', emoji: '🐨' },
+];
+
+const avatarEmojis = [
+  // Animals
+  { emoji: '🦊', category: 'animals' },
+  { emoji: '🐱', category: 'animals' },
+  { emoji: '🦉', category: 'animals' },
+  { emoji: '🐺', category: 'animals' },
+  { emoji: '🐻', category: 'animals' },
+  { emoji: '🦅', category: 'animals' },
+  { emoji: '🐼', category: 'animals' },
+  { emoji: '🐯', category: 'animals' },
+  { emoji: '🐬', category: 'animals' },
+  { emoji: '🐧', category: 'animals' },
+  { emoji: '🦎', category: 'animals' },
+  { emoji: '🦄', category: 'animals' },
+  { emoji: '🐉', category: 'animals' },
+  { emoji: '🦔', category: 'animals' },
+  { emoji: '🦁', category: 'animals' },
+  { emoji: '🐰', category: 'animals' },
+  { emoji: '🦒', category: 'animals' },
+  { emoji: '🐙', category: 'animals' },
+  { emoji: '🦩', category: 'animals' },
+  { emoji: '🐨', category: 'animals' },
+  // Faces
+  { emoji: '😎', category: 'faces' },
+  { emoji: '🤓', category: 'faces' },
+  { emoji: '🧐', category: 'faces' },
+  { emoji: '😈', category: 'faces' },
+  { emoji: '👻', category: 'faces' },
+  { emoji: '🤖', category: 'faces' },
+  { emoji: '👽', category: 'faces' },
+  { emoji: '🎃', category: 'faces' },
+  // Nature
+  { emoji: '🌸', category: 'nature' },
+  { emoji: '🔥', category: 'nature' },
+  { emoji: '⭐', category: 'nature' },
+  { emoji: '🌈', category: 'nature' },
+  { emoji: '❄️', category: 'nature' },
+  { emoji: '🌊', category: 'nature' },
+];
+
 const categories = [
   { name: 'Наука', nameEn: 'Science', slug: 'science', icon: 'flask', sortOrder: 1 },
   { name: 'История', nameEn: 'History', slug: 'history', icon: 'scroll', sortOrder: 2 },
@@ -231,6 +317,39 @@ async function main() {
       }
     }
   }
+
+  // Seed nickname adjectives
+  for (const adj of nicknameAdjectives) {
+    const existing = await prisma.nicknameAdjective.findFirst({
+      where: { textRu: adj.textRu, textEn: adj.textEn },
+    });
+    if (!existing) {
+      await prisma.nicknameAdjective.create({ data: adj });
+    }
+  }
+  console.log(`Nickname adjectives: ${nicknameAdjectives.length} entries`);
+
+  // Seed nickname animals
+  for (const animal of nicknameAnimals) {
+    const existing = await prisma.nicknameAnimal.findFirst({
+      where: { textRu: animal.textRu, textEn: animal.textEn },
+    });
+    if (!existing) {
+      await prisma.nicknameAnimal.create({ data: animal });
+    }
+  }
+  console.log(`Nickname animals: ${nicknameAnimals.length} entries`);
+
+  // Seed avatar emojis
+  for (const ae of avatarEmojis) {
+    const existing = await prisma.avatarEmoji.findFirst({
+      where: { emoji: ae.emoji },
+    });
+    if (!existing) {
+      await prisma.avatarEmoji.create({ data: ae });
+    }
+  }
+  console.log(`Avatar emojis: ${avatarEmojis.length} entries`);
 
   console.log('Seeding complete.');
 }

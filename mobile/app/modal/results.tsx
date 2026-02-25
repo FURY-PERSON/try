@@ -141,11 +141,9 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
-        {isDaily && (
-          <AnimatedEntrance delay={300} direction="up">
-            <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
-          </AnimatedEntrance>
-        )}
+        <AnimatedEntrance delay={300} direction="up">
+          <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+        </AnimatedEntrance>
 
         <AnimatedEntrance delay={400} direction="up">
           <DailyResultCard results={resultBools} />

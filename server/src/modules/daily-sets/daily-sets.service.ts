@@ -298,33 +298,21 @@ export class DailySetsService {
       );
     }
 
-    // Calculate streak (weekly cadence: playing within 14 days maintains streak)
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    // Calculate streak based on consecutive correct answers
+    let currentStreak = user.currentStreak;
+    let bestStreak = user.bestStreak;
 
-    let newCurrentStreak: number;
-
-    if (user.lastPlayedDate) {
-      const lastPlayed = new Date(user.lastPlayedDate);
-      lastPlayed.setHours(0, 0, 0, 0);
-
-      const diffTime = today.getTime() - lastPlayed.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 0) {
-        throw new BadRequestException('You have already played today');
-      } else if (diffDays <= 14) {
-        // Within 2 weeks — streak continues (weekly cadence)
-        newCurrentStreak = user.currentStreak + 1;
+    for (const result of dto.results) {
+      if (result.result === 'correct') {
+        currentStreak++;
       } else {
-        // Missed more than 2 weeks — streak resets
-        newCurrentStreak = 1;
+        currentStreak = 0;
       }
-    } else {
-      newCurrentStreak = 1;
+      bestStreak = Math.max(bestStreak, currentStreak);
     }
 
-    const newBestStreak = Math.max(user.bestStreak, newCurrentStreak);
+    const newCurrentStreak = currentStreak;
+    const newBestStreak = bestStreak;
 
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -334,7 +322,7 @@ export class DailySetsService {
           data: {
             currentStreak: newCurrentStreak,
             bestStreak: newBestStreak,
-            lastPlayedDate: today,
+            lastPlayedDate: new Date(),
             totalGamesPlayed: { increment: 1 },
             totalCorrectAnswers: { increment: correctAnswers },
           },

@@ -10,6 +10,7 @@ type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 type AvatarProps = {
   nickname?: string | null;
+  avatarEmoji?: string | null;
   imageUrl?: string | null;
   size?: AvatarSize;
 };
@@ -36,7 +37,14 @@ const getInitials = (name: string): string => {
   return (name.slice(0, 2) ?? '').toUpperCase();
 };
 
-export const Avatar: FC<AvatarProps> = ({ nickname, imageUrl, size = 'md' }) => {
+const emojiFontSizeMap: Record<AvatarSize, number> = {
+  sm: 18,
+  md: 24,
+  lg: 34,
+  xl: 48,
+};
+
+export const Avatar: FC<AvatarProps> = ({ nickname, avatarEmoji, imageUrl, size = 'md' }) => {
   const { colors, gradients, elevation } = useThemeContext();
   const dimension = sizeMap[size];
   const showShadow = size === 'lg' || size === 'xl';
@@ -59,6 +67,29 @@ export const Avatar: FC<AvatarProps> = ({ nickname, imageUrl, size = 'md' }) => 
           transition={200}
           accessibilityLabel={nickname ?? 'Avatar'}
         />
+      </View>
+    );
+  }
+
+  if (avatarEmoji) {
+    return (
+      <View style={showShadow ? elevation.md : undefined}>
+        <View
+          style={[
+            styles.fallback,
+            {
+              width: dimension,
+              height: dimension,
+              borderRadius: dimension / 2,
+              backgroundColor: colors.surface,
+              borderWidth: 2,
+              borderColor: colors.border,
+            },
+          ]}
+          accessibilityLabel={nickname ?? 'Avatar'}
+        >
+          <Text style={{ fontSize: emojiFontSizeMap[size] }}>{avatarEmoji}</Text>
+        </View>
       </View>
     );
   }

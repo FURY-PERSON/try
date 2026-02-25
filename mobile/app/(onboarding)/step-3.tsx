@@ -15,7 +15,7 @@ export default function OnboardingStep3() {
   const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
   const { t } = useTranslation();
-  const { finish } = useOnboarding();
+  const { selectLanguage } = useOnboarding();
 
   return (
     <Screen padded={false} backgroundColor={gradients.hero[0]}>
@@ -56,6 +56,7 @@ export default function OnboardingStep3() {
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
             </View>
 
             <View style={styles.langButtons}>
@@ -63,13 +64,13 @@ export default function OnboardingStep3() {
                 label={`🇷🇺 ${t('onboarding.langRu')}`}
                 variant="primary"
                 size="lg"
-                onPress={() => finish('ru')}
+                onPress={() => selectLanguage('ru')}
               />
               <Button
                 label={`🇬🇧 ${t('onboarding.langEn')}`}
                 variant="secondary"
                 size="lg"
-                onPress={() => finish('en')}
+                onPress={() => selectLanguage('en')}
               />
             </View>
           </View>

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type UserState = {
   nickname: string | null;
+  avatarEmoji: string | null;
   currentStreak: number;
   longestStreak: number;
   totalScore: number;
@@ -13,6 +14,7 @@ type UserState = {
   lastPlayedDate: string | null;
 
   setNickname: (nickname: string) => void;
+  setAvatarEmoji: (emoji: string) => void;
   updateStreak: (streak: number) => void;
   addScore: (score: number) => void;
   incrementGamesPlayed: () => void;
@@ -26,6 +28,7 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       nickname: null,
+      avatarEmoji: null,
       currentStreak: 0,
       longestStreak: 0,
       totalScore: 0,
@@ -36,6 +39,10 @@ export const useUserStore = create<UserState>()(
 
       setNickname: (nickname: string) => {
         set({ nickname });
+      },
+
+      setAvatarEmoji: (emoji: string) => {
+        set({ avatarEmoji: emoji });
       },
 
       updateStreak: (streak: number) => {

@@ -59,7 +59,7 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
             <Text style={[styles.rankTop, { color: colors.textPrimary }]}>
               {medal}
             </Text>
-            <Avatar nickname={entry.nickname ?? '?'} size="sm" />
+            <Avatar nickname={entry.nickname ?? '?'} avatarEmoji={entry.avatarEmoji} size="sm" />
             <Text
               style={[
                 styles.nickname,
@@ -88,7 +88,7 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
         <Text style={[styles.rank, { color: colors.textSecondary }]}>
           #{rank}
         </Text>
-        <Avatar nickname={entry.nickname ?? '?'} size="sm" />
+        <Avatar nickname={entry.nickname ?? '?'} avatarEmoji={entry.avatarEmoji} size="sm" />
         <Text
           style={[
             styles.nickname,

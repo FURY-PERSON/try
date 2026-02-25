@@ -24,5 +24,7 @@ export type HomeFeed = {
   userProgress: {
     dailyCompleted: boolean;
     streak: number;
+    nickname: string | null;
+    avatarEmoji: string | null;
   };
 };

@@ -2,6 +2,7 @@ export type LeaderboardEntry = {
   rank: number;
   userId: string;
   nickname: string | null;
+  avatarEmoji: string | null;
   correctAnswers: number;
   totalQuestions: number;
   score: number;

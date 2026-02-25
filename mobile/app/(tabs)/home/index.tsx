@@ -35,6 +35,7 @@ import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
+import { useUserStore } from '@/stores/useUserStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
@@ -63,6 +64,20 @@ export default function HomeScreen() {
   const daily = feed?.daily;
   const allCategories = feed?.categories ?? [];
   const allCollections = feed?.collections ?? [];
+
+  // Sync nickname & avatarEmoji from server to local store
+  useEffect(() => {
+    if (feed?.userProgress) {
+      const { nickname, avatarEmoji } = feed.userProgress;
+      const store = useUserStore.getState();
+      if (nickname && !store.nickname) {
+        store.setNickname(nickname);
+      }
+      if (avatarEmoji && !store.avatarEmoji) {
+        store.setAvatarEmoji(avatarEmoji);
+      }
+    }
+  }, [feed?.userProgress]);
 
   const categories = useMemo(() => {
     if (!selectedCategorySlug) return allCategories;
@@ -427,7 +442,7 @@ function CategoryCard({
       >
         <View style={[styles.categoryAccent, { backgroundColor: category.color ?? colors.primary }]} />
         <IconFromName name={category.icon} size={32} color={category.color ?? colors.primary} />
-        <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={1}>
+        <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={2}>
           {name}
         </Text>
         <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
@@ -632,10 +647,11 @@ const styles = StyleSheet.create({
   // Category cards
   categoryCard: {
     width: 140,
+    height: 140,
     padding: 16,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
     overflow: 'hidden',
   },
   categoryAccent: {

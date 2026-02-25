@@ -4,6 +4,7 @@ export type User = {
   id: string;
   deviceId: string;
   nickname: string | null;
+  avatarEmoji: string | null;
   language: UserLanguagePreference;
   pushToken: string | null;
   pushEnabled: boolean;

@@ -11,6 +11,7 @@ model User {
   id                 String    @id @default(cuid())
   deviceId           String    @unique
   nickname           String?   @unique
+  avatarEmoji        String?
   language           String    @default("both")
   pushToken          String?
   pushEnabled        Boolean   @default(true)
@@ -196,4 +197,38 @@ model UserCollectionProgress {
 
   @@index([userId, collectionType])
   @@index([userId, referenceId])
+}
+
+model NicknameAdjective {
+  id        String   @id @default(uuid())
+  textRu    String
+  textEn    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("nickname_adjectives")
+}
+
+model NicknameAnimal {
+  id        String   @id @default(uuid())
+  textRu    String
+  textEn    String
+  emoji     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("nickname_animals")
+}
+
+model AvatarEmoji {
+  id        String   @id @default(uuid())
+  emoji     String
+  category  String   @default("default")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("avatar_emojis")
 }

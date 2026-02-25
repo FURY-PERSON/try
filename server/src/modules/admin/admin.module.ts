@@ -22,6 +22,9 @@ import { AdminStatsService } from './stats/admin-stats.service';
 import { AdminCollectionsController } from './collections/admin-collections.controller';
 import { AdminCollectionsService } from './collections/admin-collections.service';
 
+import { AdminReferenceController } from './reference/admin-reference.controller';
+import { AdminReferenceService } from './reference/admin-reference.service';
+
 import { UploadController } from './upload/upload.controller';
 import { UploadService } from './upload/upload.service';
 
@@ -46,6 +49,7 @@ import { UploadService } from './upload/upload.service';
     AdminCategoriesController,
     AdminStatsController,
     AdminCollectionsController,
+    AdminReferenceController,
     UploadController,
   ],
   providers: [
@@ -56,6 +60,7 @@ import { UploadService } from './upload/upload.service';
     AdminCategoriesService,
     AdminStatsService,
     AdminCollectionsService,
+    AdminReferenceService,
     UploadService,
   ],
   exports: [UploadService],

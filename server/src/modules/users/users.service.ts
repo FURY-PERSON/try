@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { generateUniqueNickname } from '@/utils/generate-nickname';
 
 export interface UserStats {
   totalGames: number;
@@ -15,7 +16,7 @@ export interface UserStats {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async register(deviceId: string): Promise<User> {
+  async register(deviceId: string, language?: string): Promise<User> {
     const existingUser = await this.prisma.user.findUnique({
       where: { deviceId },
     });
@@ -24,8 +25,13 @@ export class UsersService {
       return existingUser;
     }
 
+    const { nickname, avatarEmoji } = await generateUniqueNickname(
+      this.prisma,
+      language ?? 'ru',
+    );
+
     return this.prisma.user.create({
-      data: { deviceId },
+      data: { deviceId, nickname, avatarEmoji },
     });
   }
 
@@ -51,6 +57,9 @@ export class UsersService {
     }
     if (dto.pushEnabled !== undefined) {
       data.pushEnabled = dto.pushEnabled;
+    }
+    if (dto.avatarEmoji !== undefined) {
+      data.avatarEmoji = dto.avatarEmoji;
     }
 
     return this.prisma.user.update({

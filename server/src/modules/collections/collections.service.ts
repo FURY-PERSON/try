@@ -167,6 +167,28 @@ export class CollectionsService {
       0,
     );
 
+    // Get user for streak calculation
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Calculate streak based on consecutive correct answers
+    let currentStreak = user.currentStreak;
+    let bestStreak = user.bestStreak;
+
+    for (const result of dto.results) {
+      if (result.result === 'correct') {
+        currentStreak++;
+      } else {
+        currentStreak = 0;
+      }
+      bestStreak = Math.max(bestStreak, currentStreak);
+    }
+
     // Record question history
     const historyData = dto.results.map((r) => ({
       userId,
@@ -204,11 +226,13 @@ export class CollectionsService {
         }
       }
 
-      // Update user stats
+      // Update user stats and streak
       await tx.user.update({
         where: { id: userId },
         data: {
           totalCorrectAnswers: { increment: correctAnswers },
+          currentStreak,
+          bestStreak,
         },
       });
 
@@ -242,6 +266,8 @@ export class CollectionsService {
       totalQuestions: session.questionIds.length,
       totalTimeSeconds,
       score,
+      streak: currentStreak,
+      bestStreak,
     };
   }
 

@@ -7,6 +7,7 @@ interface LeaderboardEntryResult {
   rank: number;
   userId: string;
   nickname: string | null;
+  avatarEmoji: string | null;
   correctAnswers: number;
   totalQuestions: number;
   score: number;
@@ -129,14 +130,17 @@ export class LeaderboardService {
     const userIds = top100.map((a) => a.userId);
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, nickname: true },
+      select: { id: true, nickname: true, avatarEmoji: true },
     });
-    const userMap = new Map(users.map((u) => [u.id, u.nickname]));
+    const userMap = new Map(
+      users.map((u) => [u.id, { nickname: u.nickname, avatarEmoji: u.avatarEmoji }]),
+    );
 
     const entries: LeaderboardEntryResult[] = top100.map((agg, index) => ({
       rank: index + 1,
       userId: agg.userId,
-      nickname: userMap.get(agg.userId) ?? null,
+      nickname: userMap.get(agg.userId)?.nickname ?? null,
+      avatarEmoji: userMap.get(agg.userId)?.avatarEmoji ?? null,
       correctAnswers: agg._sum.correctAnswers ?? 0,
       totalQuestions: (agg._count._all ?? 0) * CARDS_PER_DAILY_SET,
       score: agg._sum.score ?? 0,

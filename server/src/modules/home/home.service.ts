@@ -15,7 +15,7 @@ export class HomeService {
       this.getPublishedCollections(),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { currentStreak: true },
+        select: { currentStreak: true, nickname: true, avatarEmoji: true },
       }),
     ]);
 
@@ -26,6 +26,8 @@ export class HomeService {
       userProgress: {
         dailyCompleted: daily.isLocked,
         streak: user?.currentStreak ?? 0,
+        nickname: user?.nickname ?? null,
+        avatarEmoji: user?.avatarEmoji ?? null,
       },
     };
   }

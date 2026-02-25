@@ -32,6 +32,15 @@ import type {
   DashboardStats,
   QuestionStats,
   UploadResult,
+  NicknameAdjective,
+  CreateAdjectiveDto,
+  UpdateAdjectiveDto,
+  NicknameAnimal,
+  CreateAnimalDto,
+  UpdateAnimalDto,
+  AvatarEmojiItem,
+  CreateEmojiDto,
+  UpdateEmojiDto,
 } from '../types';
 
 export function createAdminEndpoints(http: AxiosInstance) {
@@ -153,6 +162,54 @@ export function createAdminEndpoints(http: AxiosInstance) {
           '/admin/ai/generate-illustration',
           dto,
         );
+      },
+    },
+
+    // ── Reference: Adjectives ──
+    adjectives: {
+      list() {
+        return http.get<NicknameAdjective[]>('/admin/reference/adjectives');
+      },
+      create(dto: CreateAdjectiveDto) {
+        return http.post<NicknameAdjective>('/admin/reference/adjectives', dto);
+      },
+      update(id: string, dto: UpdateAdjectiveDto) {
+        return http.patch<NicknameAdjective>(`/admin/reference/adjectives/${id}`, dto);
+      },
+      delete(id: string) {
+        return http.delete(`/admin/reference/adjectives/${id}`);
+      },
+    },
+
+    // ── Reference: Animals ──
+    animals: {
+      list() {
+        return http.get<NicknameAnimal[]>('/admin/reference/animals');
+      },
+      create(dto: CreateAnimalDto) {
+        return http.post<NicknameAnimal>('/admin/reference/animals', dto);
+      },
+      update(id: string, dto: UpdateAnimalDto) {
+        return http.patch<NicknameAnimal>(`/admin/reference/animals/${id}`, dto);
+      },
+      delete(id: string) {
+        return http.delete(`/admin/reference/animals/${id}`);
+      },
+    },
+
+    // ── Reference: Emojis ──
+    emojis: {
+      list() {
+        return http.get<AvatarEmojiItem[]>('/admin/reference/emojis');
+      },
+      create(dto: CreateEmojiDto) {
+        return http.post<AvatarEmojiItem>('/admin/reference/emojis', dto);
+      },
+      update(id: string, dto: UpdateEmojiDto) {
+        return http.patch<AvatarEmojiItem>(`/admin/reference/emojis/${id}`, dto);
+      },
+      delete(id: string) {
+        return http.delete(`/admin/reference/emojis/${id}`);
       },
     },
 

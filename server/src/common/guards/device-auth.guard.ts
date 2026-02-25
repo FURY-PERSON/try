@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
+import { generateUniqueNickname } from '@/utils/generate-nickname';
 
 @Injectable()
 export class DeviceAuthGuard implements CanActivate {
@@ -26,8 +27,11 @@ export class DeviceAuthGuard implements CanActivate {
     });
 
     if (!user) {
+      const { nickname, avatarEmoji } = await generateUniqueNickname(
+        this.prisma,
+      );
       user = await this.prisma.user.create({
-        data: { deviceId },
+        data: { deviceId, nickname, avatarEmoji },
       });
     }
 

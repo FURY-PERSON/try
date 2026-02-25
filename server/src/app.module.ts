@@ -12,6 +12,7 @@ import { DailySetsModule } from './modules/daily-sets/daily-sets.module';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { HomeModule } from './modules/home/home.module';
+import { ReferenceModule } from './modules/reference/reference.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 
@@ -50,6 +51,7 @@ import { AiModule } from './modules/ai/ai.module';
     LeaderboardModule,
     CollectionsModule,
     HomeModule,
+    ReferenceModule,
     AdminModule,
     AiModule,
   ],
