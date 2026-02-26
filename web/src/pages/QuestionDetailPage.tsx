@@ -1,13 +1,22 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle, XCircle, Trash2, ExternalLink, Image } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { ArrowLeft, CheckCircle, XCircle, Trash2, ExternalLink, Image, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Dialog } from '@/components/ui/Dialog';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 
 const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'danger'> = {
   draft: 'default',
@@ -16,16 +25,64 @@ const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | '
   rejected: 'danger',
 };
 
+const DIFFICULTY_LABELS: Record<number, string> = {
+  1: 'Элементарная',
+  2: 'Лёгкая',
+  3: 'Средняя',
+  4: 'Сложная',
+  5: 'Экспертная',
+};
+
+const DIFFICULTY_OPTIONS = [
+  { value: '1', label: '1 — Элементарная' },
+  { value: '2', label: '2 — Лёгкая' },
+  { value: '3', label: '3 — Средняя' },
+  { value: '4', label: '4 — Сложная' },
+  { value: '5', label: '5 — Экспертная' },
+];
+
+const LANGUAGE_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
+];
+
+const IS_TRUE_OPTIONS = [
+  { value: 'true', label: 'Факт (правда)' },
+  { value: 'false', label: 'Фейк (ложь)' },
+];
+
+const editFormSchema = z.object({
+  statement: z.string().min(10, 'Минимум 10 символов'),
+  isTrue: z.enum(['true', 'false']),
+  explanation: z.string().min(10, 'Минимум 10 символов'),
+  source: z.string().min(1, 'Введите источник'),
+  sourceUrl: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
+  language: z.enum(['ru', 'en']),
+  categoryId: z.string().min(1, 'Выберите категорию'),
+  difficulty: z.coerce.number().min(1).max(5),
+});
+
+type EditFormData = z.infer<typeof editFormSchema>;
+
 export function QuestionDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [additionalCategoryIds, setAdditionalCategoryIds] = useState<string[]>([]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'questions', id],
     queryFn: () => api.admin.questions.getById(id!),
     enabled: !!id,
   });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ['admin', 'categories'],
+    queryFn: () => api.admin.categories.list(),
+    enabled: editDialogOpen,
+  });
+  const categories = categoriesData?.data.data ?? [];
 
   const approveMutation = useMutation({
     mutationFn: () => api.admin.questions.approve(id!),
@@ -60,7 +117,62 @@ export function QuestionDetailPage() {
     onError: () => toast.error('Ошибка генерации иллюстрации'),
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (dto: EditFormData) =>
+      api.admin.questions.update(id!, {
+        statement: dto.statement,
+        isTrue: dto.isTrue === 'true',
+        explanation: dto.explanation,
+        source: dto.source,
+        sourceUrl: dto.sourceUrl || undefined,
+        language: dto.language as Language,
+        categoryId: dto.categoryId,
+        difficulty: dto.difficulty,
+        categoryIds: additionalCategoryIds.length > 0 ? additionalCategoryIds : undefined,
+      }),
+    onSuccess: () => {
+      toast.success('Утверждение обновлено');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
+      setEditDialogOpen(false);
+    },
+    onError: () => toast.error('Ошибка обновления'),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<EditFormData>({
+    resolver: zodResolver(editFormSchema),
+  });
+
   const question = data?.data.data;
+
+  const openEditDialog = () => {
+    if (!question) return;
+    const existingAdditional = (question.categories ?? [])
+      .filter((qc: any) => qc.categoryId !== question.categoryId)
+      .map((qc: any) => qc.categoryId);
+    setAdditionalCategoryIds(existingAdditional);
+    reset({
+      statement: question.statement,
+      isTrue: question.isTrue ? 'true' : 'false',
+      explanation: question.explanation,
+      source: question.source,
+      sourceUrl: question.sourceUrl ?? '',
+      language: question.language as 'ru' | 'en',
+      categoryId: question.categoryId,
+      difficulty: question.difficulty,
+    });
+    setEditDialogOpen(true);
+  };
+
+  const toggleAdditionalCategory = (catId: string) => {
+    setAdditionalCategoryIds((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId],
+    );
+  };
 
   if (isLoading) {
     return (
@@ -101,6 +213,14 @@ export function QuestionDetailPage() {
         title="Утверждение"
         actions={
           <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={openEditDialog}
+            >
+              <Pencil className="w-4 h-4" />
+              Редактировать
+            </Button>
             {question.status !== 'approved' && (
               <Button
                 size="sm"
@@ -174,7 +294,10 @@ export function QuestionDetailPage() {
               />
             )}
             <InfoRow label="Язык" value={question.language.toUpperCase()} />
-            <InfoRow label="Сложность" value={`${question.difficulty}/5`} />
+            <InfoRow
+              label="Сложность"
+              value={`${question.difficulty} — ${DIFFICULTY_LABELS[question.difficulty as number] ?? '?'}`}
+            />
             <InfoRow label="Показов" value={String(question.timesShown)} />
             <InfoRow
               label="% правильных"
@@ -257,6 +380,107 @@ export function QuestionDetailPage() {
           )}
         </Card>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        title="Редактировать утверждение"
+        className="max-w-2xl"
+      >
+        <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <Textarea
+            id="edit-statement"
+            label="Текст утверждения"
+            rows={3}
+            error={errors.statement?.message}
+            {...register('statement')}
+          />
+          <Select
+            id="edit-isTrue"
+            label="Факт или Фейк?"
+            options={IS_TRUE_OPTIONS}
+            error={errors.isTrue?.message}
+            {...register('isTrue')}
+          />
+          <Textarea
+            id="edit-explanation"
+            label="Объяснение"
+            rows={4}
+            error={errors.explanation?.message}
+            {...register('explanation')}
+          />
+          <Input
+            id="edit-source"
+            label="Источник"
+            error={errors.source?.message}
+            {...register('source')}
+          />
+          <Input
+            id="edit-sourceUrl"
+            label="URL источника"
+            error={errors.sourceUrl?.message}
+            {...register('sourceUrl')}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              id="edit-language"
+              label="Язык"
+              options={LANGUAGE_OPTIONS}
+              error={errors.language?.message}
+              {...register('language')}
+            />
+            <Select
+              id="edit-difficulty"
+              label="Сложность"
+              options={DIFFICULTY_OPTIONS}
+              error={errors.difficulty?.message}
+              {...register('difficulty')}
+            />
+          </div>
+          <Select
+            id="edit-categoryId"
+            label="Основная категория"
+            options={categories.map((c: any) => ({
+              value: c.id,
+              label: `${c.icon} ${c.name}`,
+            }))}
+            error={errors.categoryId?.message}
+            {...register('categoryId')}
+          />
+          {categories.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Дополнительные категории
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((c: any) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => toggleAdditionalCategory(c.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                      additionalCategoryIds.includes(c.id)
+                        ? 'bg-blue/10 border-blue text-blue'
+                        : 'bg-surface-secondary border-border text-text-secondary hover:border-text-secondary'
+                    }`}
+                  >
+                    {c.icon} {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setEditDialogOpen(false)}>
+              Отмена
+            </Button>
+            <Button type="submit" loading={updateMutation.isPending}>
+              Сохранить
+            </Button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 }

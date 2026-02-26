@@ -90,4 +90,18 @@ export class AdminQuestionsController {
   async bulkApprove(@Body() body: { ids: string[] }) {
     return this.adminQuestionsService.bulkApprove(body.ids);
   }
+
+  @Post('bulk-reject')
+  @ApiOperation({ summary: 'Bulk reject multiple questions' })
+  @ApiResponse({ status: 200, description: 'Questions rejected' })
+  async bulkReject(@Body() body: { ids: string[] }) {
+    return this.adminQuestionsService.bulkReject(body.ids);
+  }
+
+  @Post('bulk-delete')
+  @ApiOperation({ summary: 'Bulk delete multiple questions' })
+  @ApiResponse({ status: 200, description: 'Questions deleted' })
+  async bulkDelete(@Body() body: { ids: string[] }) {
+    return this.adminQuestionsService.bulkDelete(body.ids);
+  }
 }

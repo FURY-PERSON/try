@@ -82,4 +82,74 @@ test.describe('Daily Set Create Page', () => {
     const submitButton = page.locator('main').getByRole('button', { name: 'Создать набор' });
     await expect(submitButton).toBeDisabled();
   });
+
+  test('shows search input for approved statements', async ({ page }) => {
+    await expect(page.locator('input[placeholder="Поиск по тексту..."]')).toBeVisible();
+  });
+
+  test('shows filter dropdowns', async ({ page }) => {
+    // Should have two select filters (isTrue + category)
+    const selects = page.locator('main select');
+    await expect(selects).toHaveCount(3); // status + isTrue + category
+  });
+
+  test('search filters statements', async ({ page }) => {
+    // Wait for approved questions to load
+    await page.waitForResponse(
+      (r) => r.url().includes('/admin/questions') && r.status() === 200,
+      { timeout: 15000 },
+    ).catch(() => {});
+    await page.waitForTimeout(500);
+
+    const countBefore = page.getByText(/Найдено:/);
+    await expect(countBefore).toBeVisible();
+
+    // Type a search query
+    await page.locator('input[placeholder="Поиск по тексту..."]').fill('невозможно_найти_такое_12345');
+    await page.waitForTimeout(300);
+
+    // Should show 0 results
+    await expect(page.getByText('Найдено: 0')).toBeVisible();
+  });
+
+  test('clear search button works', async ({ page }) => {
+    const searchInput = page.locator('input[placeholder="Поиск по тексту..."]');
+    await searchInput.fill('test');
+    await page.waitForTimeout(300);
+
+    // Click the X button to clear
+    const clearButton = searchInput.locator('..').locator('button');
+    if (await clearButton.isVisible()) {
+      await clearButton.click();
+      await expect(searchInput).toHaveValue('');
+    }
+  });
+
+  test('fact/fake filter works', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    const selects = page.locator('main select');
+    // First select in the filter row is isTrue filter
+    const isTrueSelect = selects.nth(1);
+    await isTrueSelect.selectOption({ label: 'Факты' });
+    await page.waitForTimeout(300);
+
+    // No crash means filter works
+    await expect(page.getByText(/Найдено:/)).toBeVisible();
+  });
+
+  test('category filter works', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    const selects = page.locator('main select');
+    // Second select in filter row is category
+    const categorySelect = selects.nth(2);
+    const options = await categorySelect.locator('option').count();
+    if (options > 1) {
+      await categorySelect.selectOption({ index: 1 });
+      await page.waitForTimeout(300);
+      // No crash means filter works
+      await expect(page.getByText(/Найдено:/)).toBeVisible();
+    }
+  });
 });

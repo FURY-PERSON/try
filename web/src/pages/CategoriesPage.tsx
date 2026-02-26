@@ -13,9 +13,24 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog } from '@/components/ui/Dialog';
+import { EmojiPickerInput } from '@/components/ui/EmojiPickerInput';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+
+const ICON_NAME_TO_EMOJI: Record<string, string> = {
+  flask: '🧪', scroll: '📜', globe: '🌍', landmark: '🏛️', cpu: '💻',
+  palette: '🎨', dna: '🧬', trophy: '🏆', utensils: '🍴', film: '🎬',
+  leaf: '🌿', music: '🎵', heart: '❤️', rocket: '🚀', book: '📖',
+  star: '⭐', fire: '🔥', brain: '🧠', atom: '⚛️', microscope: '🔬',
+  telescope: '🔭', earth: '🌍', flower: '🌸', tree: '🌳', crown: '👑',
+  diamond: '💎', shield: '🛡️', compass: '🧭', camera: '📷', code: '💻',
+};
+
+function renderIcon(icon: string): string {
+  if (/[^\x00-\x7F]/.test(icon)) return icon;
+  return ICON_NAME_TO_EMOJI[icon] ?? '❓';
+}
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Введите название'),
@@ -43,10 +58,14 @@ export function CategoriesPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
   });
+
+  const iconValue = watch('icon');
 
   const createMutation = useMutation({
     mutationFn: (data: CategoryFormData) => api.admin.categories.create(data),
@@ -157,7 +176,7 @@ export function CategoriesPage() {
             <TableBody>
               {categories.map((cat) => (
                 <TableRow key={cat.id}>
-                  <TableCell className="text-2xl">{cat.icon}</TableCell>
+                  <TableCell className="text-2xl">{renderIcon(cat.icon)}</TableCell>
                   <TableCell className="font-medium">{cat.name}</TableCell>
                   <TableCell className="text-text-secondary">{cat.nameEn}</TableCell>
                   <TableCell>
@@ -224,12 +243,11 @@ export function CategoriesPage() {
               error={errors.slug?.message}
               {...register('slug')}
             />
-            <Input
-              id="icon"
+            <EmojiPickerInput
+              value={iconValue ?? ''}
+              onChange={(emoji) => setValue('icon', emoji, { shouldValidate: true })}
               label="Иконка (emoji)"
-              placeholder="🔬"
               error={errors.icon?.message}
-              {...register('icon')}
             />
           </div>
           <Input

@@ -6,7 +6,6 @@ import {
   FolderTree,
   Library,
   BookOpen,
-  Sparkles,
   LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -15,11 +14,10 @@ import { cn } from '@/lib/utils';
 const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Дашборд' },
   { to: '/questions', icon: HelpCircle, label: 'Утверждения' },
-  { to: '/questions/generate', icon: Sparkles, label: 'AI Генерация' },
   { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
   { to: '/categories', icon: FolderTree, label: 'Категории' },
   { to: '/collections', icon: Library, label: 'Подборки' },
-  { to: '/reference', icon: BookOpen, label: 'Справочники' },
+  { to: '/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
 ];
 
 export function AppLayout() {

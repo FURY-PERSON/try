@@ -15,7 +15,7 @@ export class AdminQuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: QuestionQueryDto) {
-    const { page, limit, status, language, isTrue, categoryId, difficulty, search } =
+    const { page, limit, status, language, isTrue, categoryId, difficulty, search, notInDailySet } =
       query;
 
     const where: Prisma.QuestionWhereInput = {};
@@ -38,11 +38,14 @@ export class AdminQuestionsService {
     if (search) {
       where.statement = { contains: search, mode: 'insensitive' };
     }
+    if (notInDailySet === 'true') {
+      where.dailySets = { none: {} };
+    }
 
     const [questions, total] = await Promise.all([
       this.prisma.question.findMany({
         where,
-        include: { category: true },
+        include: { category: true, categories: { include: { category: true } } },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -232,6 +235,41 @@ export class AdminQuestionsService {
 
     return {
       approvedCount: result.count,
+      requestedCount: ids.length,
+    };
+  }
+
+  async bulkReject(ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('No question IDs provided');
+    }
+
+    const result = await this.prisma.question.updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: { status: 'rejected' },
+    });
+
+    return {
+      rejectedCount: result.count,
+      requestedCount: ids.length,
+    };
+  }
+
+  async bulkDelete(ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('No question IDs provided');
+    }
+
+    const result = await this.prisma.question.deleteMany({
+      where: {
+        id: { in: ids },
+      },
+    });
+
+    return {
+      deletedCount: result.count,
       requestedCount: ids.length,
     };
   }

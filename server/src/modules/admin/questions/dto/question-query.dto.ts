@@ -44,4 +44,11 @@ export class QuestionQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter questions not used in any daily set (true/false)',
+  })
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  notInDailySet?: string;
 }

@@ -5,48 +5,48 @@ const prisma = new PrismaClient();
 
 const nicknameAdjectives = [
   { textRu: 'Быстрый', textEn: 'Swift' },
-  { textRu: 'Умный', textEn: 'Clever' },
-  { textRu: 'Хитрый', textEn: 'Sly' },
-  { textRu: 'Весёлый', textEn: 'Jolly' },
   { textRu: 'Храбрый', textEn: 'Brave' },
-  { textRu: 'Ловкий', textEn: 'Nimble' },
   { textRu: 'Мудрый', textEn: 'Wise' },
-  { textRu: 'Дерзкий', textEn: 'Bold' },
+  { textRu: 'Хитрый', textEn: 'Cunning' },
+  { textRu: 'Весёлый', textEn: 'Cheerful' },
   { textRu: 'Тихий', textEn: 'Quiet' },
   { textRu: 'Яркий', textEn: 'Bright' },
-  { textRu: 'Смелый', textEn: 'Daring' },
-  { textRu: 'Шустрый', textEn: 'Hasty' },
-  { textRu: 'Грозный', textEn: 'Mighty' },
-  { textRu: 'Нежный', textEn: 'Gentle' },
-  { textRu: 'Дикий', textEn: 'Wild' },
-  { textRu: 'Славный', textEn: 'Noble' },
-  { textRu: 'Милый', textEn: 'Lucky' },
-  { textRu: 'Редкий', textEn: 'Rare' },
+  { textRu: 'Ловкий', textEn: 'Agile' },
+  { textRu: 'Дерзкий', textEn: 'Bold' },
+  { textRu: 'Сонный', textEn: 'Sleepy' },
   { textRu: 'Гордый', textEn: 'Proud' },
-  { textRu: 'Хмурый', textEn: 'Keen' },
+  { textRu: 'Шустрый', textEn: 'Nimble' },
+  { textRu: 'Дикий', textEn: 'Wild' },
+  { textRu: 'Ночной', textEn: 'Nocturnal' },
+  { textRu: 'Полярный', textEn: 'Polar' },
+  { textRu: 'Огненный', textEn: 'Fiery' },
+  { textRu: 'Звёздный', textEn: 'Stellar' },
+  { textRu: 'Тайный', textEn: 'Secret' },
+  { textRu: 'Лунный', textEn: 'Lunar' },
+  { textRu: 'Грозный', textEn: 'Mighty' },
 ];
 
 const nicknameAnimals = [
   { textRu: 'Лис', textEn: 'Fox', emoji: '🦊' },
-  { textRu: 'Кот', textEn: 'Cat', emoji: '🐱' },
-  { textRu: 'Сова', textEn: 'Owl', emoji: '🦉' },
   { textRu: 'Волк', textEn: 'Wolf', emoji: '🐺' },
   { textRu: 'Медведь', textEn: 'Bear', emoji: '🐻' },
+  { textRu: 'Сова', textEn: 'Owl', emoji: '🦉' },
   { textRu: 'Орёл', textEn: 'Eagle', emoji: '🦅' },
-  { textRu: 'Панда', textEn: 'Panda', emoji: '🐼' },
   { textRu: 'Тигр', textEn: 'Tiger', emoji: '🐯' },
+  { textRu: 'Лев', textEn: 'Lion', emoji: '🦁' },
+  { textRu: 'Панда', textEn: 'Panda', emoji: '🐼' },
+  { textRu: 'Кот', textEn: 'Cat', emoji: '🐱' },
+  { textRu: 'Пёс', textEn: 'Dog', emoji: '🐶' },
   { textRu: 'Дельфин', textEn: 'Dolphin', emoji: '🐬' },
   { textRu: 'Пингвин', textEn: 'Penguin', emoji: '🐧' },
-  { textRu: 'Хамелеон', textEn: 'Chameleon', emoji: '🦎' },
+  { textRu: 'Коала', textEn: 'Koala', emoji: '🐨' },
   { textRu: 'Единорог', textEn: 'Unicorn', emoji: '🦄' },
   { textRu: 'Дракон', textEn: 'Dragon', emoji: '🐉' },
-  { textRu: 'Ёж', textEn: 'Hedgehog', emoji: '🦔' },
-  { textRu: 'Лев', textEn: 'Lion', emoji: '🦁' },
   { textRu: 'Кролик', textEn: 'Rabbit', emoji: '🐰' },
-  { textRu: 'Жираф', textEn: 'Giraffe', emoji: '🦒' },
-  { textRu: 'Осьминог', textEn: 'Octopus', emoji: '🐙' },
+  { textRu: 'Ёж', textEn: 'Hedgehog', emoji: '🦔' },
+  { textRu: 'Хамелеон', textEn: 'Chameleon', emoji: '🦎' },
   { textRu: 'Фламинго', textEn: 'Flamingo', emoji: '🦩' },
-  { textRu: 'Коала', textEn: 'Koala', emoji: '🐨' },
+  { textRu: 'Осьминог', textEn: 'Octopus', emoji: '🐙' },
 ];
 
 const avatarEmojis = [
@@ -90,14 +90,14 @@ const avatarEmojis = [
 ];
 
 const categories = [
-  { name: 'Наука', nameEn: 'Science', slug: 'science', icon: 'flask', sortOrder: 1 },
-  { name: 'История', nameEn: 'History', slug: 'history', icon: 'scroll', sortOrder: 2 },
-  { name: 'География', nameEn: 'Geography', slug: 'geography', icon: 'globe', sortOrder: 3 },
-  { name: 'Языки', nameEn: 'Languages', slug: 'languages', icon: 'book', sortOrder: 4 },
-  { name: 'Природа', nameEn: 'Nature', slug: 'nature', icon: 'leaf', sortOrder: 5 },
-  { name: 'Космос', nameEn: 'Space', slug: 'space', icon: 'rocket', sortOrder: 6 },
-  { name: 'Культура', nameEn: 'Culture', slug: 'culture', icon: 'palette', sortOrder: 7 },
-  { name: 'Технологии', nameEn: 'Technology', slug: 'technology', icon: 'cpu', sortOrder: 8 },
+  { name: 'Наука', nameEn: 'Science', slug: 'science', icon: '🧪', sortOrder: 1 },
+  { name: 'История', nameEn: 'History', slug: 'history', icon: '📜', sortOrder: 2 },
+  { name: 'География', nameEn: 'Geography', slug: 'geography', icon: '🌍', sortOrder: 3 },
+  { name: 'Языки', nameEn: 'Languages', slug: 'languages', icon: '📖', sortOrder: 4 },
+  { name: 'Природа', nameEn: 'Nature', slug: 'nature', icon: '🌿', sortOrder: 5 },
+  { name: 'Космос', nameEn: 'Space', slug: 'space', icon: '🚀', sortOrder: 6 },
+  { name: 'Культура', nameEn: 'Culture', slug: 'culture', icon: '🎨', sortOrder: 7 },
+  { name: 'Технологии', nameEn: 'Technology', slug: 'technology', icon: '💻', sortOrder: 8 },
 ];
 
 async function main() {
@@ -350,6 +350,87 @@ async function main() {
     }
   }
   console.log(`Avatar emojis: ${avatarEmojis.length} entries`);
+
+  // Seed collections
+  const scienceQuestions = await prisma.question.findMany({
+    where: {
+      status: 'approved',
+      OR: [
+        { category: { slug: { in: ['science', 'space', 'nature', 'technology'] } } },
+        { categories: { some: { category: { slug: { in: ['science', 'space', 'nature', 'technology'] } } } } },
+      ],
+    },
+    take: 15,
+    select: { id: true },
+  });
+
+  if (scienceQuestions.length >= 5) {
+    const existing = await prisma.collection.findFirst({ where: { title: 'Удивительная наука' } });
+    if (!existing) {
+      const collection = await prisma.collection.create({
+        data: {
+          title: 'Удивительная наука',
+          titleEn: 'Amazing Science',
+          description: 'Факты и мифы из мира науки, которые вас удивят',
+          descriptionEn: 'Science facts and myths that will surprise you',
+          icon: '🔬',
+          type: 'featured',
+          status: 'published',
+          sortOrder: 1,
+        },
+      });
+      for (let i = 0; i < scienceQuestions.length; i++) {
+        await prisma.collectionQuestion.create({
+          data: {
+            collectionId: collection.id,
+            questionId: scienceQuestions[i].id,
+            sortOrder: i + 1,
+          },
+        });
+      }
+      console.log(`Collection: "Удивительная наука" with ${scienceQuestions.length} questions`);
+    }
+  }
+
+  const geoQuestions = await prisma.question.findMany({
+    where: {
+      status: 'approved',
+      OR: [
+        { category: { slug: { in: ['geography', 'history', 'culture'] } } },
+        { categories: { some: { category: { slug: { in: ['geography', 'history', 'culture'] } } } } },
+      ],
+    },
+    take: 15,
+    select: { id: true },
+  });
+
+  if (geoQuestions.length >= 3) {
+    const existing = await prisma.collection.findFirst({ where: { title: 'Вокруг света' } });
+    if (!existing) {
+      const collection = await prisma.collection.create({
+        data: {
+          title: 'Вокруг света',
+          titleEn: 'Around the World',
+          description: 'Проверьте свои знания о странах, городах и культурах',
+          descriptionEn: 'Test your knowledge about countries, cities and cultures',
+          icon: '🌍',
+          type: 'featured',
+          status: 'published',
+          sortOrder: 2,
+        },
+      });
+      for (let i = 0; i < geoQuestions.length; i++) {
+        await prisma.collectionQuestion.create({
+          data: {
+            collectionId: collection.id,
+            questionId: geoQuestions[i].id,
+            sortOrder: i + 1,
+          },
+        });
+      }
+      console.log(`Collection: "Вокруг света" with ${geoQuestions.length} questions`);
+    }
+  }
 
   console.log('Seeding complete.');
 }

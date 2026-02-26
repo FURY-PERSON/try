@@ -26,6 +26,14 @@ const IS_TRUE_OPTIONS = [
   { value: 'false', label: 'Фейк (ложь)' },
 ];
 
+const DIFFICULTY_OPTIONS = [
+  { value: '1', label: '1 — Элементарная' },
+  { value: '2', label: '2 — Лёгкая' },
+  { value: '3', label: '3 — Средняя' },
+  { value: '4', label: '4 — Сложная' },
+  { value: '5', label: '5 — Экспертная' },
+];
+
 const questionFormSchema = z.object({
   statement: z.string().min(10, 'Минимум 10 символов'),
   isTrue: z.enum(['true', 'false']),
@@ -171,12 +179,10 @@ export function QuestionCreatePage() {
                   error={errors.language?.message}
                   {...register('language')}
                 />
-                <Input
+                <Select
                   id="difficulty"
-                  label="Сложность (1-5)"
-                  type="number"
-                  min={1}
-                  max={5}
+                  label="Сложность"
+                  options={DIFFICULTY_OPTIONS}
                   error={errors.difficulty?.message}
                   {...register('difficulty')}
                 />

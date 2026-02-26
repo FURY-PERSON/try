@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog } from '@/components/ui/Dialog';
+import { EmojiPickerInput } from '@/components/ui/EmojiPickerInput';
 import {
   Table,
   TableBody,
@@ -70,7 +71,7 @@ function AdjectivesTab() {
     queryFn: () => api.admin.adjectives.list(),
   });
 
-  const items = data?.data ?? [];
+  const items = data?.data.data ?? [];
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AdjectiveForm>({
     resolver: zodResolver(adjectiveSchema),
@@ -239,11 +240,13 @@ function AnimalsTab() {
     queryFn: () => api.admin.animals.list(),
   });
 
-  const items = data?.data ?? [];
+  const items = data?.data.data ?? [];
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AnimalForm>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AnimalForm>({
     resolver: zodResolver(animalSchema),
   });
+
+  const emojiValue = watch('emoji');
 
   const createMut = useMutation({
     mutationFn: (d: AnimalForm) => api.admin.animals.create(d),
@@ -386,7 +389,12 @@ function AnimalsTab() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input id="textRu" label="Русский" placeholder="Лис" error={errors.textRu?.message} {...register('textRu')} />
           <Input id="textEn" label="English" placeholder="Fox" error={errors.textEn?.message} {...register('textEn')} />
-          <Input id="emoji" label="Эмоджи" placeholder="🦊" error={errors.emoji?.message} {...register('emoji')} />
+          <EmojiPickerInput
+            value={emojiValue ?? ''}
+            onChange={(emoji) => setValue('emoji', emoji, { shouldValidate: true })}
+            label="Эмоджи"
+            error={errors.emoji?.message}
+          />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="ghost" onClick={closeDialog}>Отмена</Button>
             <Button type="submit" loading={createMut.isPending || updateMut.isPending}>
@@ -411,11 +419,13 @@ function EmojisTab() {
     queryFn: () => api.admin.emojis.list(),
   });
 
-  const items = data?.data ?? [];
+  const items = data?.data.data ?? [];
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<EmojiForm>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<EmojiForm>({
     resolver: zodResolver(emojiSchema),
   });
+
+  const emojiTabValue = watch('emoji');
 
   const createMut = useMutation({
     mutationFn: (d: EmojiForm) => api.admin.emojis.create(d),
@@ -558,7 +568,12 @@ function EmojisTab() {
 
       <Dialog open={dialogOpen} onClose={closeDialog} title={editing ? 'Редактировать' : 'Новый эмоджи'}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <Input id="emoji" label="Эмоджи" placeholder="🦊" error={errors.emoji?.message} {...register('emoji')} />
+          <EmojiPickerInput
+            value={emojiTabValue ?? ''}
+            onChange={(emoji) => setValue('emoji', emoji, { shouldValidate: true })}
+            label="Эмоджи"
+            error={errors.emoji?.message}
+          />
           <Input id="category" label="Категория" placeholder="animals" error={errors.category?.message} {...register('category')} />
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="ghost" onClick={closeDialog}>Отмена</Button>
@@ -579,7 +594,7 @@ export function ReferencePage() {
 
   return (
     <div>
-      <PageHeader title="Справочники" description="Управление никнеймами и аватарами" />
+      <PageHeader title="Никнеймы и аватары" description="Прилагательные, животные и эмоджи для персонализации" />
 
       <div className="flex gap-1 mb-6 bg-surface-secondary p-1 rounded-lg w-fit">
         {TABS.map((tab) => (

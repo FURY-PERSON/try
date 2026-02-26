@@ -51,7 +51,7 @@ test.describe('Collections Page', () => {
 
     await expect(page.locator('#title')).toBeVisible();
     await expect(page.locator('#titleEn')).toBeVisible();
-    await expect(page.locator('#icon')).toBeVisible();
+    await expect(page.getByText('Иконка').first()).toBeVisible();
     await expect(page.locator('#type')).toBeVisible();
     await expect(page.locator('#sortOrder')).toBeVisible();
 
@@ -98,7 +98,13 @@ test.describe('Collections Page', () => {
 
     await page.locator('#title').fill('E2E подборка ' + Date.now());
     await page.locator('#titleEn').fill('E2E Collection ' + Date.now());
-    await page.locator('#icon').fill('🧪');
+    // Select emoji via the emoji picker
+    await page.getByText('Иконка').first().click();
+    await page.waitForTimeout(300);
+    const emojiBtn = page.locator('button', { hasText: '🧪' }).first();
+    if (await emojiBtn.isVisible()) {
+      await emojiBtn.click();
+    }
 
     // Wait for questions to load
     await page.waitForTimeout(2000);

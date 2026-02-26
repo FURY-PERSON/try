@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -12,45 +12,56 @@ type DialogProps = {
 };
 
 export function Dialog({ open, onClose, title, description, children, className }: DialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
     if (open) {
-      dialog.showModal();
+      document.body.style.overflow = 'hidden';
     } else {
-      dialog.close();
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   return (
-    <dialog
-      ref={dialogRef}
-      onClose={onClose}
-      className={cn(
-        'fixed inset-0 z-50 bg-transparent backdrop:bg-black/40',
-        'open:flex open:items-center open:justify-center',
-      )}
-    >
-      <div className={cn('bg-surface rounded-2xl p-6 w-full max-w-lg shadow-xl', className)}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-base font-semibold text-text-primary">{title}</h2>
-            {description && (
-              <p className="text-sm text-text-secondary mt-0.5">{description}</p>
-            )}
+    <>
+      <div
+        className="fixed inset-0 z-50 bg-black/40"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className={cn('bg-surface rounded-2xl p-6 w-full max-w-lg shadow-xl pointer-events-auto', className)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+              {description && (
+                <p className="text-sm text-text-secondary mt-0.5">{description}</p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {children}
         </div>
-        {children}
       </div>
-    </dialog>
+    </>
   );
 }

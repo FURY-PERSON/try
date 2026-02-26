@@ -35,7 +35,7 @@ export class UpdateDailySetDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @ArrayMinSize(5)
-  @ArrayMaxSize(5)
+  @ArrayMinSize(15)
+  @ArrayMaxSize(15)
   questionIds?: string[];
 }

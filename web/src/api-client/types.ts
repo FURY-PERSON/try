@@ -71,6 +71,7 @@ export type QuestionQueryDto = {
   status?: QuestionStatus;
   difficulty?: number;
   search?: string;
+  notInDailySet?: string;
 };
 
 export type CreateDailySetDto = {
@@ -78,7 +79,7 @@ export type CreateDailySetDto = {
   theme: string;
   themeEn: string;
   questionIds: string[];
-  status?: 'draft' | 'scheduled';
+  status?: 'draft' | 'scheduled' | 'published';
 };
 
 export type UpdateDailySetDto = Partial<CreateDailySetDto>;
@@ -240,5 +241,7 @@ export type UpdateEmojiDto = Partial<CreateEmojiDto>;
 export type ApiClientOptions = {
   deviceId?: string;
   accessToken?: string;
+  refreshToken?: string;
+  onTokenRefreshed?: (accessToken: string) => void;
   onTokenExpired?: () => void;
 };

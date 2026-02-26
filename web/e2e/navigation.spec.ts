@@ -11,7 +11,7 @@ test.describe('Sidebar Navigation', () => {
   });
 
   test('sidebar shows all navigation items', async ({ page }) => {
-    const navItems = ['Дашборд', 'Утверждения', 'AI Генерация', 'Ежедневные наборы', 'Категории', 'Подборки'];
+    const navItems = ['Дашборд', 'Утверждения', 'Ежедневные наборы', 'Категории', 'Подборки', 'Никнеймы и аватары'];
     for (const item of navItems) {
       await expect(page.locator('aside').getByText(item)).toBeVisible();
     }
@@ -27,8 +27,9 @@ test.describe('Sidebar Navigation', () => {
     await expect(page.getByText('Утверждения').first()).toBeVisible();
   });
 
-  test('navigate to AI Генерация', async ({ page }) => {
-    await page.locator('aside').getByText('AI Генерация').click();
+  test('AI Генерация is not visible in sidebar but route still works', async ({ page }) => {
+    await expect(page.locator('aside').getByText('AI Генерация')).not.toBeVisible();
+    await page.goto('/questions/generate');
     await expect(page).toHaveURL('/questions/generate');
   });
 
@@ -48,6 +49,12 @@ test.describe('Sidebar Navigation', () => {
     await page.locator('aside').getByText('Подборки').click();
     await expect(page).toHaveURL('/collections');
     await expect(page.getByText('Подборки').first()).toBeVisible();
+  });
+
+  test('navigate to Никнеймы и аватары', async ({ page }) => {
+    await page.locator('aside').getByText('Никнеймы и аватары').click();
+    await expect(page).toHaveURL('/reference');
+    await expect(page.getByText('Никнеймы и аватары').first()).toBeVisible();
   });
 
   test('navigate back to Дашборд', async ({ page }) => {

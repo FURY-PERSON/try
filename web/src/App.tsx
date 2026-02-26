@@ -9,6 +9,7 @@ import { QuestionGeneratePage } from '@/pages/QuestionGeneratePage';
 import { QuestionCreatePage } from '@/pages/QuestionCreatePage';
 import { DailySetsPage } from '@/pages/DailySetsPage';
 import { DailySetCreatePage } from '@/pages/DailySetCreatePage';
+import { DailySetEditPage } from '@/pages/DailySetEditPage';
 import { CategoriesPage } from '@/pages/CategoriesPage';
 import { CollectionsPage } from '@/pages/CollectionsPage';
 import { ReferencePage } from '@/pages/ReferencePage';
@@ -39,6 +40,7 @@ export function App() {
         <Route path="questions/:id" element={<QuestionDetailPage />} />
         <Route path="daily-sets" element={<DailySetsPage />} />
         <Route path="daily-sets/create" element={<DailySetCreatePage />} />
+        <Route path="daily-sets/:id/edit" element={<DailySetEditPage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="collections" element={<CollectionsPage />} />
         <Route path="reference" element={<ReferencePage />} />

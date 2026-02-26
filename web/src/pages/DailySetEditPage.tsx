@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,15 +14,16 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { Skeleton } from '@/components/ui/Skeleton';
 
-const createSchema = z.object({
+const editSchema = z.object({
   date: z.string().min(1, 'Выберите дату'),
   theme: z.string().min(1, 'Введите тему'),
   themeEn: z.string().min(1, 'Введите тему (EN)'),
   status: z.enum(['draft', 'scheduled', 'published']),
 });
 
-type CreateFormData = z.infer<typeof createSchema>;
+type EditFormData = z.infer<typeof editSchema>;
 
 const IS_TRUE_OPTIONS = [
   { value: '', label: 'Все' },
@@ -30,7 +31,8 @@ const IS_TRUE_OPTIONS = [
   { value: 'false', label: 'Фейки' },
 ];
 
-export function DailySetCreatePage() {
+export function DailySetEditPage() {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
@@ -38,6 +40,12 @@ export function DailySetCreatePage() {
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [usedFilter, setUsedFilter] = useState<'new' | 'all'>('new');
+
+  const { data: setData, isLoading: setLoading } = useQuery({
+    queryKey: ['admin', 'daily-sets', id],
+    queryFn: () => api.admin.dailySets.getById(id!),
+    enabled: !!id,
+  });
 
   const { data: questionsData } = useQuery({
     queryKey: ['admin', 'questions', { status: 'approved', limit: 500, notInDailySet: usedFilter === 'new' ? 'true' : undefined }],
@@ -53,11 +61,22 @@ export function DailySetCreatePage() {
     queryFn: () => api.admin.categories.list(),
   });
 
+  const dailySet = setData?.data.data;
   const approvedQuestions = questionsData?.data.data ?? [];
   const categories = categoriesData?.data.data ?? [];
 
-  const filteredQuestions = approvedQuestions
-    .filter((q: any) => !selectedQuestionIds.includes(q.id))
+  // Combine approved questions with already-selected questions from the daily set
+  const allKnownQuestions = [...approvedQuestions];
+  if (dailySet?.questions) {
+    for (const dsq of dailySet.questions) {
+      if (!allKnownQuestions.find((q: any) => q.id === (dsq as any).question?.id)) {
+        allKnownQuestions.push((dsq as any).question);
+      }
+    }
+  }
+
+  const filteredQuestions = allKnownQuestions
+    .filter((q: any) => q && !selectedQuestionIds.includes(q.id))
     .filter((q: any) => !searchQuery || q.statement?.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter((q: any) => !isTrueFilter || String(q.isTrue) === isTrueFilter)
     .filter((q: any) => !categoryFilter || q.categoryId === categoryFilter || q.category?.id === categoryFilter);
@@ -65,45 +84,83 @@ export function DailySetCreatePage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
-  } = useForm<CreateFormData>({
-    resolver: zodResolver(createSchema),
+  } = useForm<EditFormData>({
+    resolver: zodResolver(editSchema),
     defaultValues: {
       status: 'draft',
     },
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: CreateFormData) =>
-      api.admin.dailySets.create({
+  useEffect(() => {
+    if (dailySet) {
+      reset({
+        date: dailySet.date.split('T')[0],
+        theme: dailySet.theme,
+        themeEn: dailySet.themeEn,
+        status: dailySet.status as 'draft' | 'scheduled' | 'published',
+      });
+      setSelectedQuestionIds(
+        dailySet.questions.map((dsq: any) => dsq.question?.id ?? dsq.questionId),
+      );
+    }
+  }, [dailySet, reset]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data: EditFormData) =>
+      api.admin.dailySets.update(id!, {
         ...data,
         questionIds: selectedQuestionIds,
       }),
     onSuccess: () => {
-      toast.success('Набор создан');
+      toast.success('Набор обновлён');
       queryClient.invalidateQueries({ queryKey: ['admin', 'daily-sets'] });
       navigate('/daily-sets');
     },
-    onError: () => toast.error('Ошибка создания набора'),
+    onError: () => toast.error('Ошибка обновления набора'),
   });
 
-  const onSubmit = (data: CreateFormData) => {
+  const onSubmit = (data: EditFormData) => {
     if (selectedQuestionIds.length !== CARDS_PER_DAILY_SET) {
       toast.error(`Необходимо выбрать ровно ${CARDS_PER_DAILY_SET} утверждений`);
       return;
     }
-    createMutation.mutate(data);
+    updateMutation.mutate(data);
   };
 
-  const addQuestion = (id: string) => {
+  const addQuestion = (qId: string) => {
     if (selectedQuestionIds.length >= CARDS_PER_DAILY_SET) return;
-    if (selectedQuestionIds.includes(id)) return;
-    setSelectedQuestionIds((prev) => [...prev, id]);
+    if (selectedQuestionIds.includes(qId)) return;
+    setSelectedQuestionIds((prev) => [...prev, qId]);
   };
 
-  const removeQuestion = (id: string) => {
-    setSelectedQuestionIds((prev) => prev.filter((qId) => qId !== id));
+  const removeQuestion = (qId: string) => {
+    setSelectedQuestionIds((prev) => prev.filter((id) => id !== qId));
   };
+
+  if (setLoading) {
+    return (
+      <div>
+        <Skeleton className="h-8 w-64 mb-6" />
+        <div className="grid grid-cols-2 gap-6">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!dailySet) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-text-secondary">Набор не найден</p>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate('/daily-sets')}>
+          К списку наборов
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -115,7 +172,7 @@ export function DailySetCreatePage() {
         Назад
       </button>
 
-      <PageHeader title="Создать ежедневный набор" />
+      <PageHeader title="Редактировать ежедневный набор" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
@@ -163,11 +220,11 @@ export function DailySetCreatePage() {
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {selectedQuestionIds.map((id, index) => {
-                    const q = approvedQuestions.find((aq: any) => aq.id === id);
+                  {selectedQuestionIds.map((qId, index) => {
+                    const q = allKnownQuestions.find((aq: any) => aq.id === qId);
                     return (
                       <div
-                        key={id}
+                        key={qId}
                         className="flex items-center justify-between p-2 bg-surface-secondary rounded-lg"
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -178,12 +235,12 @@ export function DailySetCreatePage() {
                             {q?.isTrue ? 'Факт' : 'Фейк'}
                           </Badge>
                           <span className="text-xs text-text-secondary truncate">
-                            {q?.statement?.slice(0, 40) ?? id.slice(0, 8)}...
+                            {q?.statement?.slice(0, 40) ?? qId.slice(0, 8)}...
                           </span>
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeQuestion(id)}
+                          onClick={() => removeQuestion(qId)}
                           className="p-1 text-text-secondary hover:text-red transition-colors shrink-0"
                         >
                           <X className="w-4 h-4" />
@@ -198,10 +255,10 @@ export function DailySetCreatePage() {
             <Button
               type="submit"
               className="w-full"
-              loading={createMutation.isPending}
+              loading={updateMutation.isPending}
               disabled={selectedQuestionIds.length !== CARDS_PER_DAILY_SET}
             >
-              Создать набор
+              Сохранить набор
             </Button>
           </form>
         </Card>

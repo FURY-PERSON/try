@@ -83,6 +83,16 @@ export function createAdminEndpoints(http: AxiosInstance) {
           ids,
         });
       },
+      bulkReject(ids: string[]) {
+        return http.post<ApiResponse<{ rejected: number }>>('/admin/questions/bulk-reject', {
+          ids,
+        });
+      },
+      bulkDelete(ids: string[]) {
+        return http.post<ApiResponse<{ deleted: number }>>('/admin/questions/bulk-delete', {
+          ids,
+        });
+      },
     },
 
     // ── Daily Sets ──
@@ -168,13 +178,13 @@ export function createAdminEndpoints(http: AxiosInstance) {
     // ── Reference: Adjectives ──
     adjectives: {
       list() {
-        return http.get<NicknameAdjective[]>('/admin/reference/adjectives');
+        return http.get<ApiResponse<NicknameAdjective[]>>('/admin/reference/adjectives');
       },
       create(dto: CreateAdjectiveDto) {
-        return http.post<NicknameAdjective>('/admin/reference/adjectives', dto);
+        return http.post<ApiResponse<NicknameAdjective>>('/admin/reference/adjectives', dto);
       },
       update(id: string, dto: UpdateAdjectiveDto) {
-        return http.patch<NicknameAdjective>(`/admin/reference/adjectives/${id}`, dto);
+        return http.patch<ApiResponse<NicknameAdjective>>(`/admin/reference/adjectives/${id}`, dto);
       },
       delete(id: string) {
         return http.delete(`/admin/reference/adjectives/${id}`);
@@ -184,13 +194,13 @@ export function createAdminEndpoints(http: AxiosInstance) {
     // ── Reference: Animals ──
     animals: {
       list() {
-        return http.get<NicknameAnimal[]>('/admin/reference/animals');
+        return http.get<ApiResponse<NicknameAnimal[]>>('/admin/reference/animals');
       },
       create(dto: CreateAnimalDto) {
-        return http.post<NicknameAnimal>('/admin/reference/animals', dto);
+        return http.post<ApiResponse<NicknameAnimal>>('/admin/reference/animals', dto);
       },
       update(id: string, dto: UpdateAnimalDto) {
-        return http.patch<NicknameAnimal>(`/admin/reference/animals/${id}`, dto);
+        return http.patch<ApiResponse<NicknameAnimal>>(`/admin/reference/animals/${id}`, dto);
       },
       delete(id: string) {
         return http.delete(`/admin/reference/animals/${id}`);
@@ -200,13 +210,13 @@ export function createAdminEndpoints(http: AxiosInstance) {
     // ── Reference: Emojis ──
     emojis: {
       list() {
-        return http.get<AvatarEmojiItem[]>('/admin/reference/emojis');
+        return http.get<ApiResponse<AvatarEmojiItem[]>>('/admin/reference/emojis');
       },
       create(dto: CreateEmojiDto) {
-        return http.post<AvatarEmojiItem>('/admin/reference/emojis', dto);
+        return http.post<ApiResponse<AvatarEmojiItem>>('/admin/reference/emojis', dto);
       },
       update(id: string, dto: UpdateEmojiDto) {
-        return http.patch<AvatarEmojiItem>(`/admin/reference/emojis/${id}`, dto);
+        return http.patch<ApiResponse<AvatarEmojiItem>>(`/admin/reference/emojis/${id}`, dto);
       },
       delete(id: string) {
         return http.delete(`/admin/reference/emojis/${id}`);

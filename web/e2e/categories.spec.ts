@@ -41,7 +41,7 @@ test.describe('Categories Page', () => {
     await expect(page.locator('#name')).toBeVisible();
     await expect(page.locator('#nameEn')).toBeVisible();
     await expect(page.locator('#slug')).toBeVisible();
-    await expect(page.locator('#icon')).toBeVisible();
+    await expect(page.getByText('Иконка (emoji)')).toBeVisible();
     await expect(page.locator('#sortOrder')).toBeVisible();
 
     await page.getByRole('button', { name: 'Отмена' }).click();
@@ -56,7 +56,13 @@ test.describe('Categories Page', () => {
     await page.locator('#name').fill('Тестовая E2E');
     await page.locator('#nameEn').fill('Test E2E');
     await page.locator('#slug').fill(slug);
-    await page.locator('#icon').fill('🧪');
+    // Select emoji via the emoji picker
+    const emojiPickerTrigger = page.getByText('Иконка (emoji)').locator('..').locator('.cursor-pointer');
+    await emojiPickerTrigger.click();
+    await page.waitForTimeout(300);
+    const emojiButton = page.locator('button', { hasText: '🧪' }).first();
+    await expect(emojiButton).toBeVisible();
+    await emojiButton.click();
     await page.locator('#sortOrder').fill('99');
 
     await page.getByRole('button', { name: 'Создать' }).click();

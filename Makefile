@@ -2,8 +2,8 @@
 # WordPulse — Makefile
 # ─────────────────────────────────────────
 
-dev-start: ## Запустить server в dev режиме
-	docker compose up
+start-server: ## Запустить сервер 
+	docker compose up --build
 
 dev-web: ## Запустить web в dev режиме
 	cd web && npm run dev

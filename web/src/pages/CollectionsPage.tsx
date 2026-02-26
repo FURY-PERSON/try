@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
 import { Dialog } from '@/components/ui/Dialog';
+import { EmojiPickerInput } from '@/components/ui/EmojiPickerInput';
 import {
   Table,
   TableBody,
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/Table';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { PageSizeSelect } from '@/components/ui/PageSizeSelect';
 
 const collectionSchema = z.object({
   title: z.string().min(1, 'Введите название'),
@@ -76,13 +78,14 @@ export function CollectionsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'collections', { page, status: statusFilter, type: typeFilter }],
+    queryKey: ['admin', 'collections', { page, limit, status: statusFilter, type: typeFilter }],
     queryFn: () =>
       api.admin.collections.list({
         page,
-        limit: 20,
+        limit,
         ...(statusFilter && { status: statusFilter }),
         ...(typeFilter && { type: typeFilter }),
       }),
@@ -113,10 +116,14 @@ export function CollectionsPage() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CollectionFormData>({
     resolver: zodResolver(collectionSchema),
   });
+
+  const iconValue = watch('icon');
 
   const createMutation = useMutation({
     mutationFn: (data: CollectionFormData & { questionIds: string[] }) =>
@@ -398,27 +405,37 @@ export function CollectionsPage() {
       </Card>
 
       {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            ← Назад
-          </Button>
-          <span className="text-sm text-text-secondary self-center">
-            {page} / {meta.totalPages}
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={page >= meta.totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Вперёд →
-          </Button>
+      {meta && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-text-secondary">
+              {page} / {meta.totalPages}
+            </span>
+            <PageSizeSelect
+              value={limit}
+              onChange={(size) => { setLimit(size); setPage(1); }}
+            />
+          </div>
+          {meta.totalPages > 1 && (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                ← Назад
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={page >= meta.totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Вперёд →
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -460,12 +477,12 @@ export function CollectionsPage() {
           />
 
           <div className="grid grid-cols-3 gap-4">
-            <Input
-              id="icon"
+            <EmojiPickerInput
+              value={iconValue ?? ''}
+              onChange={(emoji) => setValue('icon', emoji, { shouldValidate: true })}
               label="Иконка"
-              placeholder="💊"
               error={errors.icon?.message}
-              {...register('icon')}
+              placeholder="💊"
             />
             <Select
               id="type"
