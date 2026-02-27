@@ -49,7 +49,7 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface-secondary p-4">
       <Card className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-primary">Факт или Фейк</h1>
+          <h1 className="text-2xl font-bold text-primary">Фронт фактов</h1>
           <p className="text-sm text-text-secondary mt-1">Админ-панель</p>
         </div>
 
@@ -58,7 +58,7 @@ export function LoginPage() {
             id="email"
             label="Email"
             type="email"
-            placeholder="admin@factorfake.app"
+            placeholder="admin@factfront.app"
             error={errors.email?.message}
             {...register('email')}
           />

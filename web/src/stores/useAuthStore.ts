@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: null, refreshToken: null, isAuthenticated: false }),
     }),
     {
-      name: 'wordpulse-admin-auth',
+      name: 'factfront-admin-auth',
     },
   ),
 );

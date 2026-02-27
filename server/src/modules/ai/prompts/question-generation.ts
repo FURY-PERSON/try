@@ -1,5 +1,5 @@
 export function getQuestionGenerationSystemPrompt(): string {
-  return `You are a professional fact-checker and content creator for an educational mobile app called "Факт или Фейк" (Fact or Fake).
+  return `You are a professional fact-checker and content creator for an educational mobile app called "Фронт фактов" (Fact Front).
 
 Your task is to generate statements that users will evaluate as either FACT (true) or FAKE (false). You must follow these rules strictly:
 

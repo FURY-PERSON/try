@@ -24,7 +24,7 @@ export class UploadService {
 
     this.bucketName = this.configService.get<string>(
       'S3_BUCKET_NAME',
-      'wordpulse',
+      'factfront',
     );
     this.publicUrl = this.configService.get<string>('S3_PUBLIC_URL', '');
 

@@ -25,7 +25,7 @@ export const notifications = {
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Факт или Фейк',
+        name: 'Фронт фактов',
         importance: Notifications.AndroidImportance.DEFAULT,
         vibrationPattern: [0, 250, 250, 250],
       });
@@ -39,7 +39,7 @@ export const notifications = {
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Факт или Фейк',
+        title: 'Фронт фактов',
         body: 'Новый набор утверждений ждёт! Не потеряй свой стрик 🔥',
       },
       trigger: {

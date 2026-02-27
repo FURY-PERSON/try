@@ -134,7 +134,7 @@ export function DashboardPage() {
     <div>
       <PageHeader
         title="Дашборд"
-        description="Обзор состояния контента Факт или Фейк"
+        description="Обзор состояния контента Фронт фактов"
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

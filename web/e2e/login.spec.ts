@@ -5,7 +5,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 test.describe('Login Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'Факт или Фейк' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Фронт фактов' })).toBeVisible();
   });
 
   test('shows login form', async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe('Login Page', () => {
   });
 
   test('successful login redirects to dashboard', async ({ page }) => {
-    await page.locator('#email').fill('admin@wordpulse.app');
+    await page.locator('#email').fill('admin@factfront.app');
     await page.locator('#password').fill('admin123');
     await page.getByRole('button', { name: 'Войти' }).click();
 

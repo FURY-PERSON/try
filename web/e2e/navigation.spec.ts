@@ -6,7 +6,7 @@ test.describe('Sidebar Navigation', () => {
   });
 
   test('sidebar shows app title and subtitle', async ({ page }) => {
-    await expect(page.locator('aside').getByText('Факт или Фейк')).toBeVisible();
+    await expect(page.locator('aside').getByText('Фронт фактов')).toBeVisible();
     await expect(page.locator('aside').getByText('Админ-панель')).toBeVisible();
   });
 

@@ -4,11 +4,11 @@
     "ios_app_id": "ca-app-pub-3940256099942544~1458002511"
   },
   "expo": {
-    "name": "Факт или Фейк",
-    "slug": "fact-or-fake",
+    "name": "Фронт фактов",
+    "slug": "fact-front",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "factorfake",
+    "scheme": "factfront",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
     "newArchEnabled": true,
@@ -19,7 +19,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.factorfake.app",
+      "bundleIdentifier": "com.factfront.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
@@ -36,7 +36,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#58CC02"
       },
-      "package": "com.factorfake.app",
+      "package": "com.factfront.app",
       "versionCode": 1,
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
       "config": {

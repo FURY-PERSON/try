@@ -9,7 +9,7 @@ type ShareResultParams = {
 
 export const shareResult = async ({ score, total, streak, results }: ShareResultParams): Promise<void> => {
   const squares = results.map((correct) => (correct ? '🟩' : '🟥')).join('');
-  const message = `Факт или Фейк ${score}/${total} ${squares}\n🔥 Стрик: ${streak}\nhttps://factorfake.app`;
+  const message = `Фронт фактов ${score}/${total} ${squares}\n🔥 Стрик: ${streak}\nhttps://factfront.app`;
 
   try {
     await Share.share({ message });
@@ -19,7 +19,7 @@ export const shareResult = async ({ score, total, streak, results }: ShareResult
 };
 
 export const shareFact = async (explanation: string, source: string): Promise<void> => {
-  const message = `💡 ${explanation}\n\n📖 ${source}\n\nВ приложении Факт или Фейк`;
+  const message = `💡 ${explanation}\n\n📖 ${source}\n\nВ приложении Фронт фактов`;
 
   try {
     await Share.share({ message });

@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: wordpulse
-      POSTGRES_PASSWORD: wordpulse_dev
-      POSTGRES_DB: wordpulse
+      POSTGRES_USER: factfront
+      POSTGRES_PASSWORD: factfront_dev
+      POSTGRES_DB: factfront
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wordpulse"]
+      test: ["CMD-SHELL", "pg_isready -U factfront"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,13 +22,13 @@ services:
     ports:
       - "3001:3001"
     environment:
-      DATABASE_URL: postgresql://wordpulse:wordpulse_dev@postgres:5432/wordpulse
+      DATABASE_URL: postgresql://factfront:factfront_dev@postgres:5432/factfront
       PORT: "3001"
       NODE_ENV: production
       JWT_SECRET: change-this-in-production-to-random-string
       JWT_EXPIRATION: 1d
       JWT_REFRESH_EXPIRATION: 30d
-      ADMIN_EMAIL: admin@wordpulse.app
+      ADMIN_EMAIL: admin@factfront.app
       ADMIN_PASSWORD: admin123
       CORS_ORIGIN: "*"
       THROTTLE_TTL: "60"

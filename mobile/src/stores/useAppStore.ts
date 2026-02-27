@@ -42,7 +42,7 @@ export const useAppStore = create<AppState>()(
       },
     }),
     {
-      name: 'factorfake-app-store',
+      name: 'factfront-app-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

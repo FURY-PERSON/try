@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>Факт или Фейк</string>
+    <string>Фронт фактов</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>factorfake</string>
-          <string>com.factorfake.app</string>
+          <string>factfront</string>
+          <string>com.factfront.app</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+fact-or-fake</string>
+          <string>exp+fact-front</string>
         </array>
       </dict>
     </array>

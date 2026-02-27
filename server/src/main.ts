@@ -47,9 +47,9 @@ async function bootstrap() {
 
   // Swagger documentation
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('WordPulse API')
+    .setTitle('Fact Front API')
     .setDescription(
-      'API for WordPulse - a daily word puzzle game with educational facts',
+      'API for Fact Front - a daily educational facts game',
     )
     .setVersion('1.0')
     .addApiKey(
@@ -65,7 +65,7 @@ async function bootstrap() {
   // Start server
   const port = configService.get<number>('PORT') || 3001;
   await app.listen(port);
-  logger.log(`WordPulse API is running on: http://localhost:${port}`);
+  logger.log(`Fact Front API is running on: http://localhost:${port}`);
   logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
 }
 

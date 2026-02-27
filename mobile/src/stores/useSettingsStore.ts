@@ -64,7 +64,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
     }),
     {
-      name: 'factorfake-settings-store',
+      name: 'factfront-settings-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

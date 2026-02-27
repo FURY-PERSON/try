@@ -25,7 +25,7 @@ export const useUserStore = create<UserState>()(
       },
     }),
     {
-      name: 'factorfake-user-store',
+      name: 'factfront-user-store',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

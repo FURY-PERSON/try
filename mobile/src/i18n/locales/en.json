@@ -22,7 +22,7 @@
     "profile": "Profile"
   },
   "onboarding": {
-    "step1Title": "Fact or Fake?\nBust the myths!",
+    "step1Title": "Fact Front\nBust the myths!",
     "step1Desc": "15 statements every day — tell fact from fiction. After each answer, learn the explanation from verified sources",
     "step2Title": "Swipe\nleft and right",
     "step2Desc": "Think it's true — swipe right. Think it's fake — swipe left. Simple!",
@@ -37,7 +37,7 @@
     "start": "Start!"
   },
   "home": {
-    "title": "Fact or Fake",
+    "title": "Fact Front",
     "dailySet": "Daily Set",
     "dailyTheme": "Theme: {{theme}}",
     "dailyDesc": "15 statements — swipe right (fact) or left (fake)",

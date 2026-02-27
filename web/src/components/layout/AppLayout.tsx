@@ -35,7 +35,7 @@ export function AppLayout() {
     <div className="flex h-screen bg-surface-secondary">
       <aside className="w-60 bg-surface border-r border-border flex flex-col">
         <div className="px-5 py-5 border-b border-border">
-          <h1 className="text-base font-semibold text-text-primary">Факт или Фейк</h1>
+          <h1 className="text-base font-semibold text-text-primary">Фронт фактов</h1>
           <p className="text-xs text-text-secondary mt-0.5">Админ-панель</p>
         </div>
 

@@ -115,7 +115,7 @@ export function QuestionCreatePage() {
         Назад
       </button>
 
-      <PageHeader title="Создать утверждение" description="Ручное создание нового утверждения для игры «Факт или Фейк»" />
+      <PageHeader title="Создать утверждение" description="Ручное создание нового утверждения для игры «Фронт фактов»" />
 
       <div className="max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

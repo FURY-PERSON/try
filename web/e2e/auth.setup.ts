@@ -7,7 +7,7 @@ const authFile = path.join(__dirname, '.auth/admin.json');
 
 setup('authenticate as admin', async ({ page }) => {
   await page.goto('/login');
-  await page.locator('#email').fill('admin@wordpulse.app');
+  await page.locator('#email').fill('admin@factfront.app');
   await page.locator('#password').fill('admin123');
   await page.getByRole('button', { name: 'Войти' }).click();
 
