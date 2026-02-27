@@ -16,6 +16,7 @@ import {
 import { ThemeProvider } from '@/theme';
 import { useAppStore } from '@/stores/useAppStore';
 import { adManager } from '@/services/ads';
+import { initializeFirebase } from '@/services/firebase';
 import '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
@@ -46,6 +47,7 @@ export default function RootLayout() {
     initializeDevice();
     incrementLaunchCount();
     adManager.initialize();
+    initializeFirebase();
   }, [initializeDevice, incrementLaunchCount]);
 
   const onLayoutRootView = useCallback(async () => {

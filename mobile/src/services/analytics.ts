@@ -1,3 +1,5 @@
+import { getFirebaseAnalytics } from './firebase';
+
 type AnalyticsEvent =
   | 'app_open'
   | 'onboarding_start'
@@ -34,18 +36,14 @@ export const analytics = {
   logEvent(event: AnalyticsEvent, params?: AnalyticsParams): void {
     if (__DEV__) {
       console.log(`[Analytics] ${event}`, params);
-      return;
     }
-    // TODO: Integrate Firebase Analytics
-    // firebase.analytics().logEvent(event, params);
+    getFirebaseAnalytics().logEvent(event, params).catch(console.warn);
   },
 
   setUserProperty(name: string, value: string): void {
     if (__DEV__) {
       console.log(`[Analytics] UserProperty: ${name} = ${value}`);
-      return;
     }
-    // TODO: Integrate Firebase Analytics
-    // firebase.analytics().setUserProperty(name, value);
+    getFirebaseAnalytics().setUserProperties({ [name]: value }).catch(console.warn);
   },
 };

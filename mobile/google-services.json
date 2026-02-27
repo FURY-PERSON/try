@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "550384192785",
+    "project_id": "fact-1ef4b",
+    "storage_bucket": "fact-1ef4b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:550384192785:android:d9fddbfef8638ca04990b0",
+        "android_client_info": {
+          "package_name": "com.factfront.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKsZq4GOHspQUd6BKlb4-Jwf5gNoIf3qo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
