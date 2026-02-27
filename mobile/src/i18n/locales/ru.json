@@ -125,7 +125,9 @@
   },
   "settings": {
     "title": "Настройки",
-    "language": "Язык",
+    "interfaceLanguage": "Язык интерфейса",
+    "contentLanguage": "Язык контента",
+    "contentBoth": "Оба",
     "theme": "Тема",
     "themeLight": "Светлая",
     "themeDark": "Тёмная",
@@ -166,6 +168,7 @@
     "playAgain": "Играть ещё",
     "available": "доступно",
     "total": "всего",
+    "solvedOf": "Решено {{solved}} из {{total}}",
     "lastResult": "Последний результат",
     "allDone": "Все факты изучены!",
     "notFound": "Категория не найдена",

@@ -95,31 +95,31 @@ export default function LeaderboardScreen() {
         </View>
       </AnimatedEntrance>
 
-      {isLoading ? (
-        <View style={styles.skeletons}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} width="100%" height={56} shape="card" style={{ marginBottom: 8 }} />
-          ))}
-        </View>
-      ) : isError ? (
-        <ErrorState message={error?.message} onRetry={refetch} />
-      ) : entries.length === 0 ? (
-        <EmptyState title={t('leaderboard.empty')} />
-      ) : (
-        <AnimatedEntrance delay={100}>
-          <LeaderboardList
-            data={entries}
-            mode={mode}
-            currentUserId={currentUserId ?? undefined}
-            userContext={data?.userContext}
-            positionLabel={positionLabel}
-          />
-        </AnimatedEntrance>
-      )}
-
-      <View style={{ marginTop: spacing.lg }}>
-        <AdBanner placement="leaderboard_bottom" />
+      <View style={{ flex: 1 }}>
+        {isLoading ? (
+          <View style={styles.skeletons}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} width="100%" height={56} shape="card" style={{ marginBottom: 8 }} />
+            ))}
+          </View>
+        ) : isError ? (
+          <ErrorState message={error?.message} onRetry={refetch} />
+        ) : entries.length === 0 ? (
+          <EmptyState title={t('leaderboard.empty')} />
+        ) : (
+          <AnimatedEntrance delay={100} style={{ flex: 1 }}>
+            <LeaderboardList
+              data={entries}
+              mode={mode}
+              currentUserId={currentUserId ?? undefined}
+              userContext={data?.userContext}
+              positionLabel={positionLabel}
+            />
+          </AnimatedEntrance>
+        )}
       </View>
+
+      <AdBanner placement="leaderboard_bottom" />
     </Screen>
   );
 }

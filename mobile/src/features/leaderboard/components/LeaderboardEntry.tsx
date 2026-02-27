@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
-import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
@@ -25,7 +24,7 @@ const MEDAL_EMOJI: Record<number, string> = {
 function getDisplayValue(entry: LeaderboardEntryType, mode: LeaderboardMode): string {
   switch (mode) {
     case 'streak':
-      return String(entry.bestStreak ?? 0);
+      return `\u{1F3C6}${entry.bestStreak ?? 0} \u{1F525}${entry.currentStreak ?? 0}`;
     default:
       return String(entry.score);
   }
@@ -38,7 +37,6 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
   mode = 'score',
 }) => {
   const { colors, elevation, borderRadius } = useThemeContext();
-  const { t } = useTranslation();
   const isTop3 = rank <= 3;
   const medal = MEDAL_EMOJI[rank];
   const displayValue = getDisplayValue(entry, mode);
@@ -84,11 +82,6 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
               >
                 {entry.nickname ?? '???'}
               </Text>
-              {mode === 'streak' && (entry.currentStreak ?? 0) > 0 && (
-                <Text style={[styles.subValue, { color: colors.textTertiary }]}>
-                  {t('leaderboard.streakCurrent', { count: entry.currentStreak })}
-                </Text>
-              )}
             </View>
             <Text style={[styles.scoreTop, { color: colors.textPrimary }]}>
               {displayValue}
@@ -120,11 +113,6 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
           >
             {entry.nickname ?? '???'}
           </Text>
-          {mode === 'streak' && entry.bestStreak != null && entry.bestStreak > (entry.currentStreak ?? 0) && (
-            <Text style={[styles.subValue, { color: colors.textTertiary }]}>
-              best: {entry.bestStreak}d
-            </Text>
-          )}
         </View>
         <Text style={[styles.score, { color: colors.textPrimary }]}>
           {displayValue}
@@ -169,11 +157,6 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: 16,
     fontFamily: fontFamily.bold,
-  },
-  subValue: {
-    fontSize: 12,
-    fontFamily: fontFamily.regular,
-    marginTop: 1,
   },
   scoreTop: {
     fontSize: 20,

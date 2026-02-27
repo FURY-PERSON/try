@@ -98,6 +98,8 @@ const categories = [
   { name: 'Космос', nameEn: 'Space', slug: 'space', icon: '🚀', sortOrder: 6 },
   { name: 'Культура', nameEn: 'Culture', slug: 'culture', icon: '🎨', sortOrder: 7 },
   { name: 'Технологии', nameEn: 'Technology', slug: 'technology', icon: '💻', sortOrder: 8 },
+  { name: 'Спорт', nameEn: 'Sport', slug: 'sport', icon: '🏆', color: '#FF9500', sortOrder: 9 },
+  { name: 'Здоровье', nameEn: 'Health', slug: 'health', icon: '🏥', color: '#FF2D55', sortOrder: 10 },
 ];
 
 async function main() {

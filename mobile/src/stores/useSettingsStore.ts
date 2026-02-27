@@ -4,10 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemePreference = 'light' | 'dark' | 'system';
 type Language = 'ru' | 'en';
+type ContentLanguage = 'ru' | 'en' | 'both';
 
 type SettingsState = {
   theme: ThemePreference;
   language: Language;
+  contentLanguage: ContentLanguage;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
   notificationsEnabled: boolean;
@@ -15,6 +17,7 @@ type SettingsState = {
 
   setTheme: (theme: ThemePreference) => void;
   setLanguage: (language: Language) => void;
+  setContentLanguage: (language: ContentLanguage) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
@@ -26,6 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       theme: 'system',
       language: 'ru',
+      contentLanguage: 'ru',
       soundEnabled: true,
       hapticsEnabled: true,
       notificationsEnabled: true,
@@ -37,6 +41,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setLanguage: (language: Language) => {
         set({ language });
+      },
+
+      setContentLanguage: (contentLanguage: ContentLanguage) => {
+        set({ contentLanguage });
       },
 
       setSoundEnabled: (enabled: boolean) => {

@@ -5,6 +5,7 @@ import {
   Calendar,
   FolderTree,
   Library,
+  Bell,
   BookOpen,
   LogOut,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
   { to: '/categories', icon: FolderTree, label: 'Категории' },
   { to: '/collections', icon: Library, label: 'Подборки' },
+  { to: '/notifications', icon: Bell, label: 'Уведомления' },
   { to: '/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
 ];
 

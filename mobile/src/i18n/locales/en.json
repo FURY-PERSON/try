@@ -18,7 +18,7 @@
   },
   "tabs": {
     "home": "Home",
-    "leaderboard": "Ranking",
+    "leaderboard": "Leaderboard",
     "profile": "Profile"
   },
   "onboarding": {
@@ -47,7 +47,7 @@
     "empty": "Today's set is not ready yet",
     "locked": "Available in {{days}} d.",
     "lockedHours": "Available in {{hours}} h.",
-    "categories": "Topics",
+    "categories": "Categories",
     "categoriesAll": "All",
     "questionsAvailable": "{{count}} questions",
     "allDone": "All done!",
@@ -125,7 +125,9 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language",
+    "interfaceLanguage": "Interface language",
+    "contentLanguage": "Content language",
+    "contentBoth": "Both",
     "theme": "Theme",
     "themeLight": "Light",
     "themeDark": "Dark",
@@ -166,6 +168,7 @@
     "playAgain": "Play Again",
     "available": "available",
     "total": "total",
+    "solvedOf": "Solved {{solved}} out of {{total}}",
     "lastResult": "Last Result",
     "allDone": "All facts explored!",
     "notFound": "Category not found",

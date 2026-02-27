@@ -6,6 +6,8 @@ import {
   IsEnum,
   ArrayMinSize,
   ArrayMaxSize,
+  MinLength,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -19,10 +21,14 @@ export class CreateDailySetDto {
 
   @ApiProperty({ example: 'Удивительная наука', description: 'Theme in Russian' })
   @IsString()
+  @MinLength(3, { message: 'Theme must be at least 3 characters long' })
+  @MaxLength(100, { message: 'Theme must be at most 100 characters long' })
   theme: string;
 
   @ApiProperty({ example: 'Amazing Science', description: 'Theme in English' })
   @IsString()
+  @MinLength(3, { message: 'Theme (EN) must be at least 3 characters long' })
+  @MaxLength(100, { message: 'Theme (EN) must be at most 100 characters long' })
   themeEn: string;
 
   @ApiProperty({

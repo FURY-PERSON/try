@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -25,6 +25,10 @@ export default function SettingsScreen() {
     <Screen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="chevron-left" size={24} color={colors.primary} />
+            <Text style={[styles.backText, { color: colors.primary }]}>{t('common.back')}</Text>
+          </Pressable>
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('settings.title')}
           </Text>
@@ -35,7 +39,7 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Feather name="globe" size={18} color={colors.blue} />}
               iconBgColor={colors.blue + '15'}
-              title={t('settings.language')}
+              title={t('settings.interfaceLanguage')}
             />
             <View style={styles.chipRow}>
               <Chip
@@ -49,6 +53,32 @@ export default function SettingsScreen() {
                 variant="primary"
                 selected={settings.language === 'en'}
                 onPress={() => settings.changeLanguage('en')}
+              />
+            </View>
+
+            <SettingsRow
+              icon={<MaterialCommunityIcons name="translate" size={18} color={colors.primary} />}
+              iconBgColor={colors.primary + '15'}
+              title={t('settings.contentLanguage')}
+            />
+            <View style={styles.chipRow}>
+              <Chip
+                label="🇷🇺 Русский"
+                variant="primary"
+                selected={settings.contentLanguage === 'ru'}
+                onPress={() => settings.changeContentLanguage('ru')}
+              />
+              <Chip
+                label="🇬🇧 English"
+                variant="primary"
+                selected={settings.contentLanguage === 'en'}
+                onPress={() => settings.changeContentLanguage('en')}
+              />
+              <Chip
+                label={t('settings.contentBoth')}
+                variant="primary"
+                selected={settings.contentLanguage === 'both'}
+                onPress={() => settings.changeContentLanguage('both')}
               />
             </View>
 
@@ -128,6 +158,16 @@ const styles = StyleSheet.create({
   header: {
     minHeight: 44,
     justifyContent: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    marginLeft: -6,
+  },
+  backText: {
+    fontSize: 16,
+    fontFamily: fontFamily.medium,
   },
   largeTitle: {
     fontSize: 32,

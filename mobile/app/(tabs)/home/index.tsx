@@ -109,6 +109,44 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleStartDifficulty = useCallback(async (difficulty: 'easy' | 'medium' | 'hard') => {
+    const progress = difficultyProgress?.[difficulty];
+    const isCompleted = progress && progress.totalCount > 0 && progress.answeredCount >= progress.totalCount;
+
+    if (isCompleted) {
+      Alert.alert(
+        t('category.allDone'),
+        t('category.replayDesc'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('category.playAgain'),
+            onPress: async () => {
+              setLoadingCollection(difficulty);
+              try {
+                const session = await collectionsApi.start({
+                  type: 'difficulty',
+                  difficulty,
+                  replay: true,
+                });
+                startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true);
+                analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
+                router.push({
+                  pathname: '/game/card',
+                  params: { mode: 'collection' },
+                });
+              } catch (err) {
+                const message = err instanceof Error ? err.message : 'Error';
+                Alert.alert(t('common.error'), message);
+              } finally {
+                setLoadingCollection(null);
+              }
+            },
+          },
+        ],
+      );
+      return;
+    }
+
     setLoadingCollection(difficulty);
     try {
       const session = await collectionsApi.start({
@@ -128,7 +166,7 @@ export default function HomeScreen() {
     } finally {
       setLoadingCollection(null);
     }
-  }, [startCollectionSession, router]);
+  }, [startCollectionSession, router, difficultyProgress]);
 
   const handleStartRandom = useCallback(async () => {
     setLoadingRandom(true);

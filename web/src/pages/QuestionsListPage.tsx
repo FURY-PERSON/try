@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTION_STATUS } from '@/shared';
-import type { QuestionStatus } from '@/shared';
+import { QUESTION_STATUS, QUESTION_STATUS_LABELS } from '@/shared';
+import type { QuestionStatus, Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -45,6 +45,21 @@ const DIFFICULTY_LABELS: Record<number, string> = {
   5: 'Экспертная',
 };
 
+const LANGUAGE_OPTIONS = [
+  { value: '', label: 'Все языки' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
+];
+
+const DIFFICULTY_OPTIONS = [
+  { value: '', label: 'Все сложности' },
+  { value: '1', label: '1 — Элементарная' },
+  { value: '2', label: '2 — Лёгкая' },
+  { value: '3', label: '3 — Средняя' },
+  { value: '4', label: '4 — Сложная' },
+  { value: '5', label: '5 — Экспертная' },
+];
+
 export function QuestionsListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -53,10 +68,26 @@ export function QuestionsListPage() {
   const [search, setSearch] = useState('');
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [languageFilter, setLanguageFilter] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
 
+  const { data: categoriesData } = useQuery({
+    queryKey: ['admin', 'categories'],
+    queryFn: () => api.admin.categories.list(),
+  });
+  const categories = categoriesData?.data.data ?? [];
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: 'Все категории' },
+      ...categories.map((c: any) => ({ value: c.id, label: `${c.icon} ${c.name}` })),
+    ],
+    [categories],
+  );
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'questions', { page, limit, search, isTrue: isTrueFilter, status: statusFilter }],
+    queryKey: ['admin', 'questions', { page, limit, search, isTrue: isTrueFilter, status: statusFilter, language: languageFilter, difficulty: difficultyFilter, categoryId: categoryFilter }],
     queryFn: () =>
       api.admin.questions.list({
         page,
@@ -64,6 +95,9 @@ export function QuestionsListPage() {
         search: search || undefined,
         isTrue: (isTrueFilter || undefined) as string | undefined,
         status: (statusFilter || undefined) as QuestionStatus | undefined,
+        language: (languageFilter || undefined) as Language | undefined,
+        difficulty: difficultyFilter ? Number(difficultyFilter) : undefined,
+        categoryId: categoryFilter || undefined,
       }),
   });
 
@@ -195,12 +229,30 @@ export function QuestionsListPage() {
             options={IS_TRUE_OPTIONS}
             value={isTrueFilter}
             onChange={(e) => { setIsTrueFilter(e.target.value); setPage(1); }}
-            className="w-48"
+            className="w-36"
           />
           <Select
             options={STATUS_OPTIONS}
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="w-44"
+          />
+          <Select
+            options={LANGUAGE_OPTIONS}
+            value={languageFilter}
+            onChange={(e) => { setLanguageFilter(e.target.value); setPage(1); }}
+            className="w-36"
+          />
+          <Select
+            options={DIFFICULTY_OPTIONS}
+            value={difficultyFilter}
+            onChange={(e) => { setDifficultyFilter(e.target.value); setPage(1); }}
+            className="w-48"
+          />
+          <Select
+            options={categoryOptions}
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
             className="w-48"
           />
         </div>
@@ -295,7 +347,7 @@ export function QuestionsListPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={STATUS_BADGE_VARIANT[q.status] ?? 'default'}>
-                          {q.status}
+                          {QUESTION_STATUS_LABELS[q.status] ?? q.status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-text-secondary">

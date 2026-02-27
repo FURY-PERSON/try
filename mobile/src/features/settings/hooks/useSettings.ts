@@ -16,6 +16,14 @@ export const useSettings = () => {
     [store],
   );
 
+  const changeContentLanguage = useCallback(
+    (contentLanguage: 'ru' | 'en' | 'both') => {
+      store.setContentLanguage(contentLanguage);
+      analytics.logEvent('settings_changed', { setting: 'content_language', value: contentLanguage });
+    },
+    [store],
+  );
+
   const changeTheme = useCallback(
     (theme: 'light' | 'dark' | 'system') => {
       store.setTheme(theme);
@@ -47,6 +55,7 @@ export const useSettings = () => {
   return {
     ...store,
     changeLanguage,
+    changeContentLanguage,
     changeTheme,
     toggleNotifications,
   };

@@ -4,8 +4,10 @@ import {
   IsBoolean,
   IsOptional,
   IsArray,
+  IsUrl,
   Min,
   Max,
+  MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +17,7 @@ export class CreateQuestionDto {
     description: 'Statement text that the user will evaluate as fact or fake',
   })
   @IsString()
+  @MinLength(10, { message: 'Statement must be at least 10 characters long' })
   statement: string;
 
   @ApiProperty({
@@ -43,7 +46,7 @@ export class CreateQuestionDto {
     description: 'URL to the source',
   })
   @IsOptional()
-  @IsString()
+  @IsUrl({}, { message: 'sourceUrl must be a valid URL' })
   sourceUrl?: string;
 
   @ApiProperty({ example: 'ru', description: 'Language code' })

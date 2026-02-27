@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Modal, Pressable, Switch } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -26,8 +26,12 @@ export default function CollectionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const language = useSettingsStore((s) => s.language);
+  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
+  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
   const [starting, setStarting] = useState(false);
+  const [showReplayWarning, setShowReplayWarning] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const { data: collection, isLoading, isError } = useQuery({
     queryKey: ['collection', id],
@@ -52,7 +56,7 @@ export default function CollectionDetailScreen() {
       : collection.description
     : '';
 
-  const handleStart = useCallback(async () => {
+  const doStart = useCallback(async (replay: boolean) => {
     if (!id || starting) return;
     setStarting(true);
     try {
@@ -60,12 +64,14 @@ export default function CollectionDetailScreen() {
         type: 'collection',
         collectionId: id,
         count: 30,
+        ...(replay ? { replay: true } : {}),
       });
-      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions);
+      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, replay);
       analytics.logEvent('collection_start', {
         type: 'collection',
         referenceId: id,
         questionCount: session.questions.length,
+        replay,
       });
       router.push({
         pathname: '/game/card',
@@ -73,11 +79,31 @@ export default function CollectionDetailScreen() {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
-      Alert.alert('Error', message);
+      Alert.alert(t('common.error'), message);
     } finally {
       setStarting(false);
     }
   }, [id, starting, startCollectionSession, router]);
+
+  const handleStart = useCallback(() => {
+    doStart(false);
+  }, [doStart]);
+
+  const handleReplay = useCallback(() => {
+    if (replayWarningDismissed) {
+      doStart(true);
+    } else {
+      setShowReplayWarning(true);
+    }
+  }, [replayWarningDismissed, doStart]);
+
+  const handleConfirmReplay = useCallback(() => {
+    if (dontShowAgain) {
+      setReplayWarningDismissed(true);
+    }
+    setShowReplayWarning(false);
+    doStart(true);
+  }, [dontShowAgain, setReplayWarningDismissed, doStart]);
 
   if (isLoading) {
     return (
@@ -132,33 +158,25 @@ export default function CollectionDetailScreen() {
       </AnimatedEntrance>
 
       <View style={[styles.content, { paddingHorizontal: spacing.screenPadding }]}>
-        {/* Info */}
+        {/* Progress */}
         <AnimatedEntrance delay={100}>
-          <Card variant="default" style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.primary + '15' }]}>
-                  <Feather name="help-circle" size={16} color={colors.primary} />
-                </View>
-                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>
-                  {t('collection.questions')}
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {collection._count.questions}
-                </Text>
-              </View>
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
-              <View style={styles.infoItem}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.blue + '15' }]}>
-                  <Feather name="tag" size={16} color={colors.blue} />
-                </View>
-                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>
-                  {t('collection.type')}
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {t(`collection.types.${collection.type}`)}
-                </Text>
-              </View>
+          <Card variant="default" style={styles.progressCard}>
+            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
+              {t('category.solvedOf', {
+                solved: collection.completed ? collection._count.questions : 0,
+                total: collection._count.questions,
+              })}
+            </Text>
+            <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    backgroundColor: colors.primary,
+                    width: collection.completed ? '100%' : '0%',
+                  },
+                ]}
+              />
             </View>
           </Card>
         </AnimatedEntrance>
@@ -191,14 +209,25 @@ export default function CollectionDetailScreen() {
       {/* Footer */}
       <AnimatedEntrance delay={300}>
         <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding }]}>
-          <Button
-            label={collection.completed ? t('collection.playAgain') : t('common.play')}
-            variant="primary"
-            size="lg"
-            onPress={handleStart}
-            loading={starting}
-            iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
-          />
+          {collection.completed ? (
+            <Button
+              label={t('collection.playAgain')}
+              variant="primary"
+              size="lg"
+              onPress={handleReplay}
+              loading={starting}
+              iconLeft={<Feather name="rotate-ccw" size={18} color="#FFFFFF" />}
+            />
+          ) : (
+            <Button
+              label={t('common.play')}
+              variant="primary"
+              size="lg"
+              onPress={handleStart}
+              loading={starting}
+              iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
+            />
+          )}
           <Button
             label={t('common.back')}
             variant="secondary"
@@ -207,6 +236,50 @@ export default function CollectionDetailScreen() {
           />
         </View>
       </AnimatedEntrance>
+
+      <Modal visible={showReplayWarning} transparent animationType="fade">
+        <View style={styles.replayOverlay}>
+          <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+            <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
+              {t('category.replayTitle')}
+            </Text>
+            <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
+              {t('category.replayDesc')}
+            </Text>
+            <Pressable
+              onPress={() => setDontShowAgain(!dontShowAgain)}
+              style={styles.replayCheckRow}
+            >
+              <Switch
+                value={dontShowAgain}
+                onValueChange={setDontShowAgain}
+                trackColor={{ true: colors.primary }}
+              />
+              <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
+                {t('category.dontShow')}
+              </Text>
+            </Pressable>
+            <View style={styles.replayButtons}>
+              <Pressable
+                onPress={() => setShowReplayWarning(false)}
+                style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}
+              >
+                <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmReplay}
+                style={[styles.replayBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>
+                  {t('category.start')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -253,18 +326,23 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 16,
   },
-  infoCard: {
+  progressCard: {
     paddingVertical: 18,
     paddingHorizontal: 20,
+    gap: 10,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressLabel: {
+    fontSize: 14,
+    fontFamily: fontFamily.semiBold,
   },
-  infoItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 6,
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   infoIconBg: {
     width: 32,
@@ -272,19 +350,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontFamily: fontFamily.regular,
-  },
-  infoValue: {
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    letterSpacing: -0.3,
-  },
-  divider: {
-    width: 1,
-    height: 48,
   },
   completedCard: {
     paddingVertical: 14,
@@ -311,5 +376,55 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: 32,
     gap: 12,
+  },
+  replayOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  replayModal: {
+    width: '100%',
+    padding: 24,
+  },
+  replayTitle: {
+    fontSize: 20,
+    fontFamily: fontFamily.bold,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  replayDesc: {
+    fontSize: 15,
+    fontFamily: fontFamily.regular,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  replayCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  replayCheckLabel: {
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    flex: 1,
+    marginLeft: 10,
+  },
+  replayButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  replayBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  replayBtnText: {
+    fontSize: 15,
+    fontFamily: fontFamily.semiBold,
   },
 });

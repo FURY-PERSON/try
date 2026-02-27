@@ -10,8 +10,10 @@ type HeatmapCalendarProps = {
 };
 
 const WEEKS = 52;
-const CELL_SIZE = 12;
-const CELL_GAP = 2;
+const CELL_SIZE = 14;
+const CELL_GAP = 3;
+const STEP = CELL_SIZE + CELL_GAP;
+const LABEL_COLUMN_WIDTH = 28;
 
 // Indigo-based palette (Midnight Scholar)
 const LIGHT_COLORS = ['#F1F5F9', '#C7D2FE', '#A5B4FC', '#818CF8', '#6366F1'];
@@ -85,77 +87,81 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
     return { grid: cells, monthLabels: labels };
   }, [activityMap, monthNames]);
 
-  const gridWidth = WEEKS * (CELL_SIZE + CELL_GAP);
-  const labelColumnWidth = 28;
+  const gridWidth = WEEKS * STEP;
 
   return (
     <View>
       <View style={{ flexDirection: 'row' }}>
-        <View style={{ width: labelColumnWidth }} />
+        {/* Day labels column */}
+        <View style={{ width: LABEL_COLUMN_WIDTH, marginTop: 20 }}>
+          {dayLabels.map((label, i) => (
+            <Text
+              key={label}
+              style={[
+                styles.dayLabel,
+                {
+                  color: colors.textSecondary,
+                  top: [0, 2, 4][i] * STEP,
+                  lineHeight: CELL_SIZE,
+                },
+              ]}
+            >
+              {label}
+            </Text>
+          ))}
+        </View>
+
+        {/* Scrollable grid */}
         <ScrollView
           ref={scrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          onContentSizeChange={() =>
-            scrollRef.current?.scrollToEnd({ animated: false })
-          }
+          onContentSizeChange={() => {
+            scrollRef.current?.scrollToEnd({ animated: false });
+          }}
         >
-          <View style={[styles.monthRow, { width: gridWidth }]}>
-            {monthLabels.map((ml, i) => (
-              <Text
-                key={`${ml.label}-${i}`}
-                style={[
-                  styles.monthLabel,
-                  {
-                    color: colors.textSecondary,
-                    left: ml.weekIndex * (CELL_SIZE + CELL_GAP),
-                  },
-                ]}
-              >
-                {ml.label}
-              </Text>
-            ))}
-          </View>
+          <View>
+            {/* Month labels */}
+            <View style={[styles.monthRow, { width: gridWidth }]}>
+              {monthLabels.map((ml, i) => (
+                <Text
+                  key={`${ml.label}-${i}`}
+                  style={[
+                    styles.monthLabel,
+                    {
+                      color: colors.textSecondary,
+                      left: ml.weekIndex * STEP,
+                    },
+                  ]}
+                >
+                  {ml.label}
+                </Text>
+              ))}
+            </View>
 
-          <View style={[styles.grid, { width: gridWidth }]}>
-            {grid.map((week, weekIndex) => (
-              <View key={weekIndex} style={styles.weekColumn}>
-                {week.map((day) => (
-                  <View
-                    key={day.date}
-                    style={[
-                      styles.cell,
-                      {
+            {/* Grid cells */}
+            <View style={[styles.grid, { width: gridWidth, gap: CELL_GAP }]}>
+              {grid.map((week, weekIndex) => (
+                <View key={weekIndex} style={{ gap: CELL_GAP }}>
+                  {week.map((day) => (
+                    <View
+                      key={day.date}
+                      style={{
+                        width: CELL_SIZE,
+                        height: CELL_SIZE,
                         backgroundColor:
                           day.count < 0
                             ? 'transparent'
                             : levelColors[getLevel(day.count)],
-                        borderRadius: 3,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-            ))}
+                        borderRadius: 2,
+                      }}
+                    />
+                  ))}
+                </View>
+              ))}
+            </View>
           </View>
         </ScrollView>
-      </View>
-
-      <View style={[styles.dayLabelsOverlay, { top: 20, left: 0, width: labelColumnWidth }]}>
-        {dayLabels.map((label, i) => (
-          <Text
-            key={label}
-            style={[
-              styles.dayLabel,
-              {
-                color: colors.textSecondary,
-                top: [0, 2, 4][i] * (CELL_SIZE + CELL_GAP),
-              },
-            ]}
-          >
-            {label}
-          </Text>
-        ))}
       </View>
 
       <View style={styles.legend}>
@@ -165,7 +171,7 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         {levelColors.map((color, i) => (
           <View
             key={i}
-            style={[styles.legendCell, { backgroundColor: color, borderRadius: 3 }]}
+            style={[styles.legendCell, { backgroundColor: color, borderRadius: 2 }]}
           />
         ))}
         <Text style={[styles.legendText, { color: colors.textSecondary }]}>
@@ -190,23 +196,11 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    gap: CELL_GAP,
-  },
-  weekColumn: {
-    gap: CELL_GAP,
-  },
-  cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-  },
-  dayLabelsOverlay: {
-    position: 'absolute',
   },
   dayLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: fontFamily.regular,
     position: 'absolute',
-    lineHeight: CELL_SIZE,
   },
   legend: {
     flexDirection: 'row',

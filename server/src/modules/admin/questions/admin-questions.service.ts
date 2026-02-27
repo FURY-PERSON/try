@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
@@ -83,6 +84,17 @@ export class AdminQuestionsService {
     if (!category) {
       throw new BadRequestException(
         `Category with id "${dto.categoryId}" not found`,
+      );
+    }
+
+    // Check for duplicate statement
+    const existing = await this.prisma.question.findFirst({
+      where: { statement: dto.statement },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        `Question with this statement already exists (id: ${existing.id})`,
       );
     }
 

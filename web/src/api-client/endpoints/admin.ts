@@ -30,8 +30,12 @@ import type {
   GenerateQuestionsResult,
   GenerateIllustrationResult,
   DashboardStats,
+  UserAnalytics,
   QuestionStats,
   UploadResult,
+  SendNotificationDto,
+  SendNotificationResult,
+  NotificationHistoryResponse,
   NicknameAdjective,
   CreateAdjectiveDto,
   UpdateAdjectiveDto,
@@ -157,6 +161,9 @@ export function createAdminEndpoints(http: AxiosInstance) {
       getQuestions() {
         return http.get<ApiResponse<QuestionStats>>('/admin/stats/questions');
       },
+      getUserAnalytics() {
+        return http.get<ApiResponse<UserAnalytics>>('/admin/stats/user-analytics');
+      },
     },
 
     // ── AI ──
@@ -220,6 +227,22 @@ export function createAdminEndpoints(http: AxiosInstance) {
       },
       delete(id: string) {
         return http.delete(`/admin/reference/emojis/${id}`);
+      },
+    },
+
+    // ── Notifications ──
+    notifications: {
+      send(dto: SendNotificationDto) {
+        return http.post<ApiResponse<SendNotificationResult>>(
+          '/admin/notifications/send',
+          dto,
+        );
+      },
+      history(params?: { page?: number; limit?: number }) {
+        return http.get<ApiResponse<NotificationHistoryResponse>>(
+          '/admin/notifications/history',
+          { params },
+        );
       },
     },
 

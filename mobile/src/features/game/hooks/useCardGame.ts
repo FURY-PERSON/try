@@ -29,6 +29,7 @@ export const useCardGame = (
     setSubmissionResult,
     sessionId,
     collectionType,
+    isReplay,
   } = useGameStore();
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,9 +110,10 @@ export const useCardGame = (
           });
         }
 
-        // Submit full set when all cards are done
+        // Submit full set when all cards are done (skip for replays)
         const newProgress = useGameStore.getState().dailyProgress;
-        if (newProgress.completed) {
+        const currentIsReplay = useGameStore.getState().isReplay;
+        if (newProgress.completed && !currentIsReplay) {
           const gameResults = newProgress.results.map((r) => ({
             questionId: r.questionId,
             result: r.correct ? ('correct' as const) : ('incorrect' as const),

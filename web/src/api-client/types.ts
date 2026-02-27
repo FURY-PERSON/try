@@ -156,6 +156,18 @@ export type AnswerResult = {
   sourceUrl?: string;
 };
 
+export type CategoryQuestionCount = {
+  categoryId: string;
+  categoryName: string;
+  icon: string;
+  count: number;
+};
+
+export type DifficultyCount = {
+  difficulty: number;
+  count: number;
+};
+
 export type DashboardStats = {
   totalUsers: number;
   activeToday: number;
@@ -164,6 +176,31 @@ export type DashboardStats = {
   pendingQuestions: number;
   totalDailySets: number;
   publishedSets: number;
+  questionsByCategory: CategoryQuestionCount[];
+  questionsByDifficulty: DifficultyCount[];
+};
+
+export type DateCount = {
+  date: string;
+  count: number;
+};
+
+export type TopPlayer = {
+  id: string;
+  nickname: string | null;
+  avatarEmoji: string | null;
+  totalScore: number;
+  totalCorrectAnswers: number;
+  totalGamesPlayed: number;
+  bestAnswerStreak: number;
+};
+
+export type UserAnalytics = {
+  dau: DateCount[];
+  newUsers: DateCount[];
+  topPlayers: TopPlayer[];
+  overallAccuracy: number;
+  totalAnswers: number;
 };
 
 export type QuestionStats = {
@@ -235,6 +272,40 @@ export type CreateEmojiDto = {
 };
 
 export type UpdateEmojiDto = Partial<CreateEmojiDto>;
+
+// ── Notifications ──
+
+export type SendNotificationDto = {
+  title: string;
+  body: string;
+  target?: string;
+};
+
+export type NotificationRecord = {
+  id: string;
+  title: string;
+  body: string;
+  target: string;
+  totalSent: number;
+  totalFailed: number;
+  status: string;
+  createdAt: string;
+};
+
+export type SendNotificationResult = {
+  sent: number;
+  failed: number;
+  total: number;
+  notificationId: string;
+};
+
+export type NotificationHistoryResponse = {
+  items: NotificationRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
 
 // ── Client Options ──
 

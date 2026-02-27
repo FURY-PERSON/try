@@ -146,6 +146,18 @@ export class AiService {
         stmt.source && stmt.source !== '' ? stmt.source : 'Requires verification';
 
       try {
+        // Skip duplicates
+        const existingQuestion = await this.prisma.question.findFirst({
+          where: { statement: stmt.statement },
+        });
+
+        if (existingQuestion) {
+          this.logger.warn(
+            `Skipping duplicate statement: "${stmt.statement.substring(0, 50)}..."`,
+          );
+          continue;
+        }
+
         const created = await this.prisma.question.create({
           data: {
             statement: stmt.statement,

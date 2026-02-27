@@ -25,6 +25,9 @@ import { AdminCollectionsService } from './collections/admin-collections.service
 import { AdminReferenceController } from './reference/admin-reference.controller';
 import { AdminReferenceService } from './reference/admin-reference.service';
 
+import { AdminNotificationsController } from './notifications/admin-notifications.controller';
+import { AdminNotificationsService } from './notifications/admin-notifications.service';
+
 import { UploadController } from './upload/upload.controller';
 import { UploadService } from './upload/upload.service';
 
@@ -50,6 +53,7 @@ import { UploadService } from './upload/upload.service';
     AdminStatsController,
     AdminCollectionsController,
     AdminReferenceController,
+    AdminNotificationsController,
     UploadController,
   ],
   providers: [
@@ -61,6 +65,7 @@ import { UploadService } from './upload/upload.service';
     AdminStatsService,
     AdminCollectionsService,
     AdminReferenceService,
+    AdminNotificationsService,
     UploadService,
   ],
   exports: [UploadService],

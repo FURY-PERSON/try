@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsArray, IsOptional, IsEnum, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import { IsString, IsDateString, IsArray, IsOptional, IsEnum, ArrayMinSize, ArrayMaxSize, MinLength, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateDailySetDto {
@@ -13,11 +13,15 @@ export class UpdateDailySetDto {
   @ApiPropertyOptional({ example: 'Удивительная наука', description: 'Theme in Russian' })
   @IsOptional()
   @IsString()
+  @MinLength(3, { message: 'Theme must be at least 3 characters long' })
+  @MaxLength(100, { message: 'Theme must be at most 100 characters long' })
   theme?: string;
 
   @ApiPropertyOptional({ example: 'Amazing Science', description: 'Theme in English' })
   @IsOptional()
   @IsString()
+  @MinLength(3, { message: 'Theme (EN) must be at least 3 characters long' })
+  @MaxLength(100, { message: 'Theme (EN) must be at most 100 characters long' })
   themeEn?: string;
 
   @ApiPropertyOptional({

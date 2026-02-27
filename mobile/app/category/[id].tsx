@@ -162,33 +162,24 @@ export default function CategoryDetailScreen() {
       </AnimatedEntrance>
 
       <View style={[styles.content, { paddingHorizontal: spacing.screenPadding }]}>
-        {/* Info */}
+        {/* Progress */}
         <AnimatedEntrance delay={100}>
           <Card variant="default" style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.emerald + '15' }]}>
-                  <Feather name="check-circle" size={16} color={colors.emerald} />
-                </View>
-                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>
-                  {t('category.available')}
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {category.availableCount}
-                </Text>
-              </View>
-              <View style={[styles.divider, { backgroundColor: colors.border }]} />
-              <View style={styles.infoItem}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.primary + '15' }]}>
-                  <Feather name="help-circle" size={16} color={colors.primary} />
-                </View>
-                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>
-                  {t('category.total')}
-                </Text>
-                <Text style={[styles.infoValue, { color: colors.textPrimary }]}>
-                  {category.totalCount}
-                </Text>
-              </View>
+            <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
+              {t('category.solvedOf', { solved: category.totalCount - category.availableCount, total: category.totalCount })}
+            </Text>
+            <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    backgroundColor: categoryColor,
+                    width: category.totalCount > 0
+                      ? `${((category.totalCount - category.availableCount) / category.totalCount) * 100}%`
+                      : '0%',
+                  },
+                ]}
+              />
             </View>
           </Card>
         </AnimatedEntrance>
@@ -354,15 +345,20 @@ const styles = StyleSheet.create({
   infoCard: {
     paddingVertical: 18,
     paddingHorizontal: 20,
+    gap: 10,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  progressLabel: {
+    fontSize: 14,
+    fontFamily: fontFamily.semiBold,
   },
-  infoItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 6,
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   infoIconBg: {
     width: 32,
@@ -370,19 +366,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontFamily: fontFamily.regular,
-  },
-  infoValue: {
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    letterSpacing: -0.3,
-  },
-  divider: {
-    width: 1,
-    height: 48,
   },
   completedCard: {
     paddingVertical: 14,

@@ -203,6 +203,17 @@ model UserCollectionProgress {
   @@index([userId, referenceId])
 }
 
+model Notification {
+  id          String   @id @default(cuid())
+  title       String
+  body        String
+  target      String   @default("all")
+  totalSent   Int      @default(0)
+  totalFailed Int      @default(0)
+  status      String   @default("sent")
+  createdAt   DateTime @default(now())
+}
+
 model NicknameAdjective {
   id        String   @id @default(uuid())
   textRu    String

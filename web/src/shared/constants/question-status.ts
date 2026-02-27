@@ -8,3 +8,10 @@ export const QUESTION_STATUS = {
 export type QuestionStatus = (typeof QUESTION_STATUS)[keyof typeof QUESTION_STATUS];
 
 export const QUESTION_STATUS_VALUES = Object.values(QUESTION_STATUS);
+
+export const QUESTION_STATUS_LABELS: Record<string, string> = {
+  draft: 'Черновик',
+  moderation: 'На модерации',
+  approved: 'Одобрен',
+  rejected: 'Отклонён',
+};

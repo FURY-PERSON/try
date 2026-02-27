@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, CheckCircle, XCircle, Trash2, ExternalLink, Image, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { QUESTION_STATUS_LABELS } from '@/shared';
 import type { Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -266,7 +267,7 @@ export function QuestionDetailPage() {
               label="Статус"
               value={
                 <Badge variant={STATUS_BADGE_VARIANT[question.status] ?? 'default'}>
-                  {question.status}
+                  {QUESTION_STATUS_LABELS[question.status] ?? question.status}
                 </Badge>
               }
             />

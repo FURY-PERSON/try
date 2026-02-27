@@ -133,7 +133,7 @@ export class LeaderboardService {
 
     // Build user context only if user is outside the visible entries list
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (userPosition && userPosition > top100.length) {
+    if (userPosition && userPosition > 5) {
       const contextIndices = [userIndex - 1, userIndex, userIndex + 1].filter(
         (i) => i >= 0 && i < users.length,
       );
@@ -206,7 +206,7 @@ export class LeaderboardService {
 
     // Build user context only if user is outside the visible entries list
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (userPosition && userPosition > top100.length) {
+    if (userPosition && userPosition > 5) {
       const contextIndices = [userIndex - 1, userIndex, userIndex + 1].filter(
         (i) => i >= 0 && i < users.length,
       );
@@ -247,91 +247,76 @@ export class LeaderboardService {
     userId: string,
     dateFilter: { gte: Date; lte: Date },
   ): Promise<LeaderboardResponse> {
-    interface StreakRow { userId: string; bestStreak: number }
-
-    const streakRows = await this.prisma.$queryRaw<StreakRow[]>`
-      WITH ordered AS (
-        SELECT
-          "userId",
-          "result",
-          SUM(CASE WHEN "result" != 'correct' THEN 1 ELSE 0 END)
-            OVER (PARTITION BY "userId" ORDER BY "id") AS grp
-        FROM "UserQuestionHistory"
-        WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
-      ),
-      streaks AS (
-        SELECT
-          "userId",
-          COUNT(*)::int AS streak_len
-        FROM ordered
-        WHERE "result" = 'correct'
-        GROUP BY "userId", grp
-      )
-      SELECT
-        "userId",
-        MAX(streak_len)::int AS "bestStreak"
-      FROM streaks
-      GROUP BY "userId"
-      HAVING MAX(streak_len) > 0
-      ORDER BY "bestStreak" DESC
+    // Find users who have activity in this period
+    interface ActiveRow { userId: string }
+    const activeRows = await this.prisma.$queryRaw<ActiveRow[]>`
+      SELECT DISTINCT "userId"
+      FROM "UserQuestionHistory"
+      WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
     `;
 
-    const totalPlayers = streakRows.length;
+    const activeUserIds = activeRows.map((r) => r.userId);
+
+    // Use User model streak values (same as all-time) but only for active users
+    const users = await this.prisma.user.findMany({
+      where: {
+        id: { in: activeUserIds },
+        bestAnswerStreak: { gt: 0 },
+      },
+      select: {
+        id: true,
+        nickname: true,
+        avatarEmoji: true,
+        currentAnswerStreak: true,
+        bestAnswerStreak: true,
+      },
+      orderBy: [
+        { bestAnswerStreak: 'desc' },
+        { currentAnswerStreak: 'desc' },
+      ],
+    });
+
+    const totalPlayers = users.length;
 
     let userPosition: number | null = null;
-    const userIndex = streakRows.findIndex((r) => r.userId === userId);
+    const userIndex = users.findIndex((u) => u.id === userId);
     if (userIndex !== -1) {
       userPosition = userIndex + 1;
     }
 
-    const top100 = streakRows.slice(0, 100);
+    const top100 = users.slice(0, 100);
 
-    const userIds = top100.map((r) => r.userId);
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, nickname: true, avatarEmoji: true },
-    });
-    const userMap = new Map(
-      users.map((u) => [u.id, { nickname: u.nickname, avatarEmoji: u.avatarEmoji }]),
-    );
-
-    const entries: LeaderboardEntryResult[] = top100.map((r, index) => ({
+    const entries: LeaderboardEntryResult[] = top100.map((u, index) => ({
       rank: index + 1,
-      userId: r.userId,
-      nickname: userMap.get(r.userId)?.nickname ?? null,
-      avatarEmoji: userMap.get(r.userId)?.avatarEmoji ?? null,
+      userId: u.id,
+      nickname: u.nickname,
+      avatarEmoji: u.avatarEmoji,
       correctAnswers: 0,
       totalQuestions: 0,
       score: 0,
       totalTimeSeconds: 0,
-      bestStreak: r.bestStreak,
+      currentStreak: u.currentAnswerStreak,
+      bestStreak: u.bestAnswerStreak,
     }));
 
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (userPosition && userPosition > top100.length) {
+    if (userPosition && userPosition > 5) {
       const contextIndices = [userIndex - 1, userIndex, userIndex + 1].filter(
-        (i) => i >= 0 && i < streakRows.length,
-      );
-      const contextUserIds = contextIndices.map((i) => streakRows[i].userId);
-      const contextUsers = await this.prisma.user.findMany({
-        where: { id: { in: contextUserIds } },
-        select: { id: true, nickname: true, avatarEmoji: true },
-      });
-      const contextUserMap = new Map(
-        contextUsers.map((u) => [u.id, { nickname: u.nickname, avatarEmoji: u.avatarEmoji }]),
+        (i) => i >= 0 && i < users.length,
       );
       userContext = contextIndices.map((i) => {
-        const r = streakRows[i];
+        const u = users[i];
         return {
           rank: i + 1,
-          userId: r.userId,
-          nickname: contextUserMap.get(r.userId)?.nickname ?? null,
-          avatarEmoji: contextUserMap.get(r.userId)?.avatarEmoji ?? null,
+          userId: u.id,
+          nickname: u.nickname,
+          avatarEmoji: u.avatarEmoji,
           correctAnswers: 0,
           totalQuestions: 0,
           score: 0,
           totalTimeSeconds: 0,
-          bestStreak: r.bestStreak,
+          currentStreak: u.currentAnswerStreak,
+          bestStreak: u.bestAnswerStreak,
         };
       });
     } else if (!userPosition) {
@@ -495,7 +480,7 @@ export class LeaderboardService {
 
     // Build user context only if user is outside the visible entries list
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (userPosition && userPosition > top100.length) {
+    if (userPosition && userPosition > 5) {
       const contextIndices = [userIndex - 1, userIndex, userIndex + 1].filter(
         (i) => i >= 0 && i < aggregated.length,
       );
