@@ -15,6 +15,7 @@ interface SessionData {
   difficulty: string | null;
   questionIds: string[];
   createdAt: number;
+  replay: boolean;
 }
 
 const DIFFICULTY_MAP: Record<string, number[]> = {
@@ -123,16 +124,19 @@ export class CollectionsService {
   }
 
   async start(userId: string, dto: StartCollectionDto) {
-    const count = dto.count ?? 10;
+    const count = dto.count;
 
+    if (dto.type === 'random') {
+      return this.startRandom(userId, count ?? 10);
+    }
     if (dto.type === 'category') {
-      return this.startByCategory(userId, dto.categoryId!, count);
+      return this.startByCategory(userId, dto.categoryId!, count, dto.replay ?? false);
     }
     if (dto.type === 'difficulty') {
-      return this.startByDifficulty(userId, dto.difficulty!, count);
+      return this.startByDifficulty(userId, dto.difficulty!, count ?? 10);
     }
     if (dto.type === 'collection') {
-      return this.startByCollection(userId, dto.collectionId!, count);
+      return this.startByCollection(userId, dto.collectionId!, count ?? 10);
     }
 
     throw new BadRequestException('Invalid collection type');
@@ -167,6 +171,20 @@ export class CollectionsService {
       0,
     );
 
+    // If replay mode, skip all recording and return results directly
+    if (session.replay) {
+      this.sessions.delete(sessionId);
+      return {
+        correctAnswers,
+        totalQuestions: dto.results.length,
+        totalTimeSeconds,
+        score: 0,
+        streak: 0,
+        bestStreak: 0,
+        replay: true,
+      };
+    }
+
     // Get user for streak calculation
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -176,26 +194,36 @@ export class CollectionsService {
       throw new NotFoundException('User not found');
     }
 
-    // Calculate streak based on consecutive correct answers
+    // Calculate streaks and score in a single pass
     let currentStreak = user.currentStreak;
     let bestStreak = user.bestStreak;
+    let currentAnswerStreak = user.currentAnswerStreak;
+    let bestAnswerStreak = user.bestAnswerStreak;
+    let score = 0;
 
-    for (const result of dto.results) {
-      if (result.result === 'correct') {
+    const historyData = dto.results.map((r) => {
+      let answerScore = 0;
+      if (r.result === 'correct') {
         currentStreak++;
+        currentAnswerStreak++;
+        // Score: 1 base + streak bonus (floor(streak / 5))
+        answerScore = 1 + Math.floor(currentAnswerStreak / 5);
+        score += answerScore;
       } else {
         currentStreak = 0;
+        currentAnswerStreak = 0;
       }
       bestStreak = Math.max(bestStreak, currentStreak);
-    }
+      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
-    // Record question history
-    const historyData = dto.results.map((r) => ({
-      userId,
-      questionId: r.questionId,
-      result: r.result,
-      timeSpentSeconds: r.timeSpentSeconds,
-    }));
+      return {
+        userId,
+        questionId: r.questionId,
+        result: r.result,
+        timeSpentSeconds: r.timeSpentSeconds,
+        score: answerScore,
+      };
+    });
 
     await this.prisma.$transaction(async (tx) => {
       // Save question history
@@ -231,8 +259,12 @@ export class CollectionsService {
         where: { id: userId },
         data: {
           totalCorrectAnswers: { increment: correctAnswers },
+          totalScore: { increment: score },
+          totalGamesPlayed: { increment: 1 },
           currentStreak,
           bestStreak,
+          currentAnswerStreak,
+          bestAnswerStreak,
         },
       });
 
@@ -244,22 +276,13 @@ export class CollectionsService {
           referenceId: session.referenceId,
           difficulty: session.difficulty,
           correctAnswers,
-          totalQuestions: session.questionIds.length,
+          totalQuestions: dto.results.length,
         },
       });
     });
 
     // Clean up session
     this.sessions.delete(sessionId);
-
-    // Calculate score
-    const score = dto.results.reduce((total, r) => {
-      if (r.result === 'correct') {
-        const speedBonus = Math.max(0, 50 - r.timeSpentSeconds);
-        return total + 100 + speedBonus;
-      }
-      return total;
-    }, 0);
 
     return {
       correctAnswers,
@@ -271,28 +294,10 @@ export class CollectionsService {
     };
   }
 
-  private async startByCategory(
-    userId: string,
-    categoryId: string,
-    count: number,
-  ) {
-    if (!categoryId) {
-      throw new BadRequestException('categoryId is required for category type');
-    }
+  private async startRandom(userId: string, count: number) {
+    const questions = await this.getQuestionsWithAntiRepeat(userId, count, {});
 
-    const category = await this.prisma.category.findUnique({
-      where: { id: categoryId },
-    });
-
-    if (!category || !category.isActive) {
-      throw new NotFoundException('Category not found or inactive');
-    }
-
-    const questions = await this.getQuestionsWithAntiRepeat(userId, count, {
-      OR: [{ categoryId }, { categories: { some: { categoryId } } }],
-    });
-
-    const sessionId = this.createSession(userId, 'category', categoryId, null, questions);
+    const sessionId = this.createSession(userId, 'random', null, null, questions);
 
     return {
       sessionId,
@@ -307,6 +312,79 @@ export class CollectionsService {
         categoryId: q.categoryId,
         difficulty: q.difficulty,
         illustrationUrl: q.illustrationUrl,
+        category: q.category,
+      })),
+    };
+  }
+
+  private async startByCategory(
+    userId: string,
+    categoryId: string,
+    count?: number,
+    replay = false,
+  ) {
+    if (!categoryId) {
+      throw new BadRequestException('categoryId is required for category type');
+    }
+
+    const category = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category || !category.isActive) {
+      throw new NotFoundException('Category not found or inactive');
+    }
+
+    let questions;
+    if (replay) {
+      // Skip anti-repeat for replay — fetch all approved questions in category
+      const allQuestions = await this.prisma.question.findMany({
+        where: {
+          status: 'approved',
+          OR: [{ categoryId }, { categories: { some: { categoryId } } }],
+        },
+        select: {
+          id: true,
+          statement: true,
+          isTrue: true,
+          explanation: true,
+          source: true,
+          sourceUrl: true,
+          language: true,
+          categoryId: true,
+          difficulty: true,
+          illustrationUrl: true,
+          category: { select: { name: true, nameEn: true } },
+        },
+      });
+      // Shuffle
+      for (let i = allQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+      }
+      questions = count != null ? allQuestions.slice(0, count) : allQuestions;
+    } else {
+      questions = await this.getQuestionsWithAntiRepeat(userId, count, {
+        OR: [{ categoryId }, { categories: { some: { categoryId } } }],
+      });
+    }
+
+    const sessionId = this.createSession(userId, 'category', categoryId, null, questions, replay);
+
+    return {
+      sessionId,
+      questions: questions.map((q) => ({
+        id: q.id,
+        statement: q.statement,
+        isTrue: q.isTrue,
+        explanation: q.explanation,
+        source: q.source,
+        sourceUrl: q.sourceUrl,
+        language: q.language,
+        categoryId: q.categoryId,
+        difficulty: q.difficulty,
+        illustrationUrl: q.illustrationUrl,
+        category: q.category,
       })),
     };
   }
@@ -346,6 +424,7 @@ export class CollectionsService {
         categoryId: q.categoryId,
         difficulty: q.difficulty,
         illustrationUrl: q.illustrationUrl,
+        category: q.category,
       })),
     };
   }
@@ -353,7 +432,7 @@ export class CollectionsService {
   private async startByCollection(
     userId: string,
     collectionId: string,
-    _count: number,
+    count: number,
   ) {
     if (!collectionId) {
       throw new BadRequestException(
@@ -379,6 +458,7 @@ export class CollectionsService {
                 categoryId: true,
                 difficulty: true,
                 illustrationUrl: true,
+                category: { select: { name: true, nameEn: true } },
               },
             },
           },
@@ -399,7 +479,8 @@ export class CollectionsService {
       throw new BadRequestException('Collection has expired');
     }
 
-    const questions = collection.questions.map((cq) => cq.question);
+    const allQuestions = collection.questions.map((cq) => cq.question);
+    const questions = allQuestions.slice(0, count);
     const sessionId = this.createSession(
       userId,
       'collection',
@@ -421,13 +502,14 @@ export class CollectionsService {
         categoryId: q.categoryId,
         difficulty: q.difficulty,
         illustrationUrl: q.illustrationUrl,
+        category: q.category,
       })),
     };
   }
 
   private async getQuestionsWithAntiRepeat(
     userId: string,
-    count: number,
+    count: number | undefined,
     where: Record<string, unknown>,
   ) {
     // Anti-repeat: correct=14 days, incorrect=7 days cooldown (based on last answer)
@@ -450,6 +532,7 @@ export class CollectionsService {
         categoryId: true,
         difficulty: true,
         illustrationUrl: true,
+        category: { select: { name: true, nameEn: true } },
       },
     });
 
@@ -465,7 +548,7 @@ export class CollectionsService {
       [questions[i], questions[j]] = [questions[j], questions[i]];
     }
 
-    return questions.slice(0, count);
+    return count != null ? questions.slice(0, count) : questions;
   }
 
   private createSession(
@@ -474,6 +557,7 @@ export class CollectionsService {
     referenceId: string | null,
     difficulty: string | null,
     questions: { id: string }[],
+    replay = false,
   ): string {
     // Clean expired sessions
     this.cleanExpiredSessions();
@@ -486,6 +570,7 @@ export class CollectionsService {
       difficulty,
       questionIds: questions.map((q) => q.id),
       createdAt: Date.now(),
+      replay,
     });
 
     return sessionId;

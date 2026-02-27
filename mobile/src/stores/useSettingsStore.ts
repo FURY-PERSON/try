@@ -11,12 +11,14 @@ type SettingsState = {
   soundEnabled: boolean;
   hapticsEnabled: boolean;
   notificationsEnabled: boolean;
+  replayWarningDismissed: boolean;
 
   setTheme: (theme: ThemePreference) => void;
   setLanguage: (language: Language) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
   setNotificationsEnabled: (enabled: boolean) => void;
+  setReplayWarningDismissed: (dismissed: boolean) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -27,6 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
       soundEnabled: true,
       hapticsEnabled: true,
       notificationsEnabled: true,
+      replayWarningDismissed: false,
 
       setTheme: (theme: ThemePreference) => {
         set({ theme });
@@ -46,6 +49,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setNotificationsEnabled: (enabled: boolean) => {
         set({ notificationsEnabled: enabled });
+      },
+
+      setReplayWarningDismissed: (dismissed: boolean) => {
+        set({ replayWarningDismissed: dismissed });
       },
     }),
     {

@@ -15,6 +15,7 @@ type GameStoreState = {
   sessionId: string | null;
   collectionType: CollectionType;
   collectionQuestions: CollectionSessionQuestion[];
+  isReplay: boolean;
 
   startDailySet: (dailySetId: string | null, totalCards: number) => void;
   startCollectionSession: (
@@ -22,9 +23,11 @@ type GameStoreState = {
     collectionType: CollectionType,
     totalCards: number,
     questions: CollectionSessionQuestion[],
+    isReplay?: boolean,
   ) => void;
   startCard: () => void;
   submitCardResult: (result: CardResult) => void;
+  setTotalCards: (total: number) => void;
   setSubmissionResult: (result: SubmissionResult) => void;
   resetDailyProgress: () => void;
 };
@@ -45,6 +48,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   sessionId: null,
   collectionType: 'daily' as CollectionType,
   collectionQuestions: [],
+  isReplay: false,
 
   startDailySet: (dailySetId: string | null, totalCards: number) => {
     set({
@@ -60,6 +64,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],
+      isReplay: false,
     });
   },
 
@@ -68,6 +73,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     collectionType: CollectionType,
     totalCards: number,
     questions: CollectionSessionQuestion[],
+    isReplay?: boolean,
   ) => {
     set({
       dailyProgress: {
@@ -82,6 +88,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       sessionId,
       collectionType,
       collectionQuestions: questions,
+      isReplay: isReplay ?? false,
     });
   },
 
@@ -107,6 +114,16 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     });
   },
 
+  setTotalCards: (total: number) => {
+    const current = get().dailyProgress;
+    set({
+      dailyProgress: {
+        ...current,
+        totalCards: total,
+      },
+    });
+  },
+
   setSubmissionResult: (result: SubmissionResult) => {
     set({ submissionResult: result });
   },
@@ -120,6 +137,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],
+      isReplay: false,
     });
   },
 }));

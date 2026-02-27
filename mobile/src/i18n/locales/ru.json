@@ -58,9 +58,12 @@
     "mediumDesc": "Проверь знания",
     "hard": "Сложные",
     "hardDesc": "Для экспертов",
+    "randomFacts": "Случайные факты",
+    "randomDesc": "Проверь свои знания!",
     "featured": "Подборки",
     "questionsCount": "{{count}} вопросов",
-    "startCollection": "Начать"
+    "startCollection": "Начать",
+    "allCompleted": "Всё решено! \u2705"
   },
   "game": {
     "fact": "Факт",
@@ -70,7 +73,10 @@
     "incorrect": "Неправильно",
     "swipeRight": "Свайпни вправо — факт",
     "swipeLeft": "Свайпни влево — фейк",
-    "swipeHint": "свайпни для ответа"
+    "swipeHint": "свайпни для ответа",
+    "exitTitle": "Выйти из игры?",
+    "exitDesc": "Прогресс будет сохранён",
+    "exitSave": "Выйти и сохранить"
   },
   "fact": {
     "title": "Объяснение",
@@ -86,17 +92,21 @@
     "position": "#{{position}} из {{total}} игроков сегодня",
     "correctPercent": "{{percent}}% правильных ответов",
     "percentile": "Вы лучше {{percent}}% игроков сегодня",
-    "goHome": "На главную"
+    "goHome": "На главную",
+    "replayBanner": "Повторная игра — результаты не записаны"
   },
   "leaderboard": {
     "title": "Рейтинг",
+    "mode_score": "Очки",
+    "mode_streak": "Стрик",
     "weekly": "Неделя",
     "monthly": "Месяц",
     "yearly": "Год",
     "allTime": "Всё время",
     "position": "Твоя позиция: #{{position}} из {{total}}",
     "empty": "Пока нет данных",
-    "setNickname": "Укажи никнейм для участия"
+    "setNickname": "Укажи никнейм для участия",
+    "streakCurrent": "сейчас: {{count}}"
   },
   "profile": {
     "title": "Профиль",
@@ -109,6 +119,7 @@
     "correctPercent": "Правильных",
     "bestStreak": "Лучший стрик",
     "avgScore": "Средний балл",
+    "defaultNickname": "Игрок",
     "activityLess": "Меньше",
     "activityMore": "Больше"
   },
@@ -157,7 +168,10 @@
     "total": "всего",
     "lastResult": "Последний результат",
     "allDone": "Все факты изучены!",
-    "notFound": "Категория не найдена"
+    "notFound": "Категория не найдена",
+    "replayTitle": "Повторная игра",
+    "replayDesc": "Очки и стрик не начисляются",
+    "dontShow": "Понятно, не показывать"
   },
   "error": {
     "title": "Упс! Что-то пошло не так",

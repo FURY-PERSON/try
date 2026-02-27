@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, Switch } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,8 +27,13 @@ export default function CategoryDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const language = useSettingsStore((s) => s.language);
+  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
+  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
+  const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
   const [starting, setStarting] = useState(false);
+  const [showReplayWarning, setShowReplayWarning] = useState(false);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const { data: category, isLoading, isError } = useQuery({
     queryKey: ['category', id],
@@ -44,41 +49,63 @@ export default function CategoryDetailScreen() {
 
   const name = category
     ? language === 'en'
-      ? category.nameEn
+      ? (category.nameEn || category.name)
       : category.name
     : '';
   const description = category
     ? language === 'en'
-      ? category.descriptionEn
+      ? (category.descriptionEn || category.description)
       : category.description
     : '';
 
-  const handleStart = useCallback(async () => {
+  const doStart = useCallback(async (replay: boolean) => {
     if (!id || starting) return;
     setStarting(true);
     try {
       const session = await collectionsApi.start({
         type: 'category',
         categoryId: id,
-        count: 10,
+        count: 30,
+        ...(replay ? { replay: true } : {}),
       });
-      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions);
+      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, replay);
       analytics.logEvent('category_start', {
         type: 'category',
         referenceId: id,
         questionCount: session.questions.length,
+        replay,
       });
       router.push({
         pathname: '/game/card',
         params: { mode: 'collection' },
       });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : t('common.error');
-      Alert.alert(t('common.error'), message);
+    } catch {
+      // Refetch category to get fresh availableCount
+      queryClient.invalidateQueries({ queryKey: ['category', id] });
     } finally {
       setStarting(false);
     }
   }, [id, starting, startCollectionSession, router]);
+
+  const handleStart = useCallback(() => {
+    doStart(false);
+  }, [doStart]);
+
+  const handleReplay = useCallback(() => {
+    if (replayWarningDismissed) {
+      doStart(true);
+    } else {
+      setShowReplayWarning(true);
+    }
+  }, [replayWarningDismissed, doStart]);
+
+  const handleConfirmReplay = useCallback(() => {
+    if (dontShowAgain) {
+      setReplayWarningDismissed(true);
+    }
+    setShowReplayWarning(false);
+    doStart(true);
+  }, [dontShowAgain, setReplayWarningDismissed, doStart]);
 
   if (isLoading) {
     return (
@@ -207,15 +234,25 @@ export default function CategoryDetailScreen() {
       {/* Footer */}
       <AnimatedEntrance delay={300}>
         <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding }]}>
-          <Button
-            label={category.lastResult ? t('category.playAgain') : t('category.start')}
-            variant="primary"
-            size="lg"
-            onPress={handleStart}
-            loading={starting}
-            disabled={category.availableCount === 0}
-            iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
-          />
+          {category.availableCount > 0 ? (
+            <Button
+              label={category.lastResult ? t('category.playAgain') : t('category.start')}
+              variant="primary"
+              size="lg"
+              onPress={handleStart}
+              loading={starting}
+              iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
+            />
+          ) : (
+            <Button
+              label={t('category.playAgain')}
+              variant="primary"
+              size="lg"
+              onPress={handleReplay}
+              loading={starting}
+              iconLeft={<Feather name="rotate-ccw" size={18} color="#FFFFFF" />}
+            />
+          )}
           <Button
             label={t('common.back')}
             variant="secondary"
@@ -224,6 +261,50 @@ export default function CategoryDetailScreen() {
           />
         </View>
       </AnimatedEntrance>
+
+      <Modal visible={showReplayWarning} transparent animationType="fade">
+        <View style={styles.replayOverlay}>
+          <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+            <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
+              {t('category.replayTitle')}
+            </Text>
+            <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
+              {t('category.replayDesc')}
+            </Text>
+            <Pressable
+              onPress={() => setDontShowAgain(!dontShowAgain)}
+              style={styles.replayCheckRow}
+            >
+              <Switch
+                value={dontShowAgain}
+                onValueChange={setDontShowAgain}
+                trackColor={{ true: colors.primary }}
+              />
+              <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
+                {t('category.dontShow')}
+              </Text>
+            </Pressable>
+            <View style={styles.replayButtons}>
+              <Pressable
+                onPress={() => setShowReplayWarning(false)}
+                style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}
+              >
+                <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmReplay}
+                style={[styles.replayBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>
+                  {t('category.start')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -328,5 +409,55 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: 32,
     gap: 12,
+  },
+  replayOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  replayModal: {
+    width: '100%',
+    padding: 24,
+  },
+  replayTitle: {
+    fontSize: 20,
+    fontFamily: fontFamily.bold,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  replayDesc: {
+    fontSize: 15,
+    fontFamily: fontFamily.regular,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  replayCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 20,
+  },
+  replayCheckLabel: {
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    flex: 1,
+    marginLeft: 10,
+  },
+  replayButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  replayBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  replayBtnText: {
+    fontSize: 15,
+    fontFamily: fontFamily.semiBold,
   },
 });

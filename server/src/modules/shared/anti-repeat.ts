@@ -62,3 +62,18 @@ export async function getExcludedQuestionIds(
 
   return excludedIds;
 }
+
+/**
+ * Returns all distinct questionIds a user has ever answered (no cooldown).
+ */
+export async function getAllAnsweredQuestionIds(
+  prisma: PrismaService,
+  userId: string,
+): Promise<string[]> {
+  const records = await prisma.userQuestionHistory.findMany({
+    where: { userId },
+    select: { questionId: true },
+    distinct: ['questionId'],
+  });
+  return records.map((r) => r.questionId);
+}

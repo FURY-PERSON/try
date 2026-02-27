@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
+import { getExcludedQuestionIds, getAllAnsweredQuestionIds } from '@/modules/shared/anti-repeat';
 
 const WEEKLY_LOCKOUT_DAYS = 7;
 
@@ -9,10 +9,11 @@ export class HomeService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getFeed(userId: string) {
-    const [daily, categories, collections, user] = await Promise.all([
+    const [daily, categories, collections, difficultyProgress, user] = await Promise.all([
       this.getDailyStatus(userId),
       this.getCategoriesWithCount(userId),
-      this.getPublishedCollections(),
+      this.getPublishedCollections(userId),
+      this.getDifficultyProgress(userId),
       this.prisma.user.findUnique({
         where: { id: userId },
         select: { currentStreak: true, nickname: true, avatarEmoji: true },
@@ -23,6 +24,7 @@ export class HomeService {
       daily,
       categories,
       collections,
+      difficultyProgress,
       userProgress: {
         dailyCompleted: daily.isLocked,
         streak: user?.currentStreak ?? 0,
@@ -164,34 +166,78 @@ export class HomeService {
       },
     });
 
-    // Anti-repeat: correct=14 days, incorrect=7 days cooldown (based on last answer)
     const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
+    const answeredIds = await getAllAnsweredQuestionIds(this.prisma, userId);
+    const answeredSet = new Set(answeredIds);
 
     const counts = await Promise.all(
       categories.map(async (cat) => {
-        const availableCount = await this.prisma.question.count({
-          where: {
-            OR: [
-              { categoryId: cat.id },
-              { categories: { some: { categoryId: cat.id } } },
-            ],
-            status: 'approved',
-            ...(excludedIds.length > 0
-              ? { NOT: { id: { in: excludedIds } } }
-              : {}),
-          },
-        });
-        return { ...cat, availableCount };
+        const catWhere = {
+          OR: [
+            { categoryId: cat.id },
+            { categories: { some: { categoryId: cat.id } } },
+          ],
+          status: 'approved' as const,
+        };
+
+        const [availableCount, totalCount, catQuestions] = await Promise.all([
+          this.prisma.question.count({
+            where: {
+              ...catWhere,
+              ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
+            },
+          }),
+          this.prisma.question.count({ where: catWhere }),
+          this.prisma.question.findMany({
+            where: catWhere,
+            select: { id: true },
+          }),
+        ]);
+
+        const answeredCount = catQuestions.filter((q) => answeredSet.has(q.id)).length;
+
+        return {
+          ...cat,
+          availableCount,
+          totalCount,
+          answeredCount,
+          isCompleted: totalCount > 0 && answeredCount >= totalCount,
+        };
       }),
     );
 
     return counts;
   }
 
-  private async getPublishedCollections() {
+  private async getDifficultyProgress(userId: string) {
+    const answeredIds = await getAllAnsweredQuestionIds(this.prisma, userId);
+    const answeredSet = new Set(answeredIds);
+
+    const difficultyMap: Record<string, number[]> = {
+      easy: [1, 2],
+      medium: [3],
+      hard: [4, 5],
+    };
+
+    const result: Record<string, { totalCount: number; answeredCount: number }> = {};
+
+    for (const [key, levels] of Object.entries(difficultyMap)) {
+      const questions = await this.prisma.question.findMany({
+        where: { status: 'approved', difficulty: { in: levels } },
+        select: { id: true },
+      });
+      const totalCount = questions.length;
+      const answeredCount = questions.filter((q) => answeredSet.has(q.id)).length;
+      result[key] = { totalCount, answeredCount };
+    }
+
+    return result;
+  }
+
+  private async getPublishedCollections(userId: string) {
     const now = new Date();
 
-    return this.prisma.collection.findMany({
+    const collections = await this.prisma.collection.findMany({
       where: {
         status: 'published',
         OR: [
@@ -220,5 +266,21 @@ export class HomeService {
         _count: { select: { questions: true } },
       },
     });
+
+    // Use UserCollectionProgress to determine completion (not answered question count)
+    const completedProgress = await this.prisma.userCollectionProgress.findMany({
+      where: {
+        userId,
+        collectionType: 'collection',
+        referenceId: { in: collections.map((c) => c.id) },
+      },
+      select: { referenceId: true },
+    });
+    const completedIds = new Set(completedProgress.map((p) => p.referenceId));
+
+    return collections.map((c) => ({
+      ...c,
+      isCompleted: completedIds.has(c.id),
+    }));
   }
 }

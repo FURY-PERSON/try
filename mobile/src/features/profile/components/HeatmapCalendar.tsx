@@ -141,7 +141,7 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
         </ScrollView>
       </View>
 
-      <View style={[styles.dayLabelsOverlay, { top: 16, left: 0, width: labelColumnWidth }]}>
+      <View style={[styles.dayLabelsOverlay, { top: 20, left: 0, width: labelColumnWidth }]}>
         {dayLabels.map((label, i) => (
           <Text
             key={label}
@@ -178,12 +178,12 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
 
 const styles = StyleSheet.create({
   monthRow: {
-    height: 14,
+    height: 18,
     marginBottom: 2,
     position: 'relative',
   },
   monthLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontFamily: fontFamily.regular,
     position: 'absolute',
     top: 0,

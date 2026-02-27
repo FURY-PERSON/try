@@ -1,15 +1,23 @@
 import { apiClient } from '@/services/api';
-import type { LeaderboardResponse } from '@/shared';
-
-type LeaderboardPeriod = 'weekly' | 'monthly' | 'yearly' | 'alltime';
+import type { LeaderboardResponse, LeaderboardPeriod, LeaderboardMode } from '@/shared';
 
 type ApiLeaderboardResponse = {
   data: LeaderboardResponse;
 };
 
 export const leaderboardApi = {
-  async getLeaderboard(period: LeaderboardPeriod): Promise<LeaderboardResponse> {
-    const response = await apiClient.get<ApiLeaderboardResponse>(`/api/v1/leaderboard/${period}`);
+  async getLeaderboard(
+    period: LeaderboardPeriod,
+    mode: LeaderboardMode = 'score',
+  ): Promise<LeaderboardResponse> {
+    if (mode === 'streak') {
+      const periodParam = period ? `?period=${period}` : '';
+      const response = await apiClient.get<ApiLeaderboardResponse>(`/api/v1/leaderboard/streak${periodParam}`);
+      return response.data.data;
+    }
+    const response = await apiClient.get<ApiLeaderboardResponse>(
+      `/api/v1/leaderboard/${period}?type=${mode}`,
+    );
     return response.data.data;
   },
 };

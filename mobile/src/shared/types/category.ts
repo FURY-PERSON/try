@@ -24,4 +24,7 @@ export type CategoryWithCount = {
   descriptionEn: string;
   imageUrl: string | null;
   availableCount: number;
+  totalCount: number;
+  answeredCount: number;
+  isCompleted: boolean;
 };

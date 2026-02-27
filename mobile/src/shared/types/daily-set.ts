@@ -11,10 +11,8 @@ export type DailySetQuestion = {
   illustrationUrl: string | null;
   sortOrder: number;
   category?: {
-    id: string;
     name: string;
     nameEn: string;
-    slug: string;
   };
 };
 

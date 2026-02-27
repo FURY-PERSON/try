@@ -5,9 +5,13 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { generateUniqueNickname } from '@/utils/generate-nickname';
 
 export interface UserStats {
+  totalScore: number;
+  totalCorrectAnswers: number;
+  factsLearned: number;
+  currentStreak: number;
+  bestStreak: number;
   totalGames: number;
   correctPercent: number;
-  bestStreak: number;
   avgScore: number;
   activityMap: Record<string, number>;
 }
@@ -73,7 +77,10 @@ export class UsersService {
       where: { id: userId },
       select: {
         totalGamesPlayed: true,
-        bestStreak: true,
+        totalCorrectAnswers: true,
+        totalScore: true,
+        currentAnswerStreak: true,
+        bestAnswerStreak: true,
       },
     });
 
@@ -81,17 +88,14 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const totalAnswered = await this.prisma.userQuestionHistory.count({
+    // factsLearned = total questions answered (all modes)
+    const factsLearned = await this.prisma.userQuestionHistory.count({
       where: { userId },
     });
 
-    const correctAnswered = await this.prisma.userQuestionHistory.count({
-      where: { userId, result: 'correct' },
-    });
-
     const correctPercent =
-      totalAnswered > 0
-        ? Math.round((correctAnswered / totalAnswered) * 100)
+      factsLearned > 0
+        ? Math.round((user.totalCorrectAnswers / factsLearned) * 100)
         : 0;
 
     // Average score per game from leaderboard entries
@@ -144,9 +148,13 @@ export class UsersService {
     }
 
     return {
+      totalScore: user.totalScore,
+      totalCorrectAnswers: user.totalCorrectAnswers,
+      factsLearned,
+      currentStreak: user.currentAnswerStreak,
+      bestStreak: user.bestAnswerStreak,
       totalGames: user.totalGamesPlayed,
       correctPercent,
-      bestStreak: user.bestStreak,
       avgScore: Math.round(avgScore * 10) / 10,
       activityMap,
     };

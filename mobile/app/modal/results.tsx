@@ -20,7 +20,6 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { DailyResultCard } from '@/features/game/components/DailyResultCard';
 import { useGameStore } from '@/features/game/stores/useGameStore';
-import { useUserStore } from '@/stores/useUserStore';
 import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
@@ -33,8 +32,7 @@ export default function ResultsModal() {
   const { colors, gradients, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
-  const streak = useUserStore((s) => s.currentStreak);
-  const { dailyProgress, resetDailyProgress, collectionType } = useGameStore();
+  const { dailyProgress, resetDailyProgress, collectionType, isReplay } = useGameStore();
   const submissionResult = useGameStore((s) => s.submissionResult);
   const { showIfReady } = useInterstitialAd();
 
@@ -91,6 +89,8 @@ export default function ResultsModal() {
           ? colors.blue
           : colors.orange;
 
+  const streak = submissionResult?.streak ?? 0;
+
   const handleShare = () => {
     shareResult({
       score: correctCount,
@@ -131,7 +131,18 @@ export default function ResultsModal() {
           </Text>
         </AnimatedEntrance>
 
-        {submissionResult && submissionResult.correctPercent > 0 && (
+        {isReplay && (
+          <AnimatedEntrance delay={200} direction="up">
+            <View style={[styles.replayBanner, { backgroundColor: colors.orange + '20' }]}>
+              <Feather name="rotate-ccw" size={16} color={colors.orange} />
+              <Text style={[styles.replayBannerText, { color: colors.orange }]}>
+                {t('results.replayBanner')}
+              </Text>
+            </View>
+          </AnimatedEntrance>
+        )}
+
+        {!isReplay && submissionResult && submissionResult.correctPercent > 0 && (
           <AnimatedEntrance delay={200} direction="up">
             <Text style={[styles.percentText, { color: colors.primary }]}>
               {t('results.correctPercent', {
@@ -141,16 +152,18 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
-        <AnimatedEntrance delay={300} direction="up">
-          <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
-        </AnimatedEntrance>
+        {!isReplay && (
+          <AnimatedEntrance delay={300} direction="up">
+            <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+          </AnimatedEntrance>
+        )}
 
         <AnimatedEntrance delay={400} direction="up">
           <DailyResultCard results={resultBools} />
         </AnimatedEntrance>
 
-        {/* Leaderboard position only for daily sets */}
-        {isDaily && submissionResult && submissionResult.totalPlayers > 0 ? (
+        {/* Leaderboard position only for daily sets, hidden in replay */}
+        {!isReplay && isDaily && submissionResult && submissionResult.totalPlayers > 0 ? (
           <AnimatedEntrance delay={500} direction="up">
             <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
               <Text style={[styles.positionText, { color: colors.textSecondary }]}>
@@ -160,7 +173,7 @@ export default function ResultsModal() {
               </Text>
             </Card>
           </AnimatedEntrance>
-        ) : isDaily ? (
+        ) : !isReplay && isDaily ? (
           <AnimatedEntrance delay={500} direction="up">
             <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
               <Text style={[styles.positionText, { color: colors.textSecondary }]}>
@@ -241,6 +254,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fontFamily.medium,
     textAlign: 'center',
+  },
+  replayBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  replayBannerText: {
+    fontSize: 14,
+    fontFamily: fontFamily.semiBold,
   },
   footer: {
     paddingHorizontal: 20,

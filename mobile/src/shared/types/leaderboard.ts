@@ -7,10 +7,18 @@ export type LeaderboardEntry = {
   totalQuestions: number;
   score: number;
   totalTimeSeconds: number;
+  currentStreak?: number;
+  bestStreak?: number;
 };
 
 export type LeaderboardResponse = {
   entries: LeaderboardEntry[];
   userPosition: number | null;
   totalPlayers: number;
+  userContext?: LeaderboardEntry[];
+  currentUserId?: string;
 };
+
+export type LeaderboardMode = 'score' | 'streak';
+
+export type LeaderboardPeriod = 'weekly' | 'monthly' | 'yearly' | 'alltime';

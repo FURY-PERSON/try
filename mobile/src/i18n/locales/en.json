@@ -58,9 +58,12 @@
     "mediumDesc": "Test your knowledge",
     "hard": "Hard",
     "hardDesc": "For experts",
+    "randomFacts": "Random Facts",
+    "randomDesc": "Test your knowledge!",
     "featured": "Collections",
     "questionsCount": "{{count}} questions",
-    "startCollection": "Start"
+    "startCollection": "Start",
+    "allCompleted": "All done! \u2705"
   },
   "game": {
     "fact": "Fact",
@@ -70,7 +73,10 @@
     "incorrect": "Incorrect",
     "swipeRight": "Swipe right — fact",
     "swipeLeft": "Swipe left — fake",
-    "swipeHint": "swipe to answer"
+    "swipeHint": "swipe to answer",
+    "exitTitle": "Exit game?",
+    "exitDesc": "Your progress will be saved",
+    "exitSave": "Exit & Save"
   },
   "fact": {
     "title": "Explanation",
@@ -86,17 +92,21 @@
     "position": "#{{position}} of {{total}} players today",
     "correctPercent": "{{percent}}% correct answers",
     "percentile": "You're better than {{percent}}% of players today",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "replayBanner": "Replay — results not recorded"
   },
   "leaderboard": {
     "title": "Leaderboard",
+    "mode_score": "Score",
+    "mode_streak": "Streak",
     "weekly": "Week",
     "monthly": "Month",
     "yearly": "Year",
     "allTime": "All Time",
     "position": "Your position: #{{position}} of {{total}}",
     "empty": "No data yet",
-    "setNickname": "Set a nickname to participate"
+    "setNickname": "Set a nickname to participate",
+    "streakCurrent": "now: {{count}}"
   },
   "profile": {
     "title": "Profile",
@@ -109,6 +119,7 @@
     "correctPercent": "Correct",
     "bestStreak": "Best streak",
     "avgScore": "Avg score",
+    "defaultNickname": "Player",
     "activityLess": "Less",
     "activityMore": "More"
   },
@@ -157,7 +168,10 @@
     "total": "total",
     "lastResult": "Last Result",
     "allDone": "All facts explored!",
-    "notFound": "Category not found"
+    "notFound": "Category not found",
+    "replayTitle": "Replay Mode",
+    "replayDesc": "Score and streak won't be recorded",
+    "dontShow": "Got it, don't show again"
   },
   "error": {
     "title": "Oops! Something went wrong",

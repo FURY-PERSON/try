@@ -432,6 +432,147 @@ async function main() {
     }
   }
 
+  // Seed test users, daily set, and leaderboard entries for testing
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existingDailySet = await prisma.dailySet.findUnique({ where: { date: today } });
+  let dailySet: any = existingDailySet;
+
+  if (!dailySet) {
+    // Create a daily set for today with available questions
+    const allApproved = await prisma.question.findMany({
+      where: { status: 'approved' },
+      take: 15,
+      select: { id: true },
+    });
+
+    if (allApproved.length >= 5) {
+      dailySet = await prisma.dailySet.create({
+        data: {
+          date: today,
+          theme: 'Микс дня',
+          themeEn: 'Daily Mix',
+          status: 'published',
+        },
+      });
+
+      for (let i = 0; i < allApproved.length; i++) {
+        await prisma.dailySetQuestion.create({
+          data: {
+            dailySetId: dailySet.id,
+            questionId: allApproved[i].id,
+            sortOrder: i + 1,
+          },
+        });
+      }
+      console.log(`Daily set created for today with ${allApproved.length} questions`);
+    }
+  }
+
+  // Re-fetch daily set with questions for history records
+  if (dailySet) {
+    dailySet = await prisma.dailySet.findUnique({
+      where: { id: dailySet.id },
+      include: { questions: { orderBy: { sortOrder: 'asc' } } },
+    }) as any;
+  }
+
+  if (dailySet) {
+    // Create test users with leaderboard entries
+    // Score formula: 1 + floor(streak / 5) per correct answer
+    const testUsers = [
+      { deviceId: 'seed-device-alpha', nickname: 'MudrayaSova', avatarEmoji: '🦉', bestStreak: 12, currentStreak: 5, bestAnswerStreak: 18, currentAnswerStreak: 7, correct: 12, time: 120 },
+      { deviceId: 'seed-device-beta', nickname: 'BystryLis', avatarEmoji: '🦊', bestStreak: 8, currentStreak: 3, bestAnswerStreak: 12, currentAnswerStreak: 4, correct: 10, time: 135 },
+      { deviceId: 'seed-device-gamma', nickname: 'KhrabryVolk', avatarEmoji: '🐺', bestStreak: 15, currentStreak: 0, bestAnswerStreak: 25, currentAnswerStreak: 0, correct: 9, time: 150 },
+      { deviceId: 'seed-device-delta', nickname: 'TikhiyMedved', avatarEmoji: '🐻', bestStreak: 6, currentStreak: 6, bestAnswerStreak: 9, currentAnswerStreak: 9, correct: 8, time: 165 },
+      { deviceId: 'seed-device-epsilon', nickname: 'YarkiyOryol', avatarEmoji: '🦅', bestStreak: 20, currentStreak: 10, bestAnswerStreak: 32, currentAnswerStreak: 15, correct: 14, time: 100 },
+    ];
+
+    // Get daily set questions for history records
+    const dsQuestions = dailySet.questions || [];
+
+    for (const tu of testUsers) {
+      // Calculate score using new formula: simulate streak-based scoring
+      // For seed, assume all correct answers are consecutive (best case)
+      let totalScore = 0;
+      const totalCorrect = tu.correct * 5;
+      for (let i = 1; i <= totalCorrect; i++) {
+        totalScore += 1 + Math.floor(i / 5);
+      }
+
+      const user = await prisma.user.upsert({
+        where: { deviceId: tu.deviceId },
+        update: {
+          bestStreak: tu.bestStreak,
+          currentStreak: tu.currentStreak,
+          bestAnswerStreak: tu.bestAnswerStreak,
+          currentAnswerStreak: tu.currentAnswerStreak,
+          totalGamesPlayed: 5,
+          totalCorrectAnswers: totalCorrect,
+          totalScore,
+        },
+        create: {
+          deviceId: tu.deviceId,
+          nickname: tu.nickname,
+          avatarEmoji: tu.avatarEmoji,
+          bestStreak: tu.bestStreak,
+          currentStreak: tu.currentStreak,
+          bestAnswerStreak: tu.bestAnswerStreak,
+          currentAnswerStreak: tu.currentAnswerStreak,
+          totalGamesPlayed: 5,
+          totalCorrectAnswers: totalCorrect,
+          totalScore,
+        },
+      });
+
+      // Create leaderboard entry for today's daily set
+      const dsScore = tu.correct; // 1 point per correct (no streak bonus in daily set seed)
+      await prisma.leaderboardEntry.upsert({
+        where: {
+          userId_dailySetId: {
+            userId: user.id,
+            dailySetId: dailySet.id,
+          },
+        },
+        update: {
+          score: dsScore,
+          correctAnswers: tu.correct,
+          totalTimeSeconds: tu.time,
+        },
+        create: {
+          userId: user.id,
+          dailySetId: dailySet.id,
+          score: dsScore,
+          correctAnswers: tu.correct,
+          totalTimeSeconds: tu.time,
+        },
+      });
+
+      // Create UserQuestionHistory records from daily set questions
+      if (dsQuestions.length > 0) {
+        const historyRecords = dsQuestions.slice(0, 15).map((dsq: any, idx: number) => {
+          const isCorrect = idx < tu.correct;
+          const streak = isCorrect ? idx + 1 : 0;
+          const answerScore = isCorrect ? 1 + Math.floor(streak / 5) : 0;
+          return {
+            userId: user.id,
+            questionId: dsq.questionId,
+            result: isCorrect ? 'correct' : 'incorrect',
+            timeSpentSeconds: Math.floor(tu.time / 15),
+            score: answerScore,
+          };
+        });
+        // Delete old history for this user to avoid duplicates on re-seed
+        await prisma.userQuestionHistory.deleteMany({ where: { userId: user.id } });
+        await prisma.userQuestionHistory.createMany({ data: historyRecords });
+      }
+
+      console.log(`Test user: ${tu.nickname} (streak: ${tu.bestAnswerStreak}, correct: ${totalCorrect}, score: ${totalScore})`);
+    }
+    console.log('Leaderboard entries seeded for today\'s daily set');
+  }
+
   console.log('Seeding complete.');
 }
 

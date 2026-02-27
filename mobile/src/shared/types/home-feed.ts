@@ -17,10 +17,21 @@ export type DailyStatus = {
   } | null;
 };
 
+export type DifficultyProgress = Record<
+  string,
+  { totalCount: number; answeredCount: number }
+>;
+
+export type HomeFeedCollection = CollectionSummary & {
+  answeredCount?: number;
+  isCompleted?: boolean;
+};
+
 export type HomeFeed = {
   daily: DailyStatus;
   categories: CategoryWithCount[];
-  collections: CollectionSummary[];
+  collections: HomeFeedCollection[];
+  difficultyProgress?: DifficultyProgress;
   userProgress: {
     dailyCompleted: boolean;
     streak: number;

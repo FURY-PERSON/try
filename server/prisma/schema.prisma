@@ -17,9 +17,12 @@ model User {
   pushEnabled        Boolean   @default(true)
   currentStreak      Int       @default(0)
   bestStreak         Int       @default(0)
+  currentAnswerStreak Int      @default(0)
+  bestAnswerStreak    Int      @default(0)
   lastPlayedDate     DateTime?
   totalGamesPlayed   Int       @default(0)
   totalCorrectAnswers Int      @default(0)
+  totalScore          Int      @default(0)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -108,6 +111,7 @@ model UserQuestionHistory {
   result           String
   answeredAt       DateTime @default(now())
   timeSpentSeconds Int
+  score            Int      @default(0)
 
   user     User     @relation(fields: [userId], references: [id])
   question Question @relation(fields: [questionId], references: [id])

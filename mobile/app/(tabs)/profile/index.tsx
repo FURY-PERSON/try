@@ -18,7 +18,6 @@ import { useStats } from '@/features/profile/hooks/useStats';
 import { useUserStore } from '@/stores/useUserStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
-import { formatPercent } from '@/utils/format';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -27,9 +26,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
   const avatarEmoji = useUserStore((s) => s.avatarEmoji);
-  const streak = useUserStore((s) => s.currentStreak);
-  const totalScore = useUserStore((s) => s.totalScore);
-  const factsLearned = useUserStore((s) => s.factsLearned);
   const { data: stats, isLoading } = useStats();
 
   return (
@@ -65,7 +61,7 @@ export default function ProfileScreen() {
               <Pressable onPress={() => router.push('/modal/nickname')}>
                 <View style={styles.nicknameRow}>
                   <Text style={[styles.nickname, { color: colors.textPrimary }]}>
-                    {nickname ?? 'Player'}
+                    {nickname ?? t('profile.defaultNickname')}
                   </Text>
                   <Feather name="edit-2" size={12} color={colors.textTertiary} />
                 </View>
@@ -80,19 +76,19 @@ export default function ProfileScreen() {
             <View style={styles.statCards}>
               <StatCard
                 icon={<MaterialCommunityIcons name="fire" size={20} color={colors.orange} />}
-                value={streak}
+                value={isLoading ? 0 : (stats?.currentStreak ?? 0)}
                 label={t('profile.streak')}
                 accentColor={colors.orange}
               />
               <StatCard
                 icon={<Feather name="star" size={20} color={colors.gold} />}
-                value={totalScore}
+                value={isLoading ? 0 : (stats?.totalScore ?? 0)}
                 label={t('profile.score')}
                 accentColor={colors.gold}
               />
               <StatCard
                 icon={<MaterialCommunityIcons name="book-open-variant" size={20} color={colors.blue} />}
-                value={factsLearned}
+                value={isLoading ? 0 : (stats?.factsLearned ?? 0)}
                 label={t('profile.facts')}
                 accentColor={colors.blue}
               />
@@ -124,20 +120,12 @@ export default function ProfileScreen() {
             </Text>
             <Card variant="default" style={{ marginTop: spacing.md, padding: 0 }}>
               <ListItem
-                title={t('profile.totalGames')}
-                rightText={isLoading ? '...' : String(stats?.totalGames ?? 0)}
-              />
-              <ListItem
                 title={t('profile.correctPercent')}
                 rightText={isLoading ? '...' : `${stats?.correctPercent ?? 0}%`}
               />
               <ListItem
                 title={t('profile.bestStreak')}
                 rightText={isLoading ? '...' : String(stats?.bestStreak ?? 0)}
-              />
-              <ListItem
-                title={t('profile.avgScore')}
-                rightText={isLoading ? '...' : `${stats?.avgScore?.toFixed(1) ?? '0'}/5`}
               />
             </Card>
           </AnimatedEntrance>

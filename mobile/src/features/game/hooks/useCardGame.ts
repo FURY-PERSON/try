@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGameStore } from '../stores/useGameStore';
-import { useUserStore } from '@/stores/useUserStore';
 import { gameApi } from '../api/gameApi';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { calculateCardScore } from '../utils';
@@ -31,19 +30,9 @@ export const useCardGame = (
     sessionId,
     collectionType,
   } = useGameStore();
-  const {
-    incrementCorrectAnswers,
-    incrementFactsLearned,
-    addScore,
-    updateStreak,
-    incrementGamesPlayed,
-    setLastPlayedDate,
-  } = useUserStore();
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [liveStreak, setLiveStreak] = useState(
-    useUserStore.getState().currentStreak,
-  );
+  const [liveStreak, setLiveStreak] = useState(0);
 
   const currentIndex = dailyProgress.currentCardIndex;
   const currentQuestion = questions[currentIndex];
@@ -91,12 +80,6 @@ export const useCardGame = (
             sourceUrl: result.sourceUrl,
           });
 
-          if (result.correct) {
-            incrementCorrectAnswers();
-            addScore(score);
-          }
-          incrementFactsLearned();
-
           submitCardResult({
             questionId: currentQuestion.id,
             correct: result.correct,
@@ -117,12 +100,6 @@ export const useCardGame = (
             source: currentQuestion.source ?? '',
             sourceUrl: currentQuestion.sourceUrl ?? undefined,
           });
-
-          if (isCorrect) {
-            incrementCorrectAnswers();
-            addScore(score);
-          }
-          incrementFactsLearned();
 
           submitCardResult({
             questionId: currentQuestion.id,
@@ -145,9 +122,6 @@ export const useCardGame = (
             await submitDailySetResults(gameResults);
           } else if (sessionId) {
             await submitCollectionResults(gameResults);
-          } else {
-            incrementGamesPlayed();
-            setLastPlayedDate(new Date().toISOString().split('T')[0]);
           }
         }
 
@@ -174,12 +148,6 @@ export const useCardGame = (
           sourceUrl: currentQuestion.sourceUrl ?? undefined,
         });
 
-        if (isCorrect) {
-          incrementCorrectAnswers();
-          addScore(score);
-        }
-        incrementFactsLearned();
-
         submitCardResult({
           questionId: currentQuestion.id,
           correct: isCorrect,
@@ -198,9 +166,6 @@ export const useCardGame = (
       sessionId,
       collectionType,
       submitCardResult,
-      incrementCorrectAnswers,
-      incrementFactsLearned,
-      addScore,
       startCard,
     ],
   );
@@ -217,21 +182,16 @@ export const useCardGame = (
         if (dailySetId) {
           const submission = await gameApi.submitDailySet(dailySetId, results);
           setSubmissionResult(submission);
-          updateStreak(submission.streak);
         }
-        incrementGamesPlayed();
-        setLastPlayedDate(new Date().toISOString().split('T')[0]);
       } catch {
         console.warn('Failed to submit daily set');
-        incrementGamesPlayed();
-        setLastPlayedDate(new Date().toISOString().split('T')[0]);
       } finally {
         queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
         queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
         queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
       }
     },
-    [dailySetId, setSubmissionResult, updateStreak, incrementGamesPlayed, setLastPlayedDate],
+    [dailySetId, setSubmissionResult],
   );
 
   const submitCollectionResults = useCallback(
@@ -260,20 +220,17 @@ export const useCardGame = (
             percentile: 0,
             totalPlayers: 0,
           });
-          updateStreak(submission.streak ?? 0);
         }
-        incrementGamesPlayed();
-        setLastPlayedDate(new Date().toISOString().split('T')[0]);
       } catch {
         console.warn('Failed to submit collection');
-        incrementGamesPlayed();
-        setLastPlayedDate(new Date().toISOString().split('T')[0]);
       } finally {
         queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
         queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
+        queryClient.invalidateQueries({ queryKey: ['category'] });
+        queryClient.invalidateQueries({ queryKey: ['collection'] });
       }
     },
-    [sessionId, setSubmissionResult, incrementGamesPlayed, setLastPlayedDate],
+    [sessionId, setSubmissionResult],
   );
 
   const handleNextCard = useCallback(() => {

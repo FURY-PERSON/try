@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "currentAnswerStreak" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN "bestAnswerStreak" INTEGER NOT NULL DEFAULT 0;

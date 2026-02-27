@@ -43,12 +43,12 @@ export default function CollectionDetailScreen() {
 
   const title = collection
     ? language === 'en'
-      ? collection.titleEn
+      ? (collection.titleEn || collection.title)
       : collection.title
     : '';
   const description = collection
     ? language === 'en'
-      ? collection.descriptionEn
+      ? (collection.descriptionEn || collection.description)
       : collection.description
     : '';
 
@@ -59,6 +59,7 @@ export default function CollectionDetailScreen() {
       const session = await collectionsApi.start({
         type: 'collection',
         collectionId: id,
+        count: 30,
       });
       startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions);
       analytics.logEvent('collection_start', {

@@ -7,9 +7,13 @@ type UserResponse = {
 
 type StatsResponse = {
   data: {
+    totalScore: number;
+    totalCorrectAnswers: number;
+    factsLearned: number;
+    currentStreak: number;
+    bestStreak: number;
     totalGames: number;
     correctPercent: number;
-    bestStreak: number;
     avgScore: number;
     activityMap: Record<string, number>;
   };

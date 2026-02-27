@@ -15,11 +15,12 @@ type CollectionDetail = CollectionSummary & {
 };
 
 type StartParams = {
-  type: 'category' | 'difficulty' | 'collection';
+  type: 'category' | 'difficulty' | 'collection' | 'random';
   categoryId?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   collectionId?: string;
   count?: number;
+  replay?: boolean;
 };
 
 type GameResult = {

@@ -25,7 +25,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Chip } from '@/components/ui/Chip';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -42,7 +41,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { CARDS_PER_DAILY_SET } from '@/shared';
-import type { CategoryWithCount, CollectionSummary } from '@/shared';
+import type { CategoryWithCount, DifficultyProgress, HomeFeedCollection } from '@/shared';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -58,12 +57,13 @@ export default function HomeScreen() {
   const { data: feed, isLoading, isError, error, refetch, isRefetching } = useHomeFeed();
   const { data: dailyData } = useDailySet();
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
-  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
+  const [loadingRandom, setLoadingRandom] = useState(false);
 
   const streak = feed?.userProgress?.streak ?? 0;
   const daily = feed?.daily;
   const allCategories = feed?.categories ?? [];
   const allCollections = feed?.collections ?? [];
+  const difficultyProgress = feed?.difficultyProgress;
 
   // Sync nickname & avatarEmoji from server to local store
   useEffect(() => {
@@ -79,21 +79,9 @@ export default function HomeScreen() {
     }
   }, [feed?.userProgress]);
 
-  const categories = useMemo(() => {
-    if (!selectedCategorySlug) return allCategories;
-    return allCategories.filter((c) => c.slug === selectedCategorySlug);
-  }, [allCategories, selectedCategorySlug]);
-
   const collections = useMemo(() => {
     return allCollections;
   }, [allCollections]);
-
-  const handleFilterSelect = useCallback((slug: string | null) => {
-    setSelectedCategorySlug(slug);
-    if (slug) {
-      analytics.logEvent('home_filter_applied', { categorySlug: slug });
-    }
-  }, []);
 
   const handleSectionScroll = useCallback((section: string) => {
     return (_e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -126,7 +114,7 @@ export default function HomeScreen() {
       const session = await collectionsApi.start({
         type: 'difficulty',
         difficulty,
-        count: 10,
+        count: 50,
       });
       startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
@@ -136,9 +124,30 @@ export default function HomeScreen() {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
-      Alert.alert('Error', message);
+      Alert.alert(t('common.error'), message);
     } finally {
       setLoadingCollection(null);
+    }
+  }, [startCollectionSession, router]);
+
+  const handleStartRandom = useCallback(async () => {
+    setLoadingRandom(true);
+    try {
+      const session = await collectionsApi.start({
+        type: 'random',
+        count: 100,
+      });
+      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions);
+      analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
+      router.push({
+        pathname: '/game/card',
+        params: { mode: 'collection' },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error';
+      Alert.alert(t('common.error'), message);
+    } finally {
+      setLoadingRandom(false);
     }
   }, [startCollectionSession, router]);
 
@@ -211,37 +220,6 @@ export default function HomeScreen() {
           </View>
         </AnimatedEntrance>
 
-        {/* Filter Chips */}
-        {allCategories.length > 0 && (
-          <AnimatedEntrance delay={50}>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={allCategories}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={[styles.filterChips, { paddingHorizontal: spacing.screenPadding }]}
-              ListHeaderComponent={
-                <Chip
-                  label={t('home.categoriesAll')}
-                  selected={selectedCategorySlug === null}
-                  onPress={() => handleFilterSelect(null)}
-                />
-              }
-              renderItem={({ item }) => (
-                <Chip
-                  label={language === 'en' ? item.nameEn : item.name}
-                  selected={selectedCategorySlug === item.slug}
-                  onPress={() =>
-                    handleFilterSelect(
-                      selectedCategorySlug === item.slug ? null : item.slug,
-                    )
-                  }
-                />
-              )}
-            />
-          </AnimatedEntrance>
-        )}
-
         {/* Section 1: Hero Daily Set */}
         <AnimatedEntrance delay={100}>
           <LinearGradient
@@ -266,7 +244,7 @@ export default function HomeScreen() {
             <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
               {daily?.set?.theme
                 ? language === 'en'
-                  ? daily.set.themeEn
+                  ? (daily.set.themeEn || daily.set.theme)
                   : daily.set.theme
                 : t('home.dailySet')}
             </Text>
@@ -303,6 +281,41 @@ export default function HomeScreen() {
           </LinearGradient>
         </AnimatedEntrance>
 
+        {/* Random Facts Button */}
+        <AnimatedEntrance delay={150}>
+          <Pressable
+            onPress={handleStartRandom}
+            disabled={loadingRandom}
+            style={[
+              styles.randomButton,
+              {
+                marginTop: spacing.sectionGap,
+                marginHorizontal: spacing.screenPadding,
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: borderRadius.xl,
+                ...elevation.sm,
+              },
+            ]}
+          >
+            <Text style={styles.randomEmoji}>🎲</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.randomTitle, { color: colors.textPrimary }]}>
+                {t('home.randomFacts')}
+              </Text>
+              <Text style={[styles.randomDesc, { color: colors.textSecondary }]}>
+                {t('home.randomDesc')}
+              </Text>
+            </View>
+            {loadingRandom ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Feather name="play-circle" size={24} color={colors.primary} />
+            )}
+          </Pressable>
+        </AnimatedEntrance>
+
         {/* Section 2: Categories */}
         {allCategories.length > 0 && (
           <AnimatedEntrance delay={200}>
@@ -314,7 +327,7 @@ export default function HomeScreen() {
                 <FlatList
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  data={categories}
+                  data={allCategories}
                   keyExtractor={(item) => item.id}
                   contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
                   onScrollBeginDrag={handleSectionScroll('categories')}
@@ -353,6 +366,7 @@ export default function HomeScreen() {
                   loading={loadingCollection === key}
                   onPress={() => handleStartDifficulty(key)}
                   t={t}
+                  progress={difficultyProgress?.[key]}
                 />
               ))}
             </View>
@@ -414,7 +428,7 @@ function CategoryCard({
   elevation: Record<string, Record<string, unknown>>;
   onPress: () => void;
 }) {
-  const name = language === 'en' ? category.nameEn : category.name;
+  const name = language === 'en' ? (category.nameEn || category.name) : category.name;
   const { t } = useTranslation();
   const scale = useSharedValue(1);
 
@@ -445,10 +459,10 @@ function CategoryCard({
         <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
-          {category.availableCount > 0
-            ? t('home.questionsAvailable', { count: category.availableCount })
-            : t('home.allDone')}
+        <Text style={[styles.categoryCount, { color: category.isCompleted ? colors.emerald : colors.textSecondary }]}>
+          {category.isCompleted
+            ? t('home.allCompleted')
+            : `${category.answeredCount}/${category.totalCount}`}
         </Text>
       </View>
     </AnimatedPressable>
@@ -465,6 +479,7 @@ function DifficultyCard({
   loading,
   onPress,
   t,
+  progress,
 }: {
   diffKey: 'easy' | 'medium' | 'hard';
   gradient: [string, string];
@@ -475,6 +490,7 @@ function DifficultyCard({
   loading: boolean;
   onPress: () => void;
   t: (key: string) => string;
+  progress?: { totalCount: number; answeredCount: number };
 }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -515,6 +531,11 @@ function DifficultyCard({
         <Text style={[styles.difficultyDesc, { color: colors.textSecondary }]}>
           {t(`home.${diffKey}Desc`)}
         </Text>
+        {progress && progress.totalCount > 0 && (
+          <Text style={[styles.difficultyProgress, { color: colors.textTertiary }]}>
+            {progress.answeredCount}/{progress.totalCount}
+          </Text>
+        )}
         {loading && (
           <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 4 }} />
         )}
@@ -532,7 +553,7 @@ function CollectionCard({
   loading,
   onPress,
 }: {
-  collection: CollectionSummary;
+  collection: HomeFeedCollection;
   language: string;
   colors: Record<string, string>;
   borderRadius: Record<string, number>;
@@ -540,8 +561,8 @@ function CollectionCard({
   loading: boolean;
   onPress: () => void;
 }) {
-  const title = language === 'en' ? collection.titleEn : collection.title;
-  const desc = language === 'en' ? collection.descriptionEn : collection.description;
+  const title = language === 'en' ? (collection.titleEn || collection.title) : collection.title;
+  const desc = language === 'en' ? (collection.descriptionEn || collection.description) : collection.description;
   const { t } = useTranslation();
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -577,8 +598,12 @@ function CollectionCard({
             {desc}
           </Text>
         ) : null}
-        <Text style={[styles.collectionCount, { color: colors.textTertiary }]}>
-          {t('home.questionsCount', { count: collection._count.questions })}
+        <Text style={[styles.collectionCount, { color: collection.isCompleted ? colors.emerald : colors.textTertiary }]}>
+          {collection.isCompleted
+            ? t('home.allCompleted')
+            : collection.answeredCount != null
+              ? `${collection.answeredCount}/${collection._count.questions}`
+              : t('home.questionsCount', { count: collection._count.questions })}
         </Text>
         {loading && <ActivityIndicator size="small" color={colors.primary} />}
       </View>
@@ -592,10 +617,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
-  },
-  filterChips: {
-    gap: 8,
-    paddingVertical: 12,
   },
   largeTitle: {
     fontSize: 32,
@@ -633,6 +654,25 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     lineHeight: 20,
     marginTop: 4,
+  },
+  // Random facts button
+  randomButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  randomEmoji: {
+    fontSize: 28,
+  },
+  randomTitle: {
+    fontSize: 16,
+    fontFamily: fontFamily.bold,
+  },
+  randomDesc: {
+    fontSize: 13,
+    fontFamily: fontFamily.regular,
+    marginTop: 2,
   },
   // Section headers
   sectionOverline: {
@@ -707,6 +747,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
+  difficultyProgress: {
+    fontSize: 11,
+    fontFamily: fontFamily.medium,
+    textAlign: 'center',
+  },
   // Collection cards
   collectionCard: {
     width: 180,
@@ -721,11 +766,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fontFamily.bold,
     lineHeight: 20,
+    height: 40,
   },
   collectionDesc: {
     fontSize: 13,
     fontFamily: fontFamily.regular,
     lineHeight: 18,
+    height: 36,
   },
   collectionCount: {
     fontSize: 11,

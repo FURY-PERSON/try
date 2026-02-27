@@ -21,6 +21,7 @@ export type CollectionSessionQuestion = {
   categoryId: string;
   difficulty: number;
   illustrationUrl: string | null;
+  category?: { name: string; nameEn: string };
 };
 
 export type CollectionSession = {
@@ -35,4 +36,5 @@ export type CollectionSubmitResult = {
   score: number;
   streak: number;
   bestStreak: number;
+  replay?: boolean;
 };

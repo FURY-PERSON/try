@@ -3,15 +3,17 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
+import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
-import type { LeaderboardEntry as LeaderboardEntryType } from '@/shared';
+import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
 import type { FC } from 'react';
 
 type LeaderboardEntryProps = {
   entry: LeaderboardEntryType;
   rank: number;
   isCurrentUser?: boolean;
+  mode?: LeaderboardMode;
 };
 
 const MEDAL_EMOJI: Record<number, string> = {
@@ -20,14 +22,26 @@ const MEDAL_EMOJI: Record<number, string> = {
   3: '\u{1F949}',
 };
 
+function getDisplayValue(entry: LeaderboardEntryType, mode: LeaderboardMode): string {
+  switch (mode) {
+    case 'streak':
+      return String(entry.bestStreak ?? 0);
+    default:
+      return String(entry.score);
+  }
+}
+
 export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
   entry,
   rank,
   isCurrentUser = false,
+  mode = 'score',
 }) => {
-  const { colors, gradients, elevation, borderRadius } = useThemeContext();
+  const { colors, elevation, borderRadius } = useThemeContext();
+  const { t } = useTranslation();
   const isTop3 = rank <= 3;
   const medal = MEDAL_EMOJI[rank];
+  const displayValue = getDisplayValue(entry, mode);
 
   if (isTop3) {
     const podiumGradient: [string, string] =
@@ -43,15 +57,15 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
     return (
       <View style={[styles.topCard, { ...elevation.md, borderRadius: borderRadius.xl }]}>
         <LinearGradient
-          colors={podiumGradient}
+          colors={isCurrentUser ? [colors.primary + '20', colors.primary + '08'] : podiumGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
             styles.topCardInner,
             {
               borderRadius: borderRadius.xl,
-              borderWidth: 1.5,
-              borderColor: podiumBorderColor + '40',
+              borderWidth: isCurrentUser ? 2 : 1.5,
+              borderColor: isCurrentUser ? colors.primary : podiumBorderColor + '40',
             },
           ]}
         >
@@ -60,17 +74,24 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
               {medal}
             </Text>
             <Avatar nickname={entry.nickname ?? '?'} avatarEmoji={entry.avatarEmoji} size="sm" />
-            <Text
-              style={[
-                styles.nickname,
-                { color: isCurrentUser ? colors.primary : colors.textPrimary },
-              ]}
-              numberOfLines={1}
-            >
-              {entry.nickname ?? '???'}
-            </Text>
+            <View style={styles.nameColumn}>
+              <Text
+                style={[
+                  styles.nickname,
+                  { color: isCurrentUser ? colors.primary : colors.textPrimary },
+                ]}
+                numberOfLines={1}
+              >
+                {entry.nickname ?? '???'}
+              </Text>
+              {mode === 'streak' && (entry.currentStreak ?? 0) > 0 && (
+                <Text style={[styles.subValue, { color: colors.textTertiary }]}>
+                  {t('leaderboard.streakCurrent', { count: entry.currentStreak })}
+                </Text>
+              )}
+            </View>
             <Text style={[styles.scoreTop, { color: colors.textPrimary }]}>
-              {entry.correctAnswers}
+              {displayValue}
             </Text>
           </View>
         </LinearGradient>
@@ -86,20 +107,27 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
     >
       <View style={styles.row}>
         <Text style={[styles.rank, { color: colors.textSecondary }]}>
-          #{rank}
+          {rank > 0 ? `#${rank}` : '—'}
         </Text>
         <Avatar nickname={entry.nickname ?? '?'} avatarEmoji={entry.avatarEmoji} size="sm" />
-        <Text
-          style={[
-            styles.nickname,
-            { color: isCurrentUser ? colors.primary : colors.textPrimary },
-          ]}
-          numberOfLines={1}
-        >
-          {entry.nickname ?? '???'}
-        </Text>
+        <View style={styles.nameColumn}>
+          <Text
+            style={[
+              styles.nickname,
+              { color: isCurrentUser ? colors.primary : colors.textPrimary },
+            ]}
+            numberOfLines={1}
+          >
+            {entry.nickname ?? '???'}
+          </Text>
+          {mode === 'streak' && entry.bestStreak != null && entry.bestStreak > (entry.currentStreak ?? 0) && (
+            <Text style={[styles.subValue, { color: colors.textTertiary }]}>
+              best: {entry.bestStreak}d
+            </Text>
+          )}
+        </View>
         <Text style={[styles.score, { color: colors.textPrimary }]}>
-          {entry.correctAnswers}
+          {displayValue}
         </Text>
       </View>
     </Card>
@@ -135,10 +163,17 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     textAlign: 'center',
   },
-  nickname: {
+  nameColumn: {
     flex: 1,
+  },
+  nickname: {
     fontSize: 16,
     fontFamily: fontFamily.bold,
+  },
+  subValue: {
+    fontSize: 12,
+    fontFamily: fontFamily.regular,
+    marginTop: 1,
   },
   scoreTop: {
     fontSize: 20,

@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { leaderboardApi } from '../api/leaderboardApi';
+import type { LeaderboardPeriod, LeaderboardMode } from '@/shared';
 
-type LeaderboardPeriod = 'weekly' | 'monthly' | 'yearly' | 'alltime';
-
-export const useLeaderboard = (period: LeaderboardPeriod) => {
+export const useLeaderboard = (period: LeaderboardPeriod, mode: LeaderboardMode = 'score') => {
   return useQuery({
-    queryKey: ['leaderboard', period],
-    queryFn: () => leaderboardApi.getLeaderboard(period),
+    queryKey: ['leaderboard', mode, period],
+    queryFn: () => leaderboardApi.getLeaderboard(period, mode),
     staleTime: 2 * 60 * 1000,
   });
 };

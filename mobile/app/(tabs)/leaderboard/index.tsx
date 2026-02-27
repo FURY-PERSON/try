@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
-import { Chip } from '@/components/ui/Chip';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -13,16 +12,24 @@ import { LeaderboardList } from '@/features/leaderboard/components/LeaderboardLi
 import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import type { LeaderboardMode, LeaderboardPeriod } from '@/shared';
 
-type Period = 'weekly' | 'monthly' | 'yearly' | 'alltime';
+const MODES: LeaderboardMode[] = ['score', 'streak'];
+const PERIODS: LeaderboardPeriod[] = ['weekly', 'monthly', 'yearly', 'alltime'];
 
 export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
   const { colors, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
-  const [period, setPeriod] = useState<Period>('weekly');
-  const { data, isLoading, isError, error, refetch } = useLeaderboard(period);
+  const [mode, setMode] = useState<LeaderboardMode>('score');
+  const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
+  const { data, isLoading, isError, error, refetch } = useLeaderboard(period, mode);
+  const currentUserId = data?.currentUserId;
   const entries = data?.entries ?? [];
+
+  const positionLabel = data?.userPosition
+    ? t('leaderboard.position', { position: data.userPosition, total: data.totalPlayers })
+    : null;
 
   return (
     <Screen>
@@ -36,9 +43,37 @@ export default function LeaderboardScreen() {
 
       <AnimatedEntrance delay={50}>
         <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.lg }]}>
-          {(['weekly', 'monthly', 'yearly', 'alltime'] as Period[]).map((p) => (
-            <View
+          {MODES.map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => setMode(m)}
+              style={[
+                styles.segment,
+                mode === m && {
+                  backgroundColor: colors.surface,
+                  borderRadius: borderRadius.sm,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  { color: mode === m ? colors.primary : colors.textSecondary },
+                ]}
+              >
+                {t(`leaderboard.mode_${m}`)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </AnimatedEntrance>
+
+      <AnimatedEntrance delay={75}>
+        <View style={[styles.segmentedControl, { backgroundColor: colors.surfaceVariant, borderRadius: borderRadius.lg, marginTop: 0 }]}>
+          {PERIODS.map((p) => (
+            <Pressable
               key={p}
+              onPress={() => setPeriod(p)}
               style={[
                 styles.segment,
                 period === p && {
@@ -52,11 +87,10 @@ export default function LeaderboardScreen() {
                   styles.segmentText,
                   { color: period === p ? colors.primary : colors.textSecondary },
                 ]}
-                onPress={() => setPeriod(p)}
               >
                 {t(`leaderboard.${p === 'alltime' ? 'allTime' : p}`)}
               </Text>
-            </View>
+            </Pressable>
           ))}
         </View>
       </AnimatedEntrance>
@@ -73,19 +107,13 @@ export default function LeaderboardScreen() {
         <EmptyState title={t('leaderboard.empty')} />
       ) : (
         <AnimatedEntrance delay={100}>
-          <>
-            <LeaderboardList data={entries} />
-            {data?.userPosition && (
-              <View style={[styles.positionFooter, { backgroundColor: colors.primary + '10', borderRadius: borderRadius.lg }]}>
-                <Text style={[styles.positionText, { color: colors.primary }]}>
-                  {t('leaderboard.position', {
-                    position: data.userPosition,
-                    total: data.totalPlayers,
-                  })}
-                </Text>
-              </View>
-            )}
-          </>
+          <LeaderboardList
+            data={entries}
+            mode={mode}
+            currentUserId={currentUserId ?? undefined}
+            userContext={data?.userContext}
+            positionLabel={positionLabel}
+          />
         </AnimatedEntrance>
       )}
 
@@ -124,15 +152,5 @@ const styles = StyleSheet.create({
   },
   skeletons: {
     marginTop: 8,
-  },
-  positionFooter: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  positionText: {
-    fontSize: 15,
-    fontFamily: fontFamily.semiBold,
   },
 });

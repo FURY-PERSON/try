@@ -58,6 +58,7 @@ export class DailySetsService {
                 categoryId: true,
                 difficulty: true,
                 illustrationUrl: true,
+                category: { select: { name: true, nameEn: true } },
               },
             },
           },
@@ -136,6 +137,7 @@ export class DailySetsService {
           categoryId: dsq.question.categoryId,
           difficulty: dsq.question.difficulty,
           illustrationUrl: dsq.question.illustrationUrl,
+          category: dsq.question.category,
           sortOrder: dsq.sortOrder,
         })),
         completed,
@@ -168,6 +170,7 @@ export class DailySetsService {
         categoryId: true,
         difficulty: true,
         illustrationUrl: true,
+        category: { select: { name: true, nameEn: true } },
       },
     });
 
@@ -197,6 +200,7 @@ export class DailySetsService {
         categoryId: q.categoryId,
         difficulty: q.difficulty,
         illustrationUrl: q.illustrationUrl,
+        category: q.category,
         sortOrder: index + 1,
       })),
       completed: false,
@@ -255,7 +259,7 @@ export class DailySetsService {
       }
     }
 
-    // Calculate score and stats
+    // Calculate basic stats
     const correctAnswers = dto.results.filter(
       (r) => r.result === 'correct',
     ).length;
@@ -263,14 +267,6 @@ export class DailySetsService {
       (sum, r) => sum + r.timeSpentSeconds,
       0,
     );
-    // Score: 100 points per correct answer, bonus for speed (max 50 per question)
-    const score = dto.results.reduce((total, r) => {
-      if (r.result === 'correct') {
-        const speedBonus = Math.max(0, 50 - r.timeSpentSeconds);
-        return total + 100 + speedBonus;
-      }
-      return total;
-    }, 0);
 
     // Get user for streak calculation
     const user = await this.prisma.user.findUnique({
@@ -298,33 +294,54 @@ export class DailySetsService {
       );
     }
 
-    // Calculate streak based on consecutive correct answers
+    // Calculate streaks and score in a single pass
     let currentStreak = user.currentStreak;
     let bestStreak = user.bestStreak;
+    let currentAnswerStreak = user.currentAnswerStreak;
+    let bestAnswerStreak = user.bestAnswerStreak;
+    let score = 0;
 
-    for (const result of dto.results) {
-      if (result.result === 'correct') {
+    const historyData = dto.results.map((r) => {
+      let answerScore = 0;
+      if (r.result === 'correct') {
         currentStreak++;
+        currentAnswerStreak++;
+        // Score: 1 base + streak bonus (floor(streak / 5))
+        answerScore = 1 + Math.floor(currentAnswerStreak / 5);
+        score += answerScore;
       } else {
         currentStreak = 0;
+        currentAnswerStreak = 0;
       }
       bestStreak = Math.max(bestStreak, currentStreak);
-    }
+      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
-    const newCurrentStreak = currentStreak;
-    const newBestStreak = bestStreak;
+      return {
+        userId,
+        questionId: r.questionId,
+        result: r.result,
+        timeSpentSeconds: r.timeSpentSeconds,
+        score: answerScore,
+      };
+    });
 
     try {
       await this.prisma.$transaction(async (tx) => {
+        // Save question history
+        await tx.userQuestionHistory.createMany({ data: historyData });
+
         // Update user streak and stats
         await tx.user.update({
           where: { id: userId },
           data: {
-            currentStreak: newCurrentStreak,
-            bestStreak: newBestStreak,
+            currentStreak,
+            bestStreak,
+            currentAnswerStreak,
+            bestAnswerStreak,
             lastPlayedDate: new Date(),
             totalGamesPlayed: { increment: 1 },
             totalCorrectAnswers: { increment: correctAnswers },
+            totalScore: { increment: score },
           },
         });
 
@@ -391,8 +408,8 @@ export class DailySetsService {
       correctAnswers,
       totalQuestions: totalQuestionsInSet,
       totalTimeSeconds,
-      streak: newCurrentStreak,
-      bestStreak: newBestStreak,
+      streak: currentStreak,
+      bestStreak,
       leaderboardPosition,
       correctPercent,
       percentile,

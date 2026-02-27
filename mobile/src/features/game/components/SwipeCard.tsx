@@ -166,9 +166,6 @@ export const SwipeCard: FC<SwipeCardProps> = ({
           />
           {nextStatement ? (
             <View style={styles.stackContent}>
-              <Text style={[styles.counter, { color: colors.textTertiary }]}>
-                {cardIndex + 2} / {totalCards}
-              </Text>
               {nextCategoryName ? (
                 <View style={[styles.categoryBadge, { backgroundColor: colors.primary + '12' }]}>
                   <Text style={[styles.category, { color: colors.primary }]}>
@@ -230,10 +227,6 @@ export const SwipeCard: FC<SwipeCardProps> = ({
           </Animated.View>
 
           <View style={styles.cardContent}>
-            <Text style={[styles.counter, { color: colors.textTertiary }]}>
-              {cardIndex + 1} / {totalCards}
-            </Text>
-
             <View style={[styles.categoryBadge, { backgroundColor: colors.primary + '12' }]}>
               <Text style={[styles.category, { color: colors.primary }]}>
                 {categoryName}
@@ -302,19 +295,13 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
-  counter: {
-    fontSize: 12,
-    fontFamily: fontFamily.medium,
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
   categoryBadge: {
     alignSelf: 'center',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 9999,
-    marginBottom: 24,
+    marginBottom: 8,
+    marginTop: 12,
   },
   category: {
     fontSize: 11,
