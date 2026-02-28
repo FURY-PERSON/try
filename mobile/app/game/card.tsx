@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -175,13 +176,23 @@ export default function CardScreen() {
 
         {currentQuestion ? (
           <View style={styles.cardArea}>
-            <View style={[styles.hintsRow, !feedback && styles.hintsSpread]}>
+            <View style={styles.hintsRow}>
               {feedback ? (
-                <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
+                <Animated.Text
+                  key="continue"
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeOut.duration(150)}
+                  style={[styles.hintCenter, { color: colors.textTertiary }]}
+                >
                   ←  {t('game.swipeToContinue')}  →
-                </Text>
+                </Animated.Text>
               ) : (
-                <>
+                <Animated.View
+                  key="answer"
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeOut.duration(150)}
+                  style={styles.hintsContent}
+                >
                   <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
                     <Text style={[styles.hintText, { color: colors.red }]}>
                       ← {t('game.fake')}
@@ -195,7 +206,7 @@ export default function CardScreen() {
                       {t('game.fact')} →
                     </Text>
                   </View>
-                </>
+                </Animated.View>
               )}
             </View>
             <View style={styles.padded}>
@@ -277,8 +288,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     height: 40,
   },
-  hintsSpread: {
+  hintsContent: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
   },
   hintBadge: {
     paddingHorizontal: 14,

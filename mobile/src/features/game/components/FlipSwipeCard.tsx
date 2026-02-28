@@ -79,11 +79,12 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
 
   const FLIP_DURATION = 500;
 
-  // Buffer displayed content — only update alongside animation reset
-  // to prevent 1-frame desync between React content and Reanimated transforms
-  const [displayed, setDisplayed] = useState({
-    statement,
-    categoryName,
+  // Stack card content is buffered so it only updates AFTER the main card
+  // is repositioned at center (via useEffect). This prevents the stack card
+  // from flashing next-card content while the main card is still off-screen.
+  // Main card reads props directly — it's off-screen during the transition
+  // so the immediate prop update is invisible to the user.
+  const [stackContent, setStackContent] = useState({
     nextStatement,
     nextCategoryName,
   });
@@ -91,7 +92,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   // Guard against stale feedback from a previous card
   const activeFeedback = feedback?.statement === statement ? feedback : null;
 
-  // Reset state when cardIndex changes (no remount — component stays mounted)
+  // Reset animation state when cardIndex changes, then update stack content
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
@@ -99,8 +100,9 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     phase.value = 'front';
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-    // Update displayed content in sync with animation reset
-    setDisplayed({ statement, categoryName, nextStatement, nextCategoryName });
+    // Update stack content AFTER shared values reset — main card is now
+    // at center covering the stack, so the content switch is invisible.
+    setStackContent({ nextStatement, nextCategoryName });
   }, [cardIndex, translateX, translateY, flipProgress, phase, entranceProgress]);
 
   // Trigger flip when feedback arrives
@@ -367,9 +369,9 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               },
             ]}
           />
-          {displayed.nextStatement ? (
+          {stackContent.nextStatement ? (
             <View style={styles.frontContent}>
-              {displayed.nextCategoryName ? (
+              {stackContent.nextCategoryName ? (
                 <View
                   style={[
                     styles.categoryBadge,
@@ -377,7 +379,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                   ]}
                 >
                   <Text style={[styles.category, { color: colors.primary }]}>
-                    {displayed.nextCategoryName}
+                    {stackContent.nextCategoryName}
                   </Text>
                 </View>
               ) : null}
@@ -388,8 +390,11 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               </Text>
               <Text
                 style={[styles.frontStatement, { color: colors.textPrimary }]}
+                numberOfLines={8}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
               >
-                {displayed.nextStatement}
+                {stackContent.nextStatement}
               </Text>
               <Text
                 style={[
@@ -415,9 +420,10 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
           ]}
         >
           {/* ---- FRONT FACE ---- */}
-          <Animated.View
-            style={[styles.face, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardGlowStyle, submittingStyle, frontFaceStyle]}
-          >
+          <Animated.View style={[styles.faceOuter, frontFaceStyle]}>
+            <Animated.View
+              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardGlowStyle, submittingStyle]}
+            >
             <LinearGradient
               colors={gradients.primary}
               start={{ x: 0, y: 0 }}
@@ -467,7 +473,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                 ]}
               >
                 <Text style={[styles.category, { color: colors.primary }]}>
-                  {displayed.categoryName}
+                  {categoryName}
                 </Text>
               </View>
 
@@ -481,8 +487,11 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                   styles.frontStatement,
                   { color: colors.textPrimary },
                 ]}
+                numberOfLines={8}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
               >
-                {displayed.statement}
+                {statement}
               </Text>
               <Text
                 style={[
@@ -494,12 +503,14 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                 &raquo;
               </Text>
             </View>
+            </Animated.View>
           </Animated.View>
 
           {/* ---- BACK FACE ---- */}
-          <Animated.View
-            style={[styles.face, styles.backFace, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, backFaceStyle]}
-          >
+          <Animated.View style={[styles.backFaceOuter, backFaceStyle]}>
+            <View
+              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }]}
+            >
             {activeFeedback && (
               <>
                 <LinearGradient
@@ -584,6 +595,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                 </ScrollView>
               </>
             )}
+            </View>
           </Animated.View>
         </Animated.View>
       </GestureDetector>
@@ -606,18 +618,19 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     minHeight: 300,
   },
-  face: {
+  faceOuter: {
     width: '100%',
     minHeight: 300,
-    overflow: 'hidden',
   },
-  backFace: {
+  backFaceOuter: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    minHeight: 300,
+  },
+  faceInner: {
+    flex: 1,
     overflow: 'hidden',
   },
   topAccent: {
