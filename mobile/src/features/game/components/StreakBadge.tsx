@@ -129,7 +129,7 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.6,
               shadowRadius: glowRadius,
-              elevation: glowRadius,
+              elevation: 0,
             },
             glowAnimatedStyle,
           ]}

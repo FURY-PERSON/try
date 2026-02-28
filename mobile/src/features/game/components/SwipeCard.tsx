@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Platform, StyleSheet, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -259,7 +259,10 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     minHeight: 300,
-    overflow: 'hidden',
+    ...Platform.select({
+      ios: { overflow: 'hidden' as const },
+      android: {},
+    }),
   },
   topAccent: {
     height: 3,

@@ -3,31 +3,20 @@ import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
-import { fontFamily } from '@/theme/typography';
+import { FloatingTabBar } from '@/components/navigation/FloatingTabBar';
 
 export default function TabsLayout() {
-  const { colors, elevation } = useThemeContext();
+  const { colors } = useThemeContext();
   const { t } = useTranslation();
 
   return (
     <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          ...elevation.md,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: fontFamily.semiBold,
-          marginTop: 2,
-        },
-        tabBarIconStyle: {
-          marginTop: 2,
-        },
+        tabBarStyle: { position: 'absolute' },
       }}
     >
       <Tabs.Screen

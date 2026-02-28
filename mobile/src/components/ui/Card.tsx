@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Platform, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -76,14 +76,16 @@ export const Card: FC<CardProps> = ({
   if (variant === 'gradient') {
     const gColors = gradientColors ?? gradients.card;
     const inner = (
-      <LinearGradient
-        colors={gColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.container, baseStyle, elevation.md, style]}
-      >
-        {children}
-      </LinearGradient>
+      <View style={[baseStyle, elevation.md, style]}>
+        <LinearGradient
+          colors={gColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.container, styles.overflow, baseStyle]}
+        >
+          {children}
+        </LinearGradient>
+      </View>
     );
 
     if (onPress) {
@@ -130,6 +132,8 @@ export const Card: FC<CardProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+  },
+  overflow: {
     overflow: 'hidden',
   },
 });

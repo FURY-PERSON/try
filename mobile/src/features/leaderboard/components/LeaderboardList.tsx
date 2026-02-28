@@ -64,7 +64,7 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
 
 const styles = StyleSheet.create({
   list: {
-    paddingBottom: 16,
+    paddingBottom: 100,
   },
   contextBlock: {
     marginTop: 8,

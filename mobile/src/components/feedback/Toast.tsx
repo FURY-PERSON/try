@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import { Text, Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -108,7 +108,10 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 9999,
     flexDirection: 'row',
-    overflow: 'hidden',
+    ...Platform.select({
+      ios: { overflow: 'hidden' as const },
+      android: {},
+    }),
   },
   indicator: {
     width: 4,

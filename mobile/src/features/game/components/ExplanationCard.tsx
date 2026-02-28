@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, Linking, Pressable, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Platform, StyleSheet, Linking, Pressable, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -125,7 +125,10 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 4,
     maxHeight: SCREEN_HEIGHT * 0.7,
-    overflow: 'hidden',
+    ...Platform.select({
+      ios: { overflow: 'hidden' as const },
+      android: {},
+    }),
   },
   scrollBody: {
     flexGrow: 0,

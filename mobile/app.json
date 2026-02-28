@@ -39,6 +39,7 @@
       },
       "package": "com.factfront.app",
       "versionCode": 1,
+      "navigationBarColor": "#00000000",
       "googleServicesFile": "./google-services.json",
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
       "config": {
@@ -52,6 +53,7 @@
       "expo-localization",
       "expo-secure-store",
       "expo-font",
+      "expo-navigation-bar",
       [
         "expo-build-properties",
         {

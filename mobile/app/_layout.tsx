@@ -1,9 +1,11 @@
 import React, { useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
+import * as NavigationBar from 'expo-navigation-bar';
 import {
   useFonts,
   Nunito_400Regular,
@@ -13,7 +15,7 @@ import {
   Nunito_800ExtraBold,
   Nunito_900Black,
 } from '@expo-google-fonts/nunito';
-import { ThemeProvider } from '@/theme';
+import { ThemeProvider, useThemeContext } from '@/theme';
 import { useAppStore } from '@/stores/useAppStore';
 import { adManager } from '@/services/ads';
 import { initializeFirebase } from '@/services/firebase';
@@ -29,6 +31,20 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AndroidNavigationBar() {
+  const { isDark } = useThemeContext();
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      NavigationBar.setPositionAsync('absolute');
+      NavigationBar.setBackgroundColorAsync('transparent');
+      NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+    }
+  }, [isDark]);
+
+  return null;
+}
 
 export default function RootLayout() {
   const initializeDevice = useAppStore((s) => s.initializeDevice);
@@ -65,6 +81,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
+            <AndroidNavigationBar />
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(onboarding)" />
