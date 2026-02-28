@@ -6,7 +6,7 @@ import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { calculateCardScore } from '../utils';
 import { analytics } from '@/services/analytics';
 import type { DailySetQuestion } from '@/shared';
-import type { SwipeDirection } from '../types';
+import type { CardResult, SwipeDirection } from '../types';
 
 type AnswerFeedback = {
   statement: string;
@@ -34,6 +34,7 @@ export const useCardGame = (
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [liveStreak, setLiveStreak] = useState(0);
+  const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
 
   const currentIndex = dailyProgress.currentCardIndex;
   const currentQuestion = questions[currentIndex];
@@ -81,7 +82,7 @@ export const useCardGame = (
             sourceUrl: result.sourceUrl,
           });
 
-          submitCardResult({
+          setPendingResult({
             questionId: currentQuestion.id,
             correct: result.correct,
             score,
@@ -102,29 +103,12 @@ export const useCardGame = (
             sourceUrl: currentQuestion.sourceUrl ?? undefined,
           });
 
-          submitCardResult({
+          setPendingResult({
             questionId: currentQuestion.id,
             correct: isCorrect,
             score,
             timeSpentMs,
           });
-        }
-
-        // Submit full set when all cards are done (skip for replays)
-        const newProgress = useGameStore.getState().dailyProgress;
-        const currentIsReplay = useGameStore.getState().isReplay;
-        if (newProgress.completed && !currentIsReplay) {
-          const gameResults = newProgress.results.map((r) => ({
-            questionId: r.questionId,
-            result: r.correct ? ('correct' as const) : ('incorrect' as const),
-            timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
-          }));
-
-          if (collectionType === 'daily' && dailySetId) {
-            await submitDailySetResults(gameResults);
-          } else if (sessionId) {
-            await submitCollectionResults(gameResults);
-          }
         }
 
         // Update live streak based on answer
@@ -150,7 +134,7 @@ export const useCardGame = (
           sourceUrl: currentQuestion.sourceUrl ?? undefined,
         });
 
-        submitCardResult({
+        setPendingResult({
           questionId: currentQuestion.id,
           correct: isCorrect,
           score,
@@ -164,11 +148,7 @@ export const useCardGame = (
       currentQuestion,
       isSubmitting,
       feedback,
-      dailySetId,
-      sessionId,
       collectionType,
-      submitCardResult,
-      startCard,
     ],
   );
 
@@ -235,9 +215,31 @@ export const useCardGame = (
     [sessionId, setSubmissionResult],
   );
 
-  const handleNextCard = useCallback(() => {
+  const handleNextCard = useCallback(async () => {
+    if (pendingResult) {
+      submitCardResult(pendingResult);
+      setPendingResult(null);
+
+      // Submit full set when all cards are done (skip for replays)
+      // Need to read fresh state after submitCardResult
+      const newProgress = useGameStore.getState().dailyProgress;
+      const currentIsReplay = useGameStore.getState().isReplay;
+      if (newProgress.completed && !currentIsReplay) {
+        const gameResults = newProgress.results.map((r) => ({
+          questionId: r.questionId,
+          result: r.correct ? ('correct' as const) : ('incorrect' as const),
+          timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
+        }));
+
+        if (collectionType === 'daily' && dailySetId) {
+          await submitDailySetResults(gameResults);
+        } else if (sessionId) {
+          await submitCollectionResults(gameResults);
+        }
+      }
+    }
     setFeedback(null);
-  }, []);
+  }, [pendingResult, submitCardResult, collectionType, dailySetId, sessionId, submitDailySetResults, submitCollectionResults]);
 
   return {
     currentQuestion,

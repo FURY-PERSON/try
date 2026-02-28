@@ -1,16 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  runOnJS,
-  interpolate,
-  Extrapolation,
-} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { GameHeader } from '@/features/game/components/GameHeader';
-import { SwipeCard } from '@/features/game/components/SwipeCard';
-import { ExplanationCard } from '@/features/game/components/ExplanationCard';
+import { FlipSwipeCard } from '@/features/game/components/FlipSwipeCard';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
@@ -30,9 +19,6 @@ import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { DailySetQuestion } from '@/shared';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DISMISS_THRESHOLD = SCREEN_WIDTH * 0.2;
 
 export default function CardScreen() {
   const router = useRouter();
@@ -124,51 +110,6 @@ export default function CardScreen() {
     handleNextCard,
   } = useCardGame(questions, dailySetId);
 
-  // Swipe-to-dismiss for explanation card
-  const dismissX = useSharedValue(0);
-  const dismissOpacity = useSharedValue(1);
-
-  // Reset dismiss animation when feedback changes
-  useEffect(() => {
-    dismissX.value = 0;
-    dismissOpacity.value = 1;
-  }, [feedback, dismissX, dismissOpacity]);
-
-  const onDismiss = () => {
-    handleNextCard();
-  };
-
-  const dismissGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      dismissX.value = e.translationX;
-    })
-    .onEnd((e) => {
-      if (Math.abs(e.translationX) > DISMISS_THRESHOLD) {
-        const dir = e.translationX > 0 ? 1 : -1;
-        dismissX.value = withTiming(dir * SCREEN_WIDTH * 1.5, { duration: 250 });
-        dismissOpacity.value = withTiming(0, { duration: 250 });
-        runOnJS(onDismiss)();
-      } else {
-        dismissX.value = withSpring(0);
-      }
-    });
-
-  const dismissStyle = useAnimatedStyle(() => {
-    const rotation = interpolate(
-      dismissX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
-      [-10, 0, 10],
-      Extrapolation.CLAMP,
-    );
-    return {
-      transform: [
-        { translateX: dismissX.value },
-        { rotate: `${rotation}deg` },
-      ],
-      opacity: dismissOpacity.value,
-    };
-  });
-
   useEffect(() => {
     if (isComplete && !feedback) {
       router.replace('/modal/results');
@@ -229,71 +170,59 @@ export default function CardScreen() {
           />
         </View>
 
+        <Text style={[styles.counterText, { color: colors.textTertiary }]}>
+          {currentIndex + 1} / {totalCards}
+        </Text>
+
         {!feedback && currentQuestion && (
-          <Text style={[styles.counterText, { color: colors.textTertiary }]}>
-            {currentIndex + 1} / {totalCards}
-          </Text>
+          <View style={styles.swipeHints}>
+            <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
+              <Text style={[styles.hintText, { color: colors.red }]}>
+                ← {t('game.fake')}
+              </Text>
+            </View>
+            <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
+              {t('game.swipeHint')}
+            </Text>
+            <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
+              <Text style={[styles.hintText, { color: colors.emerald }]}>
+                {t('game.fact')} →
+              </Text>
+            </View>
+          </View>
         )}
 
-        {feedback ? (
+        {currentQuestion ? (
           <>
-            <View style={styles.explanationArea}>
-              <GestureDetector gesture={dismissGesture}>
-                <Animated.View style={[styles.padded, dismissStyle]}>
-                  <ExplanationCard
-                    statement={feedback.statement}
-                    isTrue={feedback.isTrue}
-                    userAnsweredCorrectly={feedback.userAnsweredCorrectly}
-                    explanation={feedback.explanation}
-                    source={feedback.source}
-                    sourceUrl={feedback.sourceUrl}
-                  />
-                </Animated.View>
-              </GestureDetector>
-            </View>
-            <View style={[styles.bottomButton, { paddingBottom: 16 + insets.bottom }]}>
-              <Button
-                label={`${t('common.next')} →`}
-                variant={feedback.userAnsweredCorrectly ? 'success' : 'primary'}
-                size="lg"
-                onPress={handleNextCard}
-              />
-            </View>
-          </>
-        ) : currentQuestion ? (
-          <>
-            {/* Swipe hints at the top */}
-            <View style={styles.swipeHints}>
-              <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
-                <Text style={[styles.hintText, { color: colors.red }]}>
-                  ← {t('game.fake')}
-                </Text>
-              </View>
-              <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
-                {t('game.swipeHint')}
-              </Text>
-              <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
-                <Text style={[styles.hintText, { color: colors.emerald }]}>
-                  {t('game.fact')} →
-                </Text>
-              </View>
-            </View>
-
             <View style={styles.cardArea}>
               <View style={styles.padded}>
-                <SwipeCard
+                <FlipSwipeCard
                   key={currentIndex}
                   statement={currentQuestion.statement}
                   categoryName={categoryName}
                   cardIndex={currentIndex}
                   totalCards={totalCards}
+                  feedback={feedback}
                   onSwipe={handleSwipe}
+                  onDismiss={handleNextCard}
                   disabled={isSubmitting}
+                  isSubmitting={isSubmitting}
                   nextStatement={nextQuestion?.statement}
                   nextCategoryName={nextCategoryName}
                 />
               </View>
             </View>
+
+            {feedback && (
+              <View style={[styles.bottomButton, { paddingBottom: 16 + insets.bottom }]}>
+                <Button
+                  label={`${t('common.next')} →`}
+                  variant={feedback.userAnsweredCorrectly ? 'success' : 'primary'}
+                  size="lg"
+                  onPress={handleNextCard}
+                />
+              </View>
+            )}
           </>
         ) : null}
       </LinearGradient>
@@ -339,10 +268,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   cardArea: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  explanationArea: {
     flex: 1,
     justifyContent: 'center',
   },
