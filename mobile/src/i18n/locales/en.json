@@ -74,6 +74,7 @@
     "swipeRight": "Swipe right — fact",
     "swipeLeft": "Swipe left — fake",
     "swipeHint": "swipe to answer",
+    "swipeToContinue": "swipe to continue",
     "exitTitle": "Exit game?",
     "exitDesc": "Your progress will be saved",
     "exitSave": "Exit & Save"

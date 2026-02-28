@@ -6,7 +6,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
-import { Button } from '@/components/ui/Button';
 import { GameHeader } from '@/features/game/components/GameHeader';
 import { FlipSwipeCard } from '@/features/game/components/FlipSwipeCard';
 import { Skeleton } from '@/components/feedback/Skeleton';
@@ -174,56 +173,47 @@ export default function CardScreen() {
           {currentIndex + 1} / {totalCards}
         </Text>
 
-        {!feedback && currentQuestion && (
-          <View style={styles.swipeHints}>
-            <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
-              <Text style={[styles.hintText, { color: colors.red }]}>
-                ← {t('game.fake')}
-              </Text>
+        {currentQuestion ? (
+          <View style={styles.cardArea}>
+            <View style={[styles.hintsRow, !feedback && styles.hintsSpread]}>
+              {feedback ? (
+                <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
+                  ←  {t('game.swipeToContinue')}  →
+                </Text>
+              ) : (
+                <>
+                  <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
+                    <Text style={[styles.hintText, { color: colors.red }]}>
+                      ← {t('game.fake')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
+                    {t('game.swipeHint')}
+                  </Text>
+                  <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
+                    <Text style={[styles.hintText, { color: colors.emerald }]}>
+                      {t('game.fact')} →
+                    </Text>
+                  </View>
+                </>
+              )}
             </View>
-            <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
-              {t('game.swipeHint')}
-            </Text>
-            <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
-              <Text style={[styles.hintText, { color: colors.emerald }]}>
-                {t('game.fact')} →
-              </Text>
+            <View style={styles.padded}>
+              <FlipSwipeCard
+                statement={currentQuestion.statement}
+                categoryName={categoryName}
+                cardIndex={currentIndex}
+                totalCards={totalCards}
+                feedback={feedback}
+                onSwipe={handleSwipe}
+                onDismiss={handleNextCard}
+                disabled={isSubmitting}
+                isSubmitting={isSubmitting}
+                nextStatement={nextQuestion?.statement}
+                nextCategoryName={nextCategoryName}
+              />
             </View>
           </View>
-        )}
-
-        {currentQuestion ? (
-          <>
-            <View style={styles.cardArea}>
-              <View style={styles.padded}>
-                <FlipSwipeCard
-                  key={currentIndex}
-                  statement={currentQuestion.statement}
-                  categoryName={categoryName}
-                  cardIndex={currentIndex}
-                  totalCards={totalCards}
-                  feedback={feedback}
-                  onSwipe={handleSwipe}
-                  onDismiss={handleNextCard}
-                  disabled={isSubmitting}
-                  isSubmitting={isSubmitting}
-                  nextStatement={nextQuestion?.statement}
-                  nextCategoryName={nextCategoryName}
-                />
-              </View>
-            </View>
-
-            {feedback && (
-              <View style={[styles.bottomButton, { paddingBottom: 16 + insets.bottom }]}>
-                <Button
-                  label={`${t('common.next')} →`}
-                  variant={feedback.userAnsweredCorrectly ? 'success' : 'primary'}
-                  size="lg"
-                  onPress={handleNextCard}
-                />
-              </View>
-            )}
-          </>
         ) : null}
       </LinearGradient>
 
@@ -270,10 +260,7 @@ const styles = StyleSheet.create({
   cardArea: {
     flex: 1,
     justifyContent: 'center',
-  },
-  bottomButton: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: '20%',
   },
   counterText: {
     fontSize: 15,
@@ -282,13 +269,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     letterSpacing: 0.5,
   },
-  swipeHints: {
+  hintsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
+    marginBottom: 12,
+    height: 40,
+  },
+  hintsSpread: {
+    justifyContent: 'space-between',
   },
   hintBadge: {
     paddingHorizontal: 14,

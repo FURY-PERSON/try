@@ -217,8 +217,10 @@ export const useCardGame = (
 
   const handleNextCard = useCallback(async () => {
     if (pendingResult) {
-      submitCardResult(pendingResult);
+      // Clear feedback BEFORE advancing index to prevent stale content flash
+      setFeedback(null);
       setPendingResult(null);
+      submitCardResult(pendingResult);
 
       // Submit full set when all cards are done (skip for replays)
       // Need to read fresh state after submitCardResult
@@ -237,8 +239,9 @@ export const useCardGame = (
           await submitCollectionResults(gameResults);
         }
       }
+    } else {
+      setFeedback(null);
     }
-    setFeedback(null);
   }, [pendingResult, submitCardResult, collectionType, dailySetId, sessionId, submitDailySetResults, submitCollectionResults]);
 
   return {

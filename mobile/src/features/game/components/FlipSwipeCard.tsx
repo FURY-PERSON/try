@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   Dimensions,
   Linking,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -26,7 +26,7 @@ import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 import type { SwipeDirection } from '../types';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 const CARD_WIDTH = SCREEN_WIDTH - 48;
 
@@ -75,30 +75,48 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   const translateY = useSharedValue(0);
   const flipProgress = useSharedValue(0);
   const phase = useSharedValue<FlipPhase>('front');
+  const entranceProgress = useSharedValue(1);
 
-  // Reset on new card mount (key changes cardIndex)
+  const FLIP_DURATION = 500;
+
+  // Buffer displayed content — only update alongside animation reset
+  // to prevent 1-frame desync between React content and Reanimated transforms
+  const [displayed, setDisplayed] = useState({
+    statement,
+    categoryName,
+    nextStatement,
+    nextCategoryName,
+  });
+
+  // Guard against stale feedback from a previous card
+  const activeFeedback = feedback?.statement === statement ? feedback : null;
+
+  // Reset state when cardIndex changes (no remount — component stays mounted)
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
-    flipProgress.value = 0;
+    flipProgress.value = 0; // instant snap, no animation
     phase.value = 'front';
-  }, [cardIndex, translateX, translateY, flipProgress, phase]);
+    entranceProgress.value = 0;
+    entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+    // Update displayed content in sync with animation reset
+    setDisplayed({ statement, categoryName, nextStatement, nextCategoryName });
+  }, [cardIndex, translateX, translateY, flipProgress, phase, entranceProgress]);
 
   // Trigger flip when feedback arrives
   useEffect(() => {
-    if (feedback && phase.value === 'front') {
+    if (activeFeedback && flipProgress.value === 0) {
       phase.value = 'flipping';
-      flipProgress.value = withTiming(
-        180,
-        { duration: 500, easing: Easing.out(Easing.cubic) },
-        (finished) => {
-          if (finished) {
-            phase.value = 'back';
-          }
-        },
-      );
+      flipProgress.value = withTiming(180, {
+        duration: FLIP_DURATION,
+        easing: Easing.inOut(Easing.ease),
+      }, (finished) => {
+        if (finished) {
+          phase.value = 'back';
+        }
+      });
     }
-  }, [feedback, flipProgress, phase]);
+  }, [activeFeedback, flipProgress, phase]);
 
   const handleSwipeAction = (direction: SwipeDirection) => {
     onSwipe(direction);
@@ -109,42 +127,51 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   };
 
   const gesture = Gesture.Pan()
-    .enabled(!disabled || phase.value === 'back')
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
-      // Block gesture during flip animation
       if (phase.value === 'flipping') return;
+      // Block front-phase gesture when submitting
+      if (phase.value === 'front' && disabled) return;
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
       if (phase.value === 'flipping') return;
+      if (phase.value === 'front' && disabled) return;
 
       const snapBack = { duration: 200, easing: Easing.out(Easing.cubic) };
+      // Slow return synced with flip animation
+      const flipReturn = { duration: FLIP_DURATION, easing: Easing.inOut(Easing.ease) };
 
       if (phase.value === 'front') {
-        // Phase 1: swipe to answer, snap back
+        // Phase 1: swipe to answer — return to center in sync with flip
         if (event.translationX > SWIPE_THRESHOLD) {
-          translateX.value = withTiming(0, snapBack);
-          translateY.value = withTiming(0, snapBack);
+          translateX.value = withTiming(0, flipReturn);
+          translateY.value = withTiming(0, flipReturn);
           runOnJS(handleSwipeAction)('right');
         } else if (event.translationX < -SWIPE_THRESHOLD) {
-          translateX.value = withTiming(0, snapBack);
-          translateY.value = withTiming(0, snapBack);
+          translateX.value = withTiming(0, flipReturn);
+          translateY.value = withTiming(0, flipReturn);
           runOnJS(handleSwipeAction)('left');
         } else {
+          // Below threshold — quick snap back, no flip
           translateX.value = withTiming(0, snapBack);
           translateY.value = withTiming(0, snapBack);
         }
       } else if (phase.value === 'back') {
-        // Phase 2: swipe to dismiss, fly off
+        // Phase 2: swipe to dismiss, fly off then advance
         if (Math.abs(event.translationX) > SWIPE_THRESHOLD * 0.8) {
           const dir = event.translationX > 0 ? 1 : -1;
-          translateX.value = withTiming(dir * SCREEN_WIDTH * 1.5, {
-            duration: 300,
-          });
+          translateX.value = withTiming(
+            dir * SCREEN_WIDTH * 1.5,
+            { duration: 300 },
+            (finished) => {
+              if (finished) {
+                runOnJS(handleDismissAction)();
+              }
+            },
+          );
           translateY.value = withTiming(0, { duration: 300 });
-          runOnJS(handleDismissAction)();
         } else {
           translateX.value = withTiming(0, snapBack);
           translateY.value = withTiming(0, snapBack);
@@ -152,7 +179,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
       }
     });
 
-  // Card transform (translate + rotate from drag + perspective for 3D flip)
+  // Card transform (translate + rotate from drag)
   const cardDragStyle = useAnimatedStyle(() => {
     const rotation = interpolate(
       translateX.value,
@@ -162,7 +189,6 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     );
     return {
       transform: [
-        { perspective: 1200 },
         { translateX: translateX.value },
         { translateY: translateY.value },
         { rotate: `${rotation}deg` },
@@ -170,32 +196,34 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     };
   });
 
-  // Front face style (3D flip)
+  // Front face: 0 → 180deg (opacity toggle at 90deg for Android reliability)
   const frontFaceStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0, 180], [0, 180]);
-    const opacity = flipProgress.value < 90 ? 1 : 0;
     return {
-      transform: [{ rotateY: `${rotateY}deg` }],
-      opacity,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${flipProgress.value}deg` },
+      ],
       backfaceVisibility: 'hidden' as const,
+      opacity: flipProgress.value < 90 ? 1 : 0,
     };
   });
 
-  // Back face style (3D flip)
+  // Back face: 180 → 360deg (opacity toggle at 90deg for Android reliability)
   const backFaceStyle = useAnimatedStyle(() => {
-    const rotateY = interpolate(flipProgress.value, [0, 180], [-180, 0]);
-    const opacity = flipProgress.value >= 90 ? 1 : 0;
     return {
-      transform: [{ rotateY: `${rotateY}deg` }],
-      opacity,
+      transform: [
+        { perspective: 1200 },
+        { rotateY: `${flipProgress.value + 180}deg` },
+      ],
       backfaceVisibility: 'hidden' as const,
+      opacity: flipProgress.value < 90 ? 0 : 1,
     };
   });
 
-  // Glow border based on drag (only for front phase)
+  // Glow border based on drag (only before flip)
   const cardGlowStyle = useAnimatedStyle(() => {
-    if (phase.value !== 'front') {
-      return { borderColor: 'transparent', borderWidth: 2 };
+    if (flipProgress.value > 0) {
+      return { borderColor: colors.border, borderWidth: 2 };
     }
     const progress = interpolate(
       translateX.value,
@@ -203,107 +231,128 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
       [-1, 0, 1],
       Extrapolation.CLAMP,
     );
-    const opacity = Math.abs(progress) * 0.19;
+    const absProgress = Math.abs(progress);
+    if (absProgress < 0.01) {
+      return { borderColor: colors.border, borderWidth: 2 };
+    }
+    const glowOpacity = absProgress * 0.19;
     const isRight = progress > 0;
     const r = isRight ? 16 : 239;
     const g = isRight ? 185 : 68;
     const b = isRight ? 129 : 68;
     return {
-      borderColor: `rgba(${r}, ${g}, ${b}, ${opacity})`,
+      borderColor: `rgba(${r}, ${g}, ${b}, ${glowOpacity})`,
       borderWidth: 2,
     };
   });
 
   // FACT overlay opacity (front only)
   const factOverlayStyle = useAnimatedStyle(() => {
-    if (phase.value !== 'front') return { opacity: 0 };
-    const opacity = interpolate(
+    if (flipProgress.value > 0) return { opacity: 0 };
+    const o = interpolate(
       translateX.value,
       [0, SWIPE_THRESHOLD],
       [0, 1],
       Extrapolation.CLAMP,
     );
-    return { opacity };
+    return { opacity: o };
   });
 
   // FAKE overlay opacity (front only)
   const fakeOverlayStyle = useAnimatedStyle(() => {
-    if (phase.value !== 'front') return { opacity: 0 };
-    const opacity = interpolate(
+    if (flipProgress.value > 0) return { opacity: 0 };
+    const o = interpolate(
       translateX.value,
       [-SWIPE_THRESHOLD, 0],
       [1, 0],
       Extrapolation.CLAMP,
     );
-    return { opacity };
+    return { opacity: o };
   });
 
-  // Submitting indicator (pulsing border while waiting for API)
+  // Submitting indicator (border while waiting for API)
   const submittingStyle = useAnimatedStyle(() => {
-    if (!isSubmitting || phase.value !== 'front') {
-      return { borderColor: 'transparent', borderWidth: 0 };
+    if (!isSubmitting || flipProgress.value > 0) {
+      return { borderColor: colors.border, borderWidth: 2 };
     }
     return {
-      borderColor: `rgba(99, 102, 241, 0.3)`,
+      borderColor: 'rgba(99, 102, 241, 0.3)',
       borderWidth: 2,
+    };
+  });
+
+  const secondStackStyle = useAnimatedStyle(() => {
+    const scale = interpolate(entranceProgress.value, [0, 1], [0.92, 0.96]);
+    const top = interpolate(entranceProgress.value, [0, 1], [24, 12]);
+    return { transform: [{ scale }], top, opacity: 0.85 };
+  });
+
+  const thirdStackStyle = useAnimatedStyle(() => {
+    const scale = interpolate(entranceProgress.value, [0, 1], [0.88, 0.92]);
+    const top = interpolate(entranceProgress.value, [0, 1], [36, 24]);
+    return { transform: [{ scale }], top, opacity: 0.4 };
+  });
+
+  // Main card entrance — animate from stack position to full size (no opacity to avoid bleed-through)
+  const mainEntranceStyle = useAnimatedStyle(() => {
+    const scale = interpolate(entranceProgress.value, [0, 1], [0.96, 1]);
+    const translateYEntrance = interpolate(entranceProgress.value, [0, 1], [12, 0]);
+    return {
+      transform: [{ scale }, { translateY: translateYEntrance }],
     };
   });
 
   const remainingCards = totalCards - cardIndex;
 
   const handleSourcePress = () => {
-    if (feedback?.sourceUrl) {
-      Linking.openURL(feedback.sourceUrl);
+    if (activeFeedback?.sourceUrl) {
+      Linking.openURL(activeFeedback.sourceUrl);
     }
   };
 
-  const resultGradient: [string, string] = feedback?.userAnsweredCorrectly
+  const resultGradient: [string, string] = activeFeedback?.userAnsweredCorrectly
     ? gradients.success
     : gradients.danger;
-  const resultIcon = feedback?.userAnsweredCorrectly
+  const resultIcon = activeFeedback?.userAnsweredCorrectly
     ? 'check-circle'
     : 'close-circle';
-  const resultText = feedback?.userAnsweredCorrectly
+  const resultText = activeFeedback?.userAnsweredCorrectly
     ? t('game.correct')
     : t('game.incorrect');
-  const truthLabel = feedback?.isTrue ? t('game.fact') : t('game.fake');
-  const truthColor = feedback?.isTrue ? colors.emerald : colors.red;
+  const truthLabel = activeFeedback?.isTrue ? t('game.fact') : t('game.fake');
+  const truthColor = activeFeedback?.isTrue ? colors.emerald : colors.red;
 
   return (
     <View style={styles.wrapper}>
       {/* Third card in stack */}
       {remainingCards > 2 && (
-        <View
+        <Animated.View
           style={[
             styles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: colors.border,
-              transform: [{ scale: 0.92 }],
-              top: 24,
-              opacity: 0.4,
             },
+            thirdStackStyle,
           ]}
         />
       )}
 
       {/* Second card in stack */}
       {remainingCards > 1 && (
-        <View
+        <Animated.View
           style={[
             styles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: colors.border,
-              transform: [{ scale: 0.96 }],
-              top: 12,
-              opacity: 0.85,
               overflow: 'hidden',
             },
+            secondStackStyle,
           ]}
         >
           <LinearGradient
@@ -318,9 +367,9 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               },
             ]}
           />
-          {nextStatement ? (
-            <View style={styles.stackContent}>
-              {nextCategoryName ? (
+          {displayed.nextStatement ? (
+            <View style={styles.frontContent}>
+              {displayed.nextCategoryName ? (
                 <View
                   style={[
                     styles.categoryBadge,
@@ -328,7 +377,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                   ]}
                 >
                   <Text style={[styles.category, { color: colors.primary }]}>
-                    {nextCategoryName}
+                    {displayed.nextCategoryName}
                   </Text>
                 </View>
               ) : null}
@@ -339,9 +388,8 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               </Text>
               <Text
                 style={[styles.frontStatement, { color: colors.textPrimary }]}
-                numberOfLines={3}
               >
-                {nextStatement}
+                {displayed.nextStatement}
               </Text>
               <Text
                 style={[
@@ -354,7 +402,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               </Text>
             </View>
           ) : null}
-        </View>
+        </Animated.View>
       )}
 
       {/* Main interactive card */}
@@ -362,6 +410,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         <Animated.View
           style={[
             styles.card,
+            mainEntranceStyle,
             cardDragStyle,
           ]}
         >
@@ -418,7 +467,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                 ]}
               >
                 <Text style={[styles.category, { color: colors.primary }]}>
-                  {categoryName}
+                  {displayed.categoryName}
                 </Text>
               </View>
 
@@ -433,7 +482,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                   { color: colors.textPrimary },
                 ]}
               >
-                {statement}
+                {displayed.statement}
               </Text>
               <Text
                 style={[
@@ -451,7 +500,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
           <Animated.View
             style={[styles.face, styles.backFace, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, backFaceStyle]}
           >
-            {feedback && (
+            {activeFeedback && (
               <>
                 <LinearGradient
                   colors={resultGradient}
@@ -474,10 +523,9 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                 </LinearGradient>
 
                 <ScrollView
-                  style={styles.scrollBody}
-                  contentContainerStyle={styles.backBody}
+                  style={styles.backBody}
+                  contentContainerStyle={styles.backBodyContent}
                   showsVerticalScrollIndicator={false}
-                  bounces={false}
                   nestedScrollEnabled
                 >
                   <Text
@@ -485,8 +533,9 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                       styles.backStatement,
                       { color: colors.textSecondary },
                     ]}
+                    numberOfLines={3}
                   >
-                    &laquo;{feedback.statement}&raquo;
+                    &laquo;{activeFeedback.statement}&raquo;
                   </Text>
 
                   <View
@@ -508,10 +557,10 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                       { color: colors.textPrimary },
                     ]}
                   >
-                    {feedback.explanation}
+                    {activeFeedback.explanation}
                   </Text>
 
-                  {feedback.source ? (
+                  {activeFeedback.source ? (
                     <Pressable
                       onPress={handleSourcePress}
                       style={styles.sourceRow}
@@ -525,10 +574,10 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
                         style={[
                           styles.sourceText,
                           { color: colors.textTertiary },
-                          feedback.sourceUrl && styles.sourceLink,
+                          activeFeedback.sourceUrl && styles.sourceLink,
                         ]}
                       >
-                        {feedback.source}
+                        {activeFeedback.source}
                       </Text>
                     </Pressable>
                   ) : null}
@@ -578,12 +627,6 @@ const styles = StyleSheet.create({
   frontContent: {
     paddingHorizontal: 24,
     paddingVertical: 32,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  stackContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
     flex: 1,
     justifyContent: 'center',
   },
@@ -648,11 +691,10 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
-  scrollBody: {
-    flexGrow: 0,
-    maxHeight: SCREEN_HEIGHT * 0.45,
-  },
   backBody: {
+    flex: 1,
+  },
+  backBodyContent: {
     padding: 24,
   },
   backStatement: {
