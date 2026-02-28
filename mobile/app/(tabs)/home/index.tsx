@@ -244,7 +244,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={48} />
         }
         contentContainerStyle={{ paddingBottom: 100 }}
       >

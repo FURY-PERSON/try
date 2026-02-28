@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -26,11 +26,15 @@ export default function ProfileScreen() {
   const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
   const avatarEmoji = useUserStore((s) => s.avatarEmoji);
-  const { data: stats, isLoading } = useStats();
+  const { data: stats, isLoading, isRefetching, refetch } = useStats();
 
   return (
     <Screen padded={false}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={48} />}
+      >
         {/* Profile Header with Gradient */}
         <AnimatedEntrance delay={0}>
           <LinearGradient

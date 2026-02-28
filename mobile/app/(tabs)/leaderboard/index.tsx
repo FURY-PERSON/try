@@ -23,7 +23,7 @@ export default function LeaderboardScreen() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<LeaderboardMode>('score');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
-  const { data, isLoading, isError, error, refetch } = useLeaderboard(period, mode);
+  const { data, isLoading, isError, error, refetch, isRefetching } = useLeaderboard(period, mode);
   const currentUserId = data?.currentUserId;
   const entries = data?.entries ?? [];
 
@@ -114,6 +114,8 @@ export default function LeaderboardScreen() {
               currentUserId={currentUserId ?? undefined}
               userContext={data?.userContext}
               positionLabel={positionLabel}
+              refreshing={isRefetching}
+              onRefresh={refetch}
             />
           </AnimatedEntrance>
         )}

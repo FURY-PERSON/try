@@ -13,9 +13,11 @@ type LeaderboardListProps = {
   mode?: LeaderboardMode;
   userContext?: LeaderboardEntryType[];
   positionLabel?: string | null;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
-export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId, mode = 'score', userContext, positionLabel }) => {
+export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId, mode = 'score', userContext, positionLabel, refreshing, onRefresh }) => {
   const { colors, borderRadius } = useThemeContext();
 
   const footer = (
@@ -60,6 +62,8 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
       ListFooterComponent={footer}
       contentContainerStyle={styles.list}
       showsVerticalScrollIndicator={false}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
     />
   );
 };
