@@ -30,7 +30,7 @@ function getDisplayValue(entry: LeaderboardEntryType, mode: LeaderboardMode): st
   }
 }
 
-export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
+export const LeaderboardEntry: FC<LeaderboardEntryProps> = React.memo(({
   entry,
   rank,
   isCurrentUser = false,
@@ -120,7 +120,7 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = ({
       </View>
     </Card>
   );
-};
+});
 
 const styles = StyleSheet.create({
   topCard: {

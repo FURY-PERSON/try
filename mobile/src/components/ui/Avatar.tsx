@@ -64,7 +64,9 @@ export const Avatar: FC<AvatarProps> = ({ nickname, avatarEmoji, imageUrl, size 
             },
           ]}
           contentFit="cover"
-          transition={200}
+          transition={300}
+          placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
+          cachePolicy="memory-disk"
           accessibilityLabel={nickname ?? 'Avatar'}
         />
       </View>

@@ -5,31 +5,44 @@ import { analytics } from '@/services/analytics';
 import i18n from '@/i18n';
 
 export const useSettings = () => {
-  const store = useSettingsStore();
+  const theme = useSettingsStore((s) => s.theme);
+  const language = useSettingsStore((s) => s.language);
+  const contentLanguage = useSettingsStore((s) => s.contentLanguage);
+  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
+  const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
+  const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
+  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
+  const setTheme = useSettingsStore((s) => s.setTheme);
+  const setLanguage = useSettingsStore((s) => s.setLanguage);
+  const setContentLanguage = useSettingsStore((s) => s.setContentLanguage);
+  const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled);
+  const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
+  const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
+  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
 
   const changeLanguage = useCallback(
-    (language: 'ru' | 'en') => {
-      store.setLanguage(language);
-      i18n.changeLanguage(language);
-      analytics.logEvent('settings_changed', { setting: 'language', value: language });
+    (lang: 'ru' | 'en') => {
+      setLanguage(lang);
+      i18n.changeLanguage(lang);
+      analytics.logEvent('settings_changed', { setting: 'language', value: lang });
     },
-    [store],
+    [setLanguage],
   );
 
   const changeContentLanguage = useCallback(
-    (contentLanguage: 'ru' | 'en' | 'both') => {
-      store.setContentLanguage(contentLanguage);
-      analytics.logEvent('settings_changed', { setting: 'content_language', value: contentLanguage });
+    (contentLang: 'ru' | 'en' | 'both') => {
+      setContentLanguage(contentLang);
+      analytics.logEvent('settings_changed', { setting: 'content_language', value: contentLang });
     },
-    [store],
+    [setContentLanguage],
   );
 
   const changeTheme = useCallback(
-    (theme: 'light' | 'dark' | 'system') => {
-      store.setTheme(theme);
-      analytics.logEvent('settings_changed', { setting: 'theme', value: theme });
+    (newTheme: 'light' | 'dark' | 'system') => {
+      setTheme(newTheme);
+      analytics.logEvent('settings_changed', { setting: 'theme', value: newTheme });
     },
-    [store],
+    [setTheme],
   );
 
   const toggleNotifications = useCallback(
@@ -37,11 +50,11 @@ export const useSettings = () => {
       if (enabled) {
         const granted = await notifications.requestPermission();
         if (granted) {
-          store.setNotificationsEnabled(true);
+          setNotificationsEnabled(true);
           await notifications.scheduleDailyReminder(19, 0);
         }
       } else {
-        store.setNotificationsEnabled(false);
+        setNotificationsEnabled(false);
         await notifications.cancelAll();
       }
       analytics.logEvent('settings_changed', {
@@ -49,11 +62,24 @@ export const useSettings = () => {
         value: enabled.toString(),
       });
     },
-    [store],
+    [setNotificationsEnabled],
   );
 
   return {
-    ...store,
+    theme,
+    language,
+    contentLanguage,
+    soundEnabled,
+    hapticsEnabled,
+    notificationsEnabled,
+    replayWarningDismissed,
+    setTheme,
+    setLanguage,
+    setContentLanguage,
+    setSoundEnabled,
+    setHapticsEnabled,
+    setNotificationsEnabled,
+    setReplayWarningDismissed,
     changeLanguage,
     changeContentLanguage,
     changeTheme,

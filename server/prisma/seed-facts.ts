@@ -8,17 +8,45 @@ import * as path from 'path';
 
 const prisma = new PrismaClient();
 
+type QuestionEntry = {
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl: string | null;
+  language: string;
+  difficulty: number;
+};
+
+function loadAndMerge(files: string[]): Record<string, QuestionEntry[]> {
+  const merged: Record<string, QuestionEntry[]> = {};
+  for (const file of files) {
+    if (!fs.existsSync(file)) continue;
+    const data: Record<string, QuestionEntry[]> = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    for (const [cat, questions] of Object.entries(data)) {
+      if (!merged[cat]) merged[cat] = [];
+      merged[cat].push(...questions);
+    }
+  }
+  return merged;
+}
+
 async function main() {
-  const questionsFile = path.join(__dirname, 'seed-questions.json');
-  const data: Record<string, Array<{
-    statement: string;
-    isTrue: boolean;
-    explanation: string;
-    source: string;
-    sourceUrl: string | null;
-    language: string;
-    difficulty: number;
-  }>> = JSON.parse(fs.readFileSync(questionsFile, 'utf-8'));
+  if (process.env.NODE_ENV !== 'development') {
+    console.log(`⛔ Seed skipped: NODE_ENV="${process.env.NODE_ENV ?? 'undefined'}" (required: development)`);
+    return;
+  }
+
+  const existingCount = await prisma.question.count();
+  if (existingCount > 0) {
+    console.log(`⛔ Seed skipped: database already contains ${existingCount} questions.`);
+    return;
+  }
+
+  const data = loadAndMerge([
+    path.join(__dirname, 'seed-questions.json'),
+    path.join(__dirname, 'seed-questions-200.json'),
+  ]);
 
   // Map category names to IDs
   const categories = await prisma.category.findMany({

@@ -132,7 +132,90 @@ export class AdminStatsService {
     };
   }
 
+  async getUserAnalytics() {
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000,
+    );
+
+    const [dauRaw, newUsersRaw, topPlayers, answersAgg] = await Promise.all([
+      // DAU: distinct users who answered per day (last 30 days)
+      this.prisma.$queryRaw<{ date: string; count: bigint }[]>`
+        SELECT DATE("answeredAt") as date, COUNT(DISTINCT "userId") as count
+        FROM "UserQuestionHistory"
+        WHERE "answeredAt" >= ${thirtyDaysAgo}
+        GROUP BY DATE("answeredAt")
+        ORDER BY date ASC
+      `,
+
+      // New users per day (last 30 days)
+      this.prisma.$queryRaw<{ date: string; count: bigint }[]>`
+        SELECT DATE("createdAt") as date, COUNT(*) as count
+        FROM "User"
+        WHERE "createdAt" >= ${thirtyDaysAgo}
+        GROUP BY DATE("createdAt")
+        ORDER BY date ASC
+      `,
+
+      // Top 10 players by total score
+      this.prisma.user.findMany({
+        orderBy: { totalScore: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          nickname: true,
+          avatarEmoji: true,
+          totalScore: true,
+          totalCorrectAnswers: true,
+          totalGamesPlayed: true,
+          bestAnswerStreak: true,
+        },
+      }),
+
+      // Overall accuracy
+      this.prisma.$queryRaw<{ total: bigint; correct: bigint }[]>`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE "result" = 'correct') as correct
+        FROM "UserQuestionHistory"
+      `,
+    ]);
+
+    const totalAnswers = Number(answersAgg[0]?.total ?? 0);
+    const totalCorrect = Number(answersAgg[0]?.correct ?? 0);
+    const overallAccuracy =
+      totalAnswers > 0
+        ? Math.round((totalCorrect / totalAnswers) * 10000) / 100
+        : 0;
+
+    return {
+      dau: dauRaw.map((r) => ({
+        date: new Date(r.date).toISOString().split('T')[0],
+        count: Number(r.count),
+      })),
+      newUsers: newUsersRaw.map((r) => ({
+        date: new Date(r.date).toISOString().split('T')[0],
+        count: Number(r.count),
+      })),
+      topPlayers,
+      overallAccuracy,
+      totalAnswers,
+    };
+  }
+
   async getQuestionStats() {
+    const questionSelect = {
+      id: true,
+      statement: true,
+      isTrue: true,
+      difficulty: true,
+      status: true,
+      timesShown: true,
+      timesCorrect: true,
+      avgTimeSeconds: true,
+      categoryId: true,
+      category: { select: { id: true, name: true, nameEn: true, icon: true } },
+    } as const;
+
     const [hardest, easiest, mostShown] = await Promise.all([
       this.prisma.question.findMany({
         where: {
@@ -142,7 +225,7 @@ export class AdminStatsService {
           timesCorrect: 'asc',
         },
         take: 10,
-        include: { category: true },
+        select: questionSelect,
       }),
 
       this.prisma.question.findMany({
@@ -153,7 +236,7 @@ export class AdminStatsService {
           timesCorrect: 'desc',
         },
         take: 10,
-        include: { category: true },
+        select: questionSelect,
       }),
 
       this.prisma.question.findMany({
@@ -161,7 +244,7 @@ export class AdminStatsService {
           timesShown: 'desc',
         },
         take: 10,
-        include: { category: true },
+        select: questionSelect,
       }),
     ]);
 

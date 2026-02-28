@@ -216,12 +216,13 @@ export class DailySetsService {
     dailySetId: string,
     dto: SubmitDailySetDto,
   ) {
-    // Validate that the daily set exists
+    // Validate that the daily set exists — only fetch question IDs (not full question data)
     const dailySet = await this.prisma.dailySet.findUnique({
       where: { id: dailySetId },
-      include: {
+      select: {
+        id: true,
         questions: {
-          include: { question: true },
+          select: { questionId: true },
         },
       },
     });
@@ -366,36 +367,36 @@ export class DailySetsService {
       throw error;
     }
 
-    // Calculate leaderboard position by correctAnswers
-    const higherCorrectCount = await this.prisma.leaderboardEntry.count({
-      where: {
-        dailySetId,
-        OR: [
-          { correctAnswers: { gt: correctAnswers } },
-          {
-            correctAnswers,
-            totalTimeSeconds: { lt: totalTimeSeconds },
-          },
-        ],
-      },
-    });
-    const leaderboardPosition = higherCorrectCount + 1;
-
-    // Calculate percentage and percentile
+    // Calculate leaderboard position, total players, and lower count in parallel
     const totalQuestionsInSet = dailySet.questions.length;
     const correctPercent = Math.round(
       (correctAnswers / totalQuestionsInSet) * 100,
     );
 
-    const totalPlayersToday = await this.prisma.leaderboardEntry.count({
-      where: { dailySetId },
-    });
-    const lowerCount = await this.prisma.leaderboardEntry.count({
-      where: {
-        dailySetId,
-        correctAnswers: { lt: correctAnswers },
-      },
-    });
+    const [higherCorrectCount, totalPlayersToday, lowerCount] = await Promise.all([
+      this.prisma.leaderboardEntry.count({
+        where: {
+          dailySetId,
+          OR: [
+            { correctAnswers: { gt: correctAnswers } },
+            {
+              correctAnswers,
+              totalTimeSeconds: { lt: totalTimeSeconds },
+            },
+          ],
+        },
+      }),
+      this.prisma.leaderboardEntry.count({
+        where: { dailySetId },
+      }),
+      this.prisma.leaderboardEntry.count({
+        where: {
+          dailySetId,
+          correctAnswers: { lt: correctAnswers },
+        },
+      }),
+    ]);
+    const leaderboardPosition = higherCorrectCount + 1;
     const percentile =
       totalPlayersToday > 0
         ? Math.round((lowerCount / totalPlayersToday) * 100)

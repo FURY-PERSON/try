@@ -2,42 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { QuestionFilterDto } from './dto/question-filter.dto';
 import { AnswerQuestionDto } from './dto/answer-question.dto';
+import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
 
 @Injectable()
 export class QuestionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getRandomQuestion(userId: string, filters: QuestionFilterDto) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    // Use anti-repeat module to get excluded IDs instead of expensive correlated subqueries
+    const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       status: 'approved',
-      AND: [
-        {
-          NOT: {
-            history: {
-              some: {
-                userId,
-                result: 'correct',
-              },
-            },
-          },
-        },
-        {
-          NOT: {
-            history: {
-              some: {
-                userId,
-                result: 'incorrect',
-                answeredAt: {
-                  gt: sevenDaysAgo,
-                },
-              },
-            },
-          },
-        },
-      ],
+      ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
     };
 
     if (filters.language) {
@@ -98,31 +75,34 @@ export class QuestionsService {
     const isCorrect = dto.userAnswer === question.isTrue;
     const result = isCorrect ? 'correct' : 'incorrect';
 
-    await this.prisma.userQuestionHistory.create({
-      data: {
-        userId,
-        questionId,
-        result,
-        timeSpentSeconds: dto.timeSpentSeconds,
-      },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userQuestionHistory.create({
+        data: {
+          userId,
+          questionId,
+          result,
+          timeSpentSeconds: dto.timeSpentSeconds,
+        },
+      });
 
-    // Atomic update to avoid race conditions
-    await this.prisma.$executeRaw`
-      UPDATE "Question"
-      SET
-        "avgTimeSeconds" = ("avgTimeSeconds" * "timesShown" + ${dto.timeSpentSeconds}::float) / ("timesShown" + 1),
-        "timesShown" = "timesShown" + 1,
-        "timesCorrect" = "timesCorrect" + ${isCorrect ? 1 : 0}
-      WHERE "id" = ${questionId}
-    `;
+      // Atomic update to avoid race conditions
+      const correctIncrement = isCorrect ? 1 : 0;
+      await tx.$executeRaw`
+        UPDATE "Question"
+        SET
+          "avgTimeSeconds" = ("avgTimeSeconds" * "timesShown" + ${dto.timeSpentSeconds}::float) / ("timesShown" + 1),
+          "timesShown" = "timesShown" + 1,
+          "timesCorrect" = "timesCorrect" + ${correctIncrement}
+        WHERE "id" = ${questionId}
+      `;
 
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        totalGamesPlayed: { increment: 1 },
-        ...(isCorrect ? { totalCorrectAnswers: { increment: 1 } } : {}),
-      },
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalGamesPlayed: { increment: 1 },
+          ...(isCorrect ? { totalCorrectAnswers: { increment: 1 } } : {}),
+        },
+      });
     });
 
     const score = this.calculateScore(

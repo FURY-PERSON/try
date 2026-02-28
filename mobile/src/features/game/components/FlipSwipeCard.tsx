@@ -91,15 +91,14 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     isSubmittingShared.value = isSubmitting;
   }, [isSubmitting, isSubmittingShared]);
 
-  // Stack card content is buffered so it only updates AFTER the main card
-  // is repositioned at center (via useEffect). This prevents the stack card
-  // from flashing next-card content while the main card is still off-screen.
-  // Main card reads props directly — it's off-screen during the transition
-  // so the immediate prop update is invisible to the user.
-  const [stackContent, setStackContent] = useState({
-    nextStatement,
-    nextCategoryName,
-  });
+  // Stack card content is buffered to prevent flashing the next card's text
+  // while the main card is still transitioning. The update is delayed by one
+  // requestAnimationFrame so the UI thread has time to reposition the main
+  // card to center before React re-renders the stack content.
+  const [stackContent, setStackContent] = useState({ nextStatement, nextCategoryName });
+  // 4th card slot is hidden during transition and only becomes available
+  // after the entrance animation (300ms) fully completes.
+  const [fourthCardReady, setFourthCardReady] = useState(true);
 
   // Guard against stale feedback from a previous card
   const activeFeedback = useMemo(
@@ -107,7 +106,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     [feedback, statement],
   );
 
-  // Reset animation state when cardIndex changes, then update stack content
+  // Reset animation state when cardIndex changes
   useEffect(() => {
     translateX.value = 0;
     translateY.value = 0;
@@ -115,9 +114,19 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     phase.value = 'front';
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
-    // Update stack content AFTER shared values reset — main card is now
-    // at center covering the stack, so the content switch is invisible.
-    setStackContent({ nextStatement, nextCategoryName });
+    // Hide 4th card immediately on transition start
+    setFourthCardReady(false);
+    // Delay by one frame so the UI thread applies translateX=0 (main card
+    // covers the stack) before React re-renders with the new stack content.
+    const raf = requestAnimationFrame(() => {
+      setStackContent({ nextStatement, nextCategoryName });
+    });
+    // Show 4th card only after entrance animation completes (300ms)
+    const timer = setTimeout(() => setFourthCardReady(true), 300);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
   }, [cardIndex]);
 
   // Trigger flip when feedback arrives
@@ -293,7 +302,13 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
   const thirdStackStyle = useAnimatedStyle(() => {
     const scale = interpolate(entranceProgress.value, [0, 1], [0.88, 0.92]);
     const top = interpolate(entranceProgress.value, [0, 1], [36, 24]);
-    return { transform: [{ scale }], top, opacity: 0.4 };
+    return { transform: [{ scale }], top, opacity: 0.5 };
+  });
+
+  const fourthStackStyle = useAnimatedStyle(() => {
+    const scale = interpolate(entranceProgress.value, [0, 1], [0.84, 0.88]);
+    const top = interpolate(entranceProgress.value, [0, 1], [48, 36]);
+    return { transform: [{ scale }], top, opacity: 0 };
   });
 
   // Main card entrance — animate from stack position to full size (no opacity to avoid bleed-through)
@@ -333,6 +348,23 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
 
   return (
     <View style={styles.wrapper}>
+      {/* Fourth card in stack (opacity 0, pre-rendered after entrance animation) */}
+      {remainingCards > 3 && fourthCardReady && (
+        <Animated.View
+          style={[
+            styles.stackCard,
+            dynamicStyles.stackCard,
+            {
+              backgroundColor: colors.surface,
+              borderRadius: borderRadius.xxl,
+              borderWidth: 2,
+              borderColor: colors.border,
+            },
+            fourthStackStyle,
+          ]}
+        />
+      )}
+
       {/* Third card in stack */}
       {remainingCards > 2 && (
         <Animated.View
@@ -392,9 +424,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
                   </Text>
                 </View>
               ) : null}
-              <Text
-                style={[styles.statementQuote, { color: colors.primary }]}
-              >
+              <Text style={[styles.statementQuote, { color: colors.primary }]}>
                 &laquo;
               </Text>
               <Text
@@ -406,11 +436,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
                 {stackContent.nextStatement}
               </Text>
               <Text
-                style={[
-                  styles.statementQuote,
-                  styles.quoteEnd,
-                  { color: colors.primary },
-                ]}
+                style={[styles.statementQuote, styles.quoteEnd, { color: colors.primary }]}
               >
                 &raquo;
               </Text>

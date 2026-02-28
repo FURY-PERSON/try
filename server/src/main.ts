@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import compression from 'compression';
+import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -37,6 +38,10 @@ async function bootstrap() {
   // Compression
   app.use(compression());
 
+  // Payload size limits
+  app.use(json({ limit: '1mb' }));
+  app.use(urlencoded({ extended: true, limit: '1mb' }));
+
   // CORS
   const corsOrigin = configService.get<string>('CORS_ORIGIN') || '*';
   app.enableCors({
@@ -61,6 +66,13 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
+
+  // Enable graceful shutdown hooks
+  app.enableShutdownHooks();
+
+  // Request timeout (60 seconds)
+  const server = app.getHttpServer();
+  server.setTimeout(60000);
 
   // Start server
   const port = configService.get<number>('PORT') || 3001;

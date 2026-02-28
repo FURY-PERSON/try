@@ -11,6 +11,7 @@
     "scheme": "factfront",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
+    "jsEngine": "hermes",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash.png",

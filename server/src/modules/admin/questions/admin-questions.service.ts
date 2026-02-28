@@ -37,6 +37,7 @@ export class AdminQuestionsService {
       where.difficulty = difficulty;
     }
     if (search) {
+      // TODO: Add PostgreSQL full-text search index (GIN/tsvector) for better performance on large datasets
       where.statement = { contains: search, mode: 'insensitive' };
     }
     if (notInDailySet === 'true') {
@@ -46,7 +47,10 @@ export class AdminQuestionsService {
     const [questions, total] = await Promise.all([
       this.prisma.question.findMany({
         where,
-        include: { category: true, categories: { include: { category: true } } },
+        include: {
+          category: { select: { id: true, name: true, nameEn: true, icon: true } },
+          categories: { include: { category: { select: { id: true, name: true, nameEn: true, icon: true } } } },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

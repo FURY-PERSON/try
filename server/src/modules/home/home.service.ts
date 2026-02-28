@@ -173,42 +173,59 @@ export class HomeService {
 
     if (categories.length === 0) return [];
 
+    // Use groupBy for primary category counts instead of loading all questions
+    const [primaryCounts, secondaryCounts] = await Promise.all([
+      this.prisma.question.groupBy({
+        by: ['categoryId'],
+        where: { status: 'approved' },
+        _count: { id: true },
+      }),
+      // For secondary categories, aggregate on QuestionCategory table
+      this.prisma.$queryRaw<{ categoryId: string; count: number }[]>`
+        SELECT qc."categoryId", COUNT(DISTINCT qc."questionId")::int AS "count"
+        FROM "QuestionCategory" qc
+        JOIN "Question" q ON q."id" = qc."questionId"
+        WHERE q."status" = 'approved'
+        GROUP BY qc."categoryId"
+      `,
+    ]);
+
+    const primaryMap = new Map(primaryCounts.map((r) => [r.categoryId, r._count.id]));
+    const secondaryMap = new Map(secondaryCounts.map((r) => [r.categoryId, r.count]));
+
+    // For available/answered counts, we still need question IDs per category
+    // but only if there are excluded or answered questions to check against
+    const needDetailedCounts = excludedIds.length > 0 || answeredSet.size > 0;
+
+    if (!needDetailedCounts) {
+      return categories.map((cat) => {
+        // Use the higher of primary or secondary count (secondary includes primary via QuestionCategory)
+        const totalCount = secondaryMap.get(cat.id) ?? primaryMap.get(cat.id) ?? 0;
+        return {
+          ...cat,
+          availableCount: totalCount,
+          totalCount,
+          answeredCount: 0,
+          isCompleted: false,
+        };
+      });
+    }
+
+    // Only load question IDs (not full objects) for categories that need detail
     const categoryIds = categories.map((c) => c.id);
+    const questionIdRows = await this.prisma.$queryRaw<{ categoryId: string; questionId: string }[]>`
+      SELECT DISTINCT qc."categoryId", qc."questionId"
+      FROM "QuestionCategory" qc
+      JOIN "Question" q ON q."id" = qc."questionId"
+      WHERE q."status" = 'approved' AND qc."categoryId" = ANY(${categoryIds})
+    `;
 
-    // Batch query: get all approved question IDs with their categoryId
-    // This replaces 3 queries per category with 1 total query
-    const allQuestions = await this.prisma.question.findMany({
-      where: {
-        status: 'approved',
-        OR: [
-          { categoryId: { in: categoryIds } },
-          { categories: { some: { categoryId: { in: categoryIds } } } },
-        ],
-      },
-      select: {
-        id: true,
-        categoryId: true,
-        categories: { select: { categoryId: true } },
-      },
-    });
-
-    // Build maps: categoryId -> question IDs
     const catQuestionMap = new Map<string, Set<string>>();
     for (const cid of categoryIds) {
       catQuestionMap.set(cid, new Set());
     }
-
-    for (const q of allQuestions) {
-      // Primary category
-      if (catQuestionMap.has(q.categoryId)) {
-        catQuestionMap.get(q.categoryId)!.add(q.id);
-      }
-      // Secondary categories
-      for (const c of q.categories) {
-        if (catQuestionMap.has(c.categoryId)) {
-          catQuestionMap.get(c.categoryId)!.add(q.id);
-        }
-      }
+    for (const row of questionIdRows) {
+      catQuestionMap.get(row.categoryId)?.add(row.questionId);
     }
 
     const excludedSet = new Set(excludedIds);
@@ -241,26 +258,55 @@ export class HomeService {
       hard: [4, 5],
     };
 
-    // Single query for all difficulties at once
-    const allQuestions = await this.prisma.question.findMany({
-      where: { status: 'approved', difficulty: { in: [1, 2, 3, 4, 5] } },
-      select: { id: true, difficulty: true },
+    // Use groupBy to count by difficulty instead of loading all questions
+    const groupedCounts = await this.prisma.question.groupBy({
+      by: ['difficulty'],
+      where: { status: 'approved' },
+      _count: { id: true },
     });
+
+    const countByDifficulty = new Map(
+      groupedCounts.map((g) => [g.difficulty, g._count.id]),
+    );
+
+    // For answered counts, we need question IDs only if user has answered any
+    const needAnsweredCounts = answeredSet.size > 0;
 
     const result: Record<string, { totalCount: number; answeredCount: number }> = {};
 
+    if (!needAnsweredCounts) {
+      for (const [key, levels] of Object.entries(difficultyMap)) {
+        let totalCount = 0;
+        for (const level of levels) {
+          totalCount += countByDifficulty.get(level) ?? 0;
+        }
+        result[key] = { totalCount, answeredCount: 0 };
+      }
+      return result;
+    }
+
+    // Only load IDs for answered count calculation
+    const answeredQuestionIds = [...answeredSet];
+    const answeredDifficulties = await this.prisma.question.findMany({
+      where: {
+        id: { in: answeredQuestionIds },
+        status: 'approved',
+      },
+      select: { difficulty: true },
+    });
+
+    const answeredByDifficulty = new Map<number, number>();
+    for (const q of answeredDifficulties) {
+      answeredByDifficulty.set(q.difficulty, (answeredByDifficulty.get(q.difficulty) ?? 0) + 1);
+    }
+
     for (const [key, levels] of Object.entries(difficultyMap)) {
-      const levelSet = new Set(levels);
       let totalCount = 0;
       let answeredCount = 0;
-
-      for (const q of allQuestions) {
-        if (levelSet.has(q.difficulty)) {
-          totalCount++;
-          if (answeredSet.has(q.id)) answeredCount++;
-        }
+      for (const level of levels) {
+        totalCount += countByDifficulty.get(level) ?? 0;
+        answeredCount += answeredByDifficulty.get(level) ?? 0;
       }
-
       result[key] = { totalCount, answeredCount };
     }
 

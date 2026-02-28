@@ -154,6 +154,12 @@ export class LeaderboardService {
       return this.getStreakLeaderboardByPeriod(userId, dateFilter);
     }
 
+    // Fetch current user once at the top with all needed fields
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, nickname: true, avatarEmoji: true, currentAnswerStreak: true, bestAnswerStreak: true },
+    });
+
     // All-time: get top 100 + count
     const [top100, totalPlayers] = await Promise.all([
       this.prisma.user.findMany({
@@ -192,58 +198,40 @@ export class LeaderboardService {
 
     if (userInTop !== -1) {
       userPosition = userInTop + 1;
-    } else {
-      const currentUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { bestAnswerStreak: true },
+    } else if (currentUser && currentUser.bestAnswerStreak > 0) {
+      const higherCount = await this.prisma.user.count({
+        where: { bestAnswerStreak: { gt: currentUser.bestAnswerStreak } },
       });
-      if (currentUser && currentUser.bestAnswerStreak > 0) {
-        const higherCount = await this.prisma.user.count({
-          where: { bestAnswerStreak: { gt: currentUser.bestAnswerStreak } },
-        });
-        userPosition = higherCount + 1;
-      }
+      userPosition = higherCount + 1;
     }
 
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (userPosition && userPosition > 5 && userInTop === -1) {
-      const currentUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, nickname: true, avatarEmoji: true, currentAnswerStreak: true, bestAnswerStreak: true },
-      });
-      if (currentUser) {
-        userContext = [{
-          rank: userPosition,
-          userId: currentUser.id,
-          nickname: currentUser.nickname,
-          avatarEmoji: currentUser.avatarEmoji,
-          correctAnswers: 0,
-          totalQuestions: 0,
-          score: 0,
-          totalTimeSeconds: 0,
-          currentStreak: currentUser.currentAnswerStreak,
-          bestStreak: currentUser.bestAnswerStreak,
-        }];
-      }
-    } else if (!userPosition) {
-      const currentUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, nickname: true, avatarEmoji: true, currentAnswerStreak: true, bestAnswerStreak: true },
-      });
-      if (currentUser) {
-        userContext = [{
-          rank: 0,
-          userId: currentUser.id,
-          nickname: currentUser.nickname,
-          avatarEmoji: currentUser.avatarEmoji,
-          correctAnswers: 0,
-          totalQuestions: 0,
-          score: 0,
-          totalTimeSeconds: 0,
-          currentStreak: currentUser.currentAnswerStreak,
-          bestStreak: currentUser.bestAnswerStreak,
-        }];
-      }
+    if (currentUser && userPosition && userPosition > 5 && userInTop === -1) {
+      userContext = [{
+        rank: userPosition,
+        userId: currentUser.id,
+        nickname: currentUser.nickname,
+        avatarEmoji: currentUser.avatarEmoji,
+        correctAnswers: 0,
+        totalQuestions: 0,
+        score: 0,
+        totalTimeSeconds: 0,
+        currentStreak: currentUser.currentAnswerStreak,
+        bestStreak: currentUser.bestAnswerStreak,
+      }];
+    } else if (!userPosition && currentUser) {
+      userContext = [{
+        rank: 0,
+        userId: currentUser.id,
+        nickname: currentUser.nickname,
+        avatarEmoji: currentUser.avatarEmoji,
+        correctAnswers: 0,
+        totalQuestions: 0,
+        score: 0,
+        totalTimeSeconds: 0,
+        currentStreak: currentUser.currentAnswerStreak,
+        bestStreak: currentUser.bestAnswerStreak,
+      }];
     }
 
     return { entries, userPosition, totalPlayers, userContext, currentUserId: userId };
@@ -424,11 +412,6 @@ export class LeaderboardService {
     dateFilter?: { gte: Date; lte: Date },
     type: LeaderboardType = 'answers',
   ): Promise<LeaderboardResponse> {
-    // Build ORDER BY based on type
-    const orderByField = type === 'score'
-      ? '"score" DESC, "totalTimeSeconds" ASC'
-      : '"correctAnswers" DESC, "totalTimeSeconds" ASC';
-
     interface AggRow {
       userId: string;
       correctAnswers: number;
@@ -437,26 +420,43 @@ export class LeaderboardService {
       score: number;
     }
 
-    // Get top 100 + total count using SQL with ORDER BY and LIMIT
+    // Use separate tagged template queries for each ordering type instead of $queryRawUnsafe
     let top100: AggRow[];
     let totalPlayersResult: { count: bigint }[];
 
     if (dateFilter) {
+      const topQuery = type === 'score'
+        ? this.prisma.$queryRaw<AggRow[]>`
+            SELECT
+              "userId",
+              COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
+              COUNT(*)::int AS "totalQuestions",
+              COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
+              COALESCE(SUM("score"), 0)::int AS "score"
+            FROM "UserQuestionHistory"
+            WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+            GROUP BY "userId"
+            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+            ORDER BY "score" DESC, "totalTimeSeconds" ASC
+            LIMIT ${TOP_LIMIT}
+          `
+        : this.prisma.$queryRaw<AggRow[]>`
+            SELECT
+              "userId",
+              COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
+              COUNT(*)::int AS "totalQuestions",
+              COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
+              COALESCE(SUM("score"), 0)::int AS "score"
+            FROM "UserQuestionHistory"
+            WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+            GROUP BY "userId"
+            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+            ORDER BY "correctAnswers" DESC, "totalTimeSeconds" ASC
+            LIMIT ${TOP_LIMIT}
+          `;
+
       [top100, totalPlayersResult] = await Promise.all([
-        this.prisma.$queryRawUnsafe<AggRow[]>(`
-          SELECT
-            "userId",
-            COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
-            COUNT(*)::int AS "totalQuestions",
-            COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
-            COALESCE(SUM("score"), 0)::int AS "score"
-          FROM "UserQuestionHistory"
-          WHERE "answeredAt" >= $1 AND "answeredAt" <= $2
-          GROUP BY "userId"
-          HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
-          ORDER BY ${orderByField}
-          LIMIT ${TOP_LIMIT}
-        `, dateFilter.gte, dateFilter.lte),
+        topQuery,
         this.prisma.$queryRaw<{ count: bigint }[]>`
           SELECT COUNT(DISTINCT "userId")::bigint AS count
           FROM "UserQuestionHistory"
@@ -465,20 +465,36 @@ export class LeaderboardService {
         `,
       ]);
     } else {
+      const topQuery = type === 'score'
+        ? this.prisma.$queryRaw<AggRow[]>`
+            SELECT
+              "userId",
+              COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
+              COUNT(*)::int AS "totalQuestions",
+              COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
+              COALESCE(SUM("score"), 0)::int AS "score"
+            FROM "UserQuestionHistory"
+            GROUP BY "userId"
+            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+            ORDER BY "score" DESC, "totalTimeSeconds" ASC
+            LIMIT ${TOP_LIMIT}
+          `
+        : this.prisma.$queryRaw<AggRow[]>`
+            SELECT
+              "userId",
+              COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
+              COUNT(*)::int AS "totalQuestions",
+              COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
+              COALESCE(SUM("score"), 0)::int AS "score"
+            FROM "UserQuestionHistory"
+            GROUP BY "userId"
+            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+            ORDER BY "correctAnswers" DESC, "totalTimeSeconds" ASC
+            LIMIT ${TOP_LIMIT}
+          `;
+
       [top100, totalPlayersResult] = await Promise.all([
-        this.prisma.$queryRawUnsafe<AggRow[]>(`
-          SELECT
-            "userId",
-            COUNT(*) FILTER (WHERE "result" = 'correct')::int AS "correctAnswers",
-            COUNT(*)::int AS "totalQuestions",
-            COALESCE(SUM("timeSpentSeconds"), 0)::int AS "totalTimeSeconds",
-            COALESCE(SUM("score"), 0)::int AS "score"
-          FROM "UserQuestionHistory"
-          GROUP BY "userId"
-          HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
-          ORDER BY ${orderByField}
-          LIMIT ${TOP_LIMIT}
-        `),
+        topQuery,
         this.prisma.$queryRaw<{ count: bigint }[]>`
           SELECT COUNT(DISTINCT "userId")::bigint AS count
           FROM "UserQuestionHistory"
@@ -517,43 +533,72 @@ export class LeaderboardService {
     if (userInTop !== -1) {
       userPosition = userInTop + 1;
     } else {
-      // Find user's position via SQL
+      // Find user's position via safe $queryRaw tagged templates
       interface UserPosRow { position: number }
       let posResult: UserPosRow[];
 
       if (dateFilter) {
-        const rankField = type === 'score' ? 'SUM("score")' : 'COUNT(*) FILTER (WHERE "result" = \'correct\')';
-        posResult = await this.prisma.$queryRawUnsafe<UserPosRow[]>(`
-          SELECT COUNT(*) + 1 AS position
-          FROM (
-            SELECT "userId", ${rankField} AS val
-            FROM "UserQuestionHistory"
-            WHERE "answeredAt" >= $1 AND "answeredAt" <= $2
-            GROUP BY "userId"
-            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
-          ) sub
-          WHERE sub.val > (
-            SELECT COALESCE(${rankField}, 0)
-            FROM "UserQuestionHistory"
-            WHERE "userId" = $3 AND "answeredAt" >= $1 AND "answeredAt" <= $2
-          )
-        `, dateFilter.gte, dateFilter.lte, userId);
+        posResult = type === 'score'
+          ? await this.prisma.$queryRaw<UserPosRow[]>`
+              SELECT COUNT(*)::int + 1 AS position
+              FROM (
+                SELECT "userId", SUM("score") AS val
+                FROM "UserQuestionHistory"
+                WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+                GROUP BY "userId"
+                HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+              ) sub
+              WHERE sub.val > (
+                SELECT COALESCE(SUM("score"), 0)
+                FROM "UserQuestionHistory"
+                WHERE "userId" = ${userId} AND "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+              )
+            `
+          : await this.prisma.$queryRaw<UserPosRow[]>`
+              SELECT COUNT(*)::int + 1 AS position
+              FROM (
+                SELECT "userId", COUNT(*) FILTER (WHERE "result" = 'correct') AS val
+                FROM "UserQuestionHistory"
+                WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+                GROUP BY "userId"
+                HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+              ) sub
+              WHERE sub.val > (
+                SELECT COALESCE(COUNT(*) FILTER (WHERE "result" = 'correct'), 0)
+                FROM "UserQuestionHistory"
+                WHERE "userId" = ${userId} AND "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+              )
+            `;
       } else {
-        const rankField = type === 'score' ? 'SUM("score")' : 'COUNT(*) FILTER (WHERE "result" = \'correct\')';
-        posResult = await this.prisma.$queryRawUnsafe<UserPosRow[]>(`
-          SELECT COUNT(*) + 1 AS position
-          FROM (
-            SELECT "userId", ${rankField} AS val
-            FROM "UserQuestionHistory"
-            GROUP BY "userId"
-            HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
-          ) sub
-          WHERE sub.val > (
-            SELECT COALESCE(${rankField}, 0)
-            FROM "UserQuestionHistory"
-            WHERE "userId" = $1
-          )
-        `, userId);
+        posResult = type === 'score'
+          ? await this.prisma.$queryRaw<UserPosRow[]>`
+              SELECT COUNT(*)::int + 1 AS position
+              FROM (
+                SELECT "userId", SUM("score") AS val
+                FROM "UserQuestionHistory"
+                GROUP BY "userId"
+                HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+              ) sub
+              WHERE sub.val > (
+                SELECT COALESCE(SUM("score"), 0)
+                FROM "UserQuestionHistory"
+                WHERE "userId" = ${userId}
+              )
+            `
+          : await this.prisma.$queryRaw<UserPosRow[]>`
+              SELECT COUNT(*)::int + 1 AS position
+              FROM (
+                SELECT "userId", COUNT(*) FILTER (WHERE "result" = 'correct') AS val
+                FROM "UserQuestionHistory"
+                GROUP BY "userId"
+                HAVING COUNT(*) FILTER (WHERE "result" = 'correct') > 0
+              ) sub
+              WHERE sub.val > (
+                SELECT COALESCE(COUNT(*) FILTER (WHERE "result" = 'correct'), 0)
+                FROM "UserQuestionHistory"
+                WHERE "userId" = ${userId}
+              )
+            `;
       }
 
       const pos = Number(posResult[0]?.position ?? 0);

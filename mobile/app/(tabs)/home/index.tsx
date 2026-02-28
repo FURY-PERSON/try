@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -79,14 +79,14 @@ export default function HomeScreen() {
     }
   }, [feed?.userProgress]);
 
-  const collections = useMemo(() => {
-    return allCollections;
-  }, [allCollections]);
+  const collections = allCollections;
 
-  const handleSectionScroll = useCallback((section: string) => {
-    return (_e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      analytics.logEvent('home_section_scroll', { section });
-    };
+  const handleCategoriesScroll = useCallback((_e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    analytics.logEvent('home_section_scroll', { section: 'categories' });
+  }, []);
+
+  const handleCollectionsScroll = useCallback((_e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    analytics.logEvent('home_section_scroll', { section: 'collections' });
   }, []);
 
   useEffect(() => {
@@ -97,12 +97,12 @@ export default function HomeScreen() {
     }
   }, [daily?.isLocked, daily?.unlocksAt]);
 
-  const handleStartDaily = () => {
+  const handleStartDaily = useCallback(() => {
     if (dailyData && !daily?.isLocked) {
       startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET);
       router.push('/game/card');
     }
-  };
+  }, [dailyData, daily?.isLocked, startDailySet, router]);
 
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
@@ -368,7 +368,11 @@ export default function HomeScreen() {
                   data={allCategories}
                   keyExtractor={(item) => item.id}
                   contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
-                  onScrollBeginDrag={handleSectionScroll('categories')}
+                  onScrollBeginDrag={handleCategoriesScroll}
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={5}
+                  initialNumToRender={5}
+                  windowSize={5}
                   renderItem={({ item }) => (
                     <CategoryCard
                       category={item}
@@ -424,7 +428,11 @@ export default function HomeScreen() {
                 data={collections}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
-                onScrollBeginDrag={handleSectionScroll('collections')}
+                onScrollBeginDrag={handleCollectionsScroll}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={5}
+                initialNumToRender={5}
+                windowSize={5}
                 renderItem={({ item }) => (
                   <CollectionCard
                     collection={item}
@@ -451,7 +459,7 @@ export default function HomeScreen() {
 
 // --- Sub-components ---
 
-function CategoryCard({
+const CategoryCard = React.memo(function CategoryCard({
   category,
   language,
   colors,
@@ -505,9 +513,9 @@ function CategoryCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
-function DifficultyCard({
+const DifficultyCard = React.memo(function DifficultyCard({
   diffKey,
   gradient,
   icon,
@@ -580,9 +588,9 @@ function DifficultyCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
-function CollectionCard({
+const CollectionCard = React.memo(function CollectionCard({
   collection,
   language,
   colors,
@@ -647,7 +655,7 @@ function CollectionCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   header: {

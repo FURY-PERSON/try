@@ -22,15 +22,13 @@ export const useCardGame = (
   dailySetId: string | null,
 ) => {
   const queryClient = useQueryClient();
-  const {
-    dailyProgress,
-    startCard,
-    submitCardResult,
-    setSubmissionResult,
-    sessionId,
-    collectionType,
-    isReplay,
-  } = useGameStore();
+  const dailyProgress = useGameStore((s) => s.dailyProgress);
+  const startCard = useGameStore((s) => s.startCard);
+  const submitCardResult = useGameStore((s) => s.submitCardResult);
+  const setSubmissionResult = useGameStore((s) => s.setSubmissionResult);
+  const sessionId = useGameStore((s) => s.sessionId);
+  const collectionType = useGameStore((s) => s.collectionType);
+  const isReplay = useGameStore((s) => s.isReplay);
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [liveStreak, setLiveStreak] = useState(0);

@@ -6,15 +6,17 @@ export class ReferenceService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getNicknameOptions(language: string = 'ru') {
-    const adjectives = await this.prisma.nicknameAdjective.findMany({
-      where: { isActive: true },
-    });
-    const animals = await this.prisma.nicknameAnimal.findMany({
-      where: { isActive: true },
-    });
-    const emojis = await this.prisma.avatarEmoji.findMany({
-      where: { isActive: true },
-    });
+    const [adjectives, animals, emojis] = await Promise.all([
+      this.prisma.nicknameAdjective.findMany({
+        where: { isActive: true },
+      }),
+      this.prisma.nicknameAnimal.findMany({
+        where: { isActive: true },
+      }),
+      this.prisma.avatarEmoji.findMany({
+        where: { isActive: true },
+      }),
+    ]);
 
     if (adjectives.length === 0 || animals.length === 0) {
       return { placeholder: language === 'en' ? 'Swift Fox' : 'Быстрый Лис', emoji: '🦊' };

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, CheckCircle, XCircle, Trash2, ExternalLink, Image, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTION_STATUS_LABELS } from '@/shared';
+import { QUESTION_STATUS_LABELS, STATUS_BADGE_VARIANT, DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
 import type { Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -19,38 +19,6 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 
-const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'danger'> = {
-  draft: 'default',
-  moderation: 'warning',
-  approved: 'success',
-  rejected: 'danger',
-};
-
-const DIFFICULTY_LABELS: Record<number, string> = {
-  1: 'Элементарная',
-  2: 'Лёгкая',
-  3: 'Средняя',
-  4: 'Сложная',
-  5: 'Экспертная',
-};
-
-const DIFFICULTY_OPTIONS = [
-  { value: '1', label: '1 — Элементарная' },
-  { value: '2', label: '2 — Лёгкая' },
-  { value: '3', label: '3 — Средняя' },
-  { value: '4', label: '4 — Сложная' },
-  { value: '5', label: '5 — Экспертная' },
-];
-
-const LANGUAGE_OPTIONS = [
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-];
-
-const IS_TRUE_OPTIONS = [
-  { value: 'true', label: 'Факт (правда)' },
-  { value: 'false', label: 'Фейк (ложь)' },
-];
 
 const editFormSchema = z.object({
   statement: z.string().min(10, 'Минимум 10 символов'),
@@ -367,6 +335,8 @@ export function QuestionDetailPage() {
             <img
               src={question.illustrationUrl}
               alt="Иллюстрация"
+              loading="lazy"
+              decoding="async"
               className="mt-4 rounded-lg w-full h-48 object-cover"
             />
           ) : (

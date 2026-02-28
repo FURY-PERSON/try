@@ -64,6 +64,8 @@ export const FactCard: FC<FactCardProps> = ({
             style={[styles.illustration, { borderRadius: borderRadius.lg }]}
             contentFit="cover"
             transition={300}
+            placeholder={{ blurhash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH' }}
+            cachePolicy="memory-disk"
           />
         )}
 

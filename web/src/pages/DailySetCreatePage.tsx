@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
@@ -24,11 +24,7 @@ const createSchema = z.object({
 
 type CreateFormData = z.infer<typeof createSchema>;
 
-const IS_TRUE_OPTIONS = [
-  { value: '', label: 'Все' },
-  { value: 'true', label: 'Факты' },
-  { value: 'false', label: 'Фейки' },
-];
+import { IS_TRUE_FILTER_OPTIONS } from '@/shared';
 
 export function DailySetCreatePage() {
   const navigate = useNavigate();
@@ -39,6 +35,7 @@ export function DailySetCreatePage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [usedFilter, setUsedFilter] = useState<'new' | 'all'>('new');
 
+  // TODO: W-8 — Implement server-side search with pagination instead of loading 500 questions at once
   const { data: questionsData } = useQuery({
     queryKey: ['admin', 'questions', { status: 'approved', limit: 500, notInDailySet: usedFilter === 'new' ? 'true' : undefined }],
     queryFn: () => api.admin.questions.list({
@@ -56,11 +53,14 @@ export function DailySetCreatePage() {
   const approvedQuestions = questionsData?.data.data ?? [];
   const categories = categoriesData?.data.data ?? [];
 
-  const filteredQuestions = approvedQuestions
-    .filter((q: any) => !selectedQuestionIds.includes(q.id))
-    .filter((q: any) => !searchQuery || q.statement?.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter((q: any) => !isTrueFilter || String(q.isTrue) === isTrueFilter)
-    .filter((q: any) => !categoryFilter || q.categoryId === categoryFilter || q.category?.id === categoryFilter);
+  const filteredQuestions = useMemo(
+    () => approvedQuestions
+      .filter((q: any) => !selectedQuestionIds.includes(q.id))
+      .filter((q: any) => !searchQuery || q.statement?.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter((q: any) => !isTrueFilter || String(q.isTrue) === isTrueFilter)
+      .filter((q: any) => !categoryFilter || q.categoryId === categoryFilter || q.category?.id === categoryFilter),
+    [approvedQuestions, selectedQuestionIds, searchQuery, isTrueFilter, categoryFilter],
+  );
 
   const {
     register,
@@ -263,7 +263,7 @@ export function DailySetCreatePage() {
               onChange={(e) => setIsTrueFilter(e.target.value)}
               className="h-9 flex-1 rounded-lg border border-border bg-surface px-3 text-sm text-text-primary"
             >
-              {IS_TRUE_OPTIONS.map((opt) => (
+              {IS_TRUE_FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -287,6 +287,7 @@ export function DailySetCreatePage() {
             Найдено: {filteredQuestions.length}
           </p>
 
+          {/* TODO: W-5 / W-13 — Add virtualization with @tanstack/react-virtual for 500+ item lists */}
           <div className="mt-2 space-y-2 max-h-[500px] overflow-auto">
             {filteredQuestions.length === 0 ? (
               <p className="text-sm text-text-secondary py-8 text-center">

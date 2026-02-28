@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CreateQuestionDto } from '@/api-client/types';
+import { LANGUAGE_OPTIONS, IS_TRUE_OPTIONS, DIFFICULTY_OPTIONS } from '@/shared';
 import type { Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -16,23 +17,6 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 
-const LANGUAGE_OPTIONS = [
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-];
-
-const IS_TRUE_OPTIONS = [
-  { value: 'true', label: 'Факт (правда)' },
-  { value: 'false', label: 'Фейк (ложь)' },
-];
-
-const DIFFICULTY_OPTIONS = [
-  { value: '1', label: '1 — Элементарная' },
-  { value: '2', label: '2 — Лёгкая' },
-  { value: '3', label: '3 — Средняя' },
-  { value: '4', label: '4 — Сложная' },
-  { value: '5', label: '5 — Экспертная' },
-];
 
 const questionFormSchema = z.object({
   statement: z.string().min(10, 'Минимум 10 символов'),

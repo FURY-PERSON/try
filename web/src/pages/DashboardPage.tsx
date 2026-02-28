@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users,
@@ -7,6 +8,7 @@ import {
   Clock,
   TrendingUp,
 } from 'lucide-react';
+import { DIFFICULTY_LABELS } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardTitle } from '@/components/ui/Card';
@@ -21,22 +23,14 @@ import {
   TableCell,
 } from '@/components/ui/Table';
 
-const DIFFICULTY_LABELS: Record<number, string> = {
-  1: 'Очень лёгкий',
-  2: 'Лёгкий',
-  3: 'Средний',
-  4: 'Сложный',
-  5: 'Очень сложный',
-};
-
-function BarChart({
+const BarChart = React.memo(function BarChart({
   data,
   label,
 }: {
   data: { date: string; count: number }[];
   label: string;
 }) {
-  const maxCount = Math.max(...data.map((d) => d.count), 1);
+  const maxCount = useMemo(() => Math.max(...data.map((d) => d.count), 1), [data]);
 
   return (
     <div>
@@ -69,7 +63,7 @@ function BarChart({
       )}
     </div>
   );
-}
+});
 
 export function DashboardPage() {
   const { data, isLoading } = useQuery({
@@ -85,7 +79,7 @@ export function DashboardPage() {
   const stats = data?.data.data;
   const analytics = analyticsData?.data.data;
 
-  const cards = [
+  const cards = useMemo(() => [
     {
       label: 'Пользователи',
       value: stats?.totalUsers ?? 0,
@@ -128,7 +122,7 @@ export function DashboardPage() {
       color: 'text-gold',
       bgColor: 'bg-gold/10',
     },
-  ];
+  ], [stats]);
 
   return (
     <div>

@@ -98,6 +98,8 @@ model DailySet {
 
   questions DailySetQuestion[]
   leaderboardEntries LeaderboardEntry[]
+
+  @@index([status])
 }
 
 model DailySetQuestion {
@@ -127,6 +129,7 @@ model UserQuestionHistory {
   @@index([userId, questionId])
   @@index([userId, result])
   @@index([userId, answeredAt])
+  @@index([answeredAt])
 }
 
 model LeaderboardEntry {
@@ -170,6 +173,8 @@ model Collection {
   updatedAt     DateTime  @updatedAt
 
   questions CollectionQuestion[]
+
+  @@index([status, sortOrder])
 }
 
 model CollectionQuestion {
@@ -221,6 +226,8 @@ model Notification {
   totalFailed Int      @default(0)
   status      String   @default("sent")
   createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model NicknameAdjective {

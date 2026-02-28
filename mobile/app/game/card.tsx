@@ -120,11 +120,6 @@ export default function CardScreen() {
     }
   }, [isComplete, feedback, router]);
 
-  // Next question for stack preview
-  const nextQuestion = questions[currentIndex + 1] ?? null;
-  const nextCategoryName = nextQuestion?.category
-    ? (language === 'en' ? (nextQuestion.category.nameEn || nextQuestion.category.name) : nextQuestion.category.name)
-    : '';
 
   if (!isCollectionMode && isLoading) {
     return (
@@ -157,6 +152,11 @@ export default function CardScreen() {
           ? (currentQuestion.category.nameEn || currentQuestion.category.name)
           : currentQuestion.category.name)
       : '';
+
+  const nextQuestion = questions[currentIndex + 1] ?? null;
+  const nextCategoryName = nextQuestion?.category
+    ? (language === 'en' ? (nextQuestion.category.nameEn || nextQuestion.category.name) : nextQuestion.category.name)
+    : '';
 
   return (
     <Screen padded={false} backgroundColor={gradients.card[0]}>

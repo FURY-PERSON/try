@@ -9,69 +9,51 @@ const INCORRECT_COOLDOWN_DAYS = 7;
  *
  * - Correctly answered: excluded for 14 days from last answer
  * - Incorrectly answered: excluded for 7 days from last answer
- * - Uses the MOST RECENT answer per question
+ * - Uses the MOST RECENT answer per question via PostgreSQL DISTINCT ON
  */
 export async function getExcludedQuestionIds(
   prisma: PrismaService,
   userId: string,
 ): Promise<string[]> {
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - CORRECT_COOLDOWN_DAYS);
+  const correctCutoff = new Date();
+  correctCutoff.setDate(correctCutoff.getDate() - CORRECT_COOLDOWN_DAYS);
 
-  const recentHistory = await prisma.userQuestionHistory.findMany({
-    where: {
-      userId,
-      answeredAt: { gte: cutoffDate },
-    },
-    select: {
-      questionId: true,
-      result: true,
-      answeredAt: true,
-    },
-    orderBy: { answeredAt: 'desc' },
-  });
+  const incorrectCutoff = new Date();
+  incorrectCutoff.setDate(incorrectCutoff.getDate() - INCORRECT_COOLDOWN_DAYS);
 
-  // Keep only the latest answer per question
-  const latestByQuestion = new Map<
-    string,
-    { result: string; answeredAt: Date }
-  >();
-  for (const entry of recentHistory) {
-    if (!latestByQuestion.has(entry.questionId)) {
-      latestByQuestion.set(entry.questionId, {
-        result: entry.result,
-        answeredAt: entry.answeredAt,
-      });
-    }
-  }
+  // Use DISTINCT ON to get the latest answer per question in a single query,
+  // then filter by result + answeredAt to determine exclusion
+  const excluded = await prisma.$queryRaw<{ questionId: string }[]>`
+    SELECT "questionId"
+    FROM (
+      SELECT DISTINCT ON ("questionId") "questionId", "result", "answeredAt"
+      FROM "UserQuestionHistory"
+      WHERE "userId" = ${userId}
+        AND "answeredAt" >= ${correctCutoff}
+      ORDER BY "questionId", "answeredAt" DESC
+    ) latest
+    WHERE
+      ("result" = 'correct' AND "answeredAt" >= ${correctCutoff})
+      OR ("result" = 'incorrect' AND "answeredAt" >= ${incorrectCutoff})
+  `;
 
-  const now = Date.now();
-  const excludedIds: string[] = [];
-  const incorrectCutoffMs = INCORRECT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
-  const correctCutoffMs = CORRECT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
-
-  for (const [questionId, latest] of latestByQuestion) {
-    const elapsed = now - latest.answeredAt.getTime();
-
-    if (latest.result === 'correct' && elapsed < correctCutoffMs) {
-      excludedIds.push(questionId);
-    } else if (latest.result === 'incorrect' && elapsed < incorrectCutoffMs) {
-      excludedIds.push(questionId);
-    }
-  }
-
-  return excludedIds;
+  return excluded.map((r) => r.questionId);
 }
 
 /**
  * Returns all distinct questionIds a user has ever answered (no cooldown).
+ * Limited to last 90 days for performance.
  */
 export async function getAllAnsweredQuestionIds(
   prisma: PrismaService,
   userId: string,
 ): Promise<string[]> {
+  // Limit to last 90 days to bound the query size
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+
   const records = await prisma.userQuestionHistory.findMany({
-    where: { userId },
+    where: { userId, answeredAt: { gte: cutoff } },
     select: { questionId: true },
     distinct: ['questionId'],
   });

@@ -28,6 +28,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 2,
       staleTime: 60 * 1000,
+      gcTime: 5 * 60 * 1000,
     },
   },
 });

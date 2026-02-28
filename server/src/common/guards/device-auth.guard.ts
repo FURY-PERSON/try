@@ -62,6 +62,7 @@ export class DeviceAuthGuard implements CanActivate {
       return true;
     }
 
+    // TODO: Add `select` to narrow fetched fields once all @CurrentUser() consumers are audited
     const existing = await this.prisma.user.findUnique({
       where: { deviceId },
     });

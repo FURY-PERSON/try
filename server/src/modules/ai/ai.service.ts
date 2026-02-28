@@ -139,52 +139,66 @@ export class AiService {
       );
     }
 
-    const createdQuestions = [];
+    // Batch dedup: find all existing statements in one query
+    const statements = generatedStatements.map((s) => s.statement);
+    const existingQuestions = await this.prisma.question.findMany({
+      where: { statement: { in: statements } },
+      select: { statement: true },
+    });
+    const existingStatements = new Set(existingQuestions.map((q) => q.statement));
 
-    for (const stmt of generatedStatements) {
-      const source =
-        stmt.source && stmt.source !== '' ? stmt.source : 'Requires verification';
+    // Filter out duplicates
+    const newStatements = generatedStatements.filter((stmt) => {
+      if (existingStatements.has(stmt.statement)) {
+        this.logger.warn(
+          `Skipping duplicate statement: "${stmt.statement.substring(0, 50)}..."`,
+        );
+        return false;
+      }
+      return true;
+    });
 
+    let createdQuestions: Awaited<ReturnType<typeof this.prisma.question.create>>[] = [];
+
+    if (newStatements.length > 0) {
       try {
-        // Skip duplicates
-        const existingQuestion = await this.prisma.question.findFirst({
-          where: { statement: stmt.statement },
+        createdQuestions = await this.prisma.$transaction(async (tx) => {
+          const created = [];
+          for (const stmt of newStatements) {
+            const source =
+              stmt.source && stmt.source !== '' ? stmt.source : 'Requires verification';
+
+            const question = await tx.question.create({
+              data: {
+                statement: stmt.statement,
+                isTrue: stmt.isTrue,
+                explanation: stmt.explanation,
+                source,
+                sourceUrl: stmt.sourceUrl || null,
+                language,
+                categoryId: categoryRecord.id,
+                difficulty: stmt.difficulty || difficulty,
+                status: 'moderation',
+              },
+              include: { category: true },
+            });
+            created.push(question);
+          }
+
+          // Batch create QuestionCategory records
+          await tx.questionCategory.createMany({
+            data: created.map((q) => ({
+              questionId: q.id,
+              categoryId: categoryRecord.id,
+            })),
+            skipDuplicates: true,
+          });
+
+          return created;
         });
-
-        if (existingQuestion) {
-          this.logger.warn(
-            `Skipping duplicate statement: "${stmt.statement.substring(0, 50)}..."`,
-          );
-          continue;
-        }
-
-        const created = await this.prisma.question.create({
-          data: {
-            statement: stmt.statement,
-            isTrue: stmt.isTrue,
-            explanation: stmt.explanation,
-            source,
-            sourceUrl: stmt.sourceUrl || null,
-            language,
-            categoryId: categoryRecord.id,
-            difficulty: stmt.difficulty || difficulty,
-            status: 'moderation',
-          },
-          include: { category: true },
-        });
-
-        // Create QuestionCategory record for multi-category support
-        await this.prisma.questionCategory.create({
-          data: {
-            questionId: created.id,
-            categoryId: categoryRecord.id,
-          },
-        });
-
-        createdQuestions.push(created);
       } catch (error) {
         this.logger.warn(
-          `Failed to save generated statement: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          `Failed to save generated statements: ${error instanceof Error ? error.message : 'Unknown error'}`,
         );
       }
     }

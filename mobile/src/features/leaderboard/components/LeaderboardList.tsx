@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { LeaderboardEntry } from './LeaderboardEntry';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
@@ -44,9 +45,10 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
   );
 
   return (
-    <FlatList
+    <FlashList
       data={data}
       keyExtractor={(item) => item.userId}
+      estimatedItemSize={64}
       renderItem={({ item, index }) => (
         <LeaderboardEntry
           entry={item}

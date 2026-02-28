@@ -10,6 +10,21 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    target: 'es2022',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-ui': ['lucide-react', 'sonner'],
+          'vendor-utils': ['axios', 'date-fns', 'clsx', 'tailwind-merge', 'zustand'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+  },
   server: {
     port: 5174,
     proxy: {

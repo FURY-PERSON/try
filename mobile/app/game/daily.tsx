@@ -4,7 +4,7 @@ import { useGameStore } from '@/features/game/stores/useGameStore';
 
 export default function DailyScreen() {
   const router = useRouter();
-  const { dailyProgress } = useGameStore();
+  const dailyProgress = useGameStore((s) => s.dailyProgress);
 
   useEffect(() => {
     if (dailyProgress.completed) {

@@ -35,4 +35,14 @@ export class AdminStatsController {
     return this.adminStatsService.getQuestionStats();
   }
 
+  @Get('user-analytics')
+  @ApiOperation({ summary: 'Get user analytics (DAU, new users, top players)' })
+  @ApiResponse({
+    status: 200,
+    description: 'User analytics with DAU, new users per day, top players, overall accuracy',
+  })
+  async getUserAnalytics() {
+    return this.adminStatsService.getUserAnalytics();
+  }
+
 }

@@ -29,6 +29,7 @@ const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 @Injectable()
 export class CollectionsService {
+  // TODO: Move to Redis/PostgreSQL for horizontal scaling and persistence across restarts
   private sessions = new Map<string, SessionData>();
 
   constructor(private readonly prisma: PrismaService) {}
@@ -495,12 +496,59 @@ export class CollectionsService {
     // Anti-repeat: correct=14 days, incorrect=7 days cooldown (based on last answer)
     const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
 
+    const whereClause = {
+      status: 'approved' as const,
+      ...where,
+      ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
+    };
+
+    // Use count + skip/take for database-side random selection instead of loading all
+    const totalCount = await this.prisma.question.count({ where: whereClause });
+
+    if (totalCount === 0) {
+      throw new NotFoundException(
+        'No available questions found matching criteria',
+      );
+    }
+
+    const take = count != null ? Math.min(count, totalCount) : totalCount;
+
+    // For small result sets or when requesting all, just fetch and shuffle
+    if (totalCount <= take * 2) {
+      const questions = await this.prisma.question.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          statement: true,
+          isTrue: true,
+          explanation: true,
+          source: true,
+          sourceUrl: true,
+          language: true,
+          categoryId: true,
+          difficulty: true,
+          illustrationUrl: true,
+          category: { select: { name: true, nameEn: true } },
+        },
+      });
+
+      // Shuffle and take requested count
+      for (let i = questions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [questions[i], questions[j]] = [questions[j], questions[i]];
+      }
+
+      return count != null ? questions.slice(0, count) : questions;
+    }
+
+    // For larger sets, use random skip to avoid loading everything
+    const maxSkip = Math.max(0, totalCount - take);
+    const randomSkip = Math.floor(Math.random() * (maxSkip + 1));
+
     const questions = await this.prisma.question.findMany({
-      where: {
-        status: 'approved',
-        ...where,
-        ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
-      },
+      where: whereClause,
+      skip: randomSkip,
+      take,
       select: {
         id: true,
         statement: true,
@@ -516,19 +564,13 @@ export class CollectionsService {
       },
     });
 
-    if (questions.length === 0) {
-      throw new NotFoundException(
-        'No available questions found matching criteria',
-      );
-    }
-
-    // Shuffle and take requested count
+    // Shuffle for additional randomness within the slice
     for (let i = questions.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [questions[i], questions[j]] = [questions[j], questions[i]];
     }
 
-    return count != null ? questions.slice(0, count) : questions;
+    return questions;
   }
 
   private createSession(

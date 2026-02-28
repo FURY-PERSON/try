@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTION_STATUS, QUESTION_STATUS_LABELS } from '@/shared';
+import { QUESTION_STATUS_LABELS, DIFFICULTY_LABELS, IS_TRUE_FILTER_OPTIONS, QUESTION_STATUS_OPTIONS, LANGUAGE_FILTER_OPTIONS, DIFFICULTY_FILTER_OPTIONS, STATUS_BADGE_VARIANT } from '@/shared';
 import type { QuestionStatus, Language } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -16,49 +16,101 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageSizeSelect } from '@/components/ui/PageSizeSelect';
 
-const IS_TRUE_OPTIONS = [
-  { value: '', label: 'Все' },
-  { value: 'true', label: 'Факты' },
-  { value: 'false', label: 'Фейки' },
-];
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Все статусы' },
-  { value: QUESTION_STATUS.DRAFT, label: 'Черновик' },
-  { value: QUESTION_STATUS.MODERATION, label: 'На модерации' },
-  { value: QUESTION_STATUS.APPROVED, label: 'Одобрен' },
-  { value: QUESTION_STATUS.REJECTED, label: 'Отклонён' },
-];
+interface QuestionRowProps {
+  q: any;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
+  onNavigate: (id: string) => void;
+  onDelete: (id: string) => void;
+}
 
-const STATUS_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'success' | 'warning' | 'danger'> = {
-  draft: 'default',
-  moderation: 'warning',
-  approved: 'success',
-  rejected: 'danger',
-};
+const QuestionRow = React.memo(function QuestionRow({
+  q,
+  selected,
+  onToggleSelect,
+  onNavigate,
+  onDelete,
+}: QuestionRowProps) {
+  const additionalCategories = q.categories?.filter(
+    (qc: any) => qc.categoryId !== q.categoryId,
+  ) ?? [];
 
-const DIFFICULTY_LABELS: Record<number, string> = {
-  1: 'Элементарная',
-  2: 'Лёгкая',
-  3: 'Средняя',
-  4: 'Сложная',
-  5: 'Экспертная',
-};
+  return (
+    <TableRow
+      className="cursor-pointer"
+      onClick={() => onNavigate(q.id)}
+    >
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <div className="py-2.5 px-2.5 -my-2 -mx-2">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelect(q.id)}
+            className="rounded"
+          />
+        </div>
+      </TableCell>
+      <TableCell className="max-w-[300px]">
+        <p className="text-sm truncate">{q.statement}</p>
+      </TableCell>
+      <TableCell>
+        <Badge variant={q.isTrue ? 'success' : 'danger'}>
+          {q.isTrue ? 'Факт' : 'Фейк'}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-text-secondary">{q.category?.name ?? '—'}</span>
+          {additionalCategories.map((qc: any) => (
+            <Badge key={qc.id} variant="default" className="text-xs">
+              {qc.category?.icon} {qc.category?.name}
+            </Badge>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell>
+        <span className="font-mono text-sm">
+          {q.difficulty} — {DIFFICULTY_LABELS[q.difficulty as number] ?? '?'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <Badge variant={STATUS_BADGE_VARIANT[q.status] ?? 'default'}>
+          {QUESTION_STATUS_LABELS[q.status] ?? q.status}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-text-secondary">
+        {q.timesShown}
+      </TableCell>
+      <TableCell className="text-text-secondary">
+        {q.timesShown > 0
+          ? `${Math.round((q.timesCorrect / q.timesShown) * 100)}%`
+          : '—'}
+      </TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={() => {
+            if (confirm('Удалить утверждение?')) {
+              onDelete(q.id);
+            }
+          }}
+          className="p-1.5 rounded-lg text-text-secondary hover:text-red hover:bg-red/10 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </TableCell>
+    </TableRow>
+  );
+});
 
-const LANGUAGE_OPTIONS = [
-  { value: '', label: 'Все языки' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
-];
-
-const DIFFICULTY_OPTIONS = [
-  { value: '', label: 'Все сложности' },
-  { value: '1', label: '1 — Элементарная' },
-  { value: '2', label: '2 — Лёгкая' },
-  { value: '3', label: '3 — Средняя' },
-  { value: '4', label: '4 — Сложная' },
-  { value: '5', label: '5 — Экспертная' },
-];
+function useDebouncedValue<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export function QuestionsListPage() {
   const navigate = useNavigate();
@@ -66,6 +118,7 @@ export function QuestionsListPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [languageFilter, setLanguageFilter] = useState('');
@@ -87,12 +140,12 @@ export function QuestionsListPage() {
   );
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'questions', { page, limit, search, isTrue: isTrueFilter, status: statusFilter, language: languageFilter, difficulty: difficultyFilter, categoryId: categoryFilter }],
+    queryKey: ['admin', 'questions', { page, limit, search: debouncedSearch, isTrue: isTrueFilter, status: statusFilter, language: languageFilter, difficulty: difficultyFilter, categoryId: categoryFilter }],
     queryFn: () =>
       api.admin.questions.list({
         page,
         limit,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         isTrue: (isTrueFilter || undefined) as string | undefined,
         status: (statusFilter || undefined) as QuestionStatus | undefined,
         language: (languageFilter || undefined) as Language | undefined,
@@ -143,19 +196,20 @@ export function QuestionsListPage() {
   const questions = data?.data.data ?? [];
   const meta = data?.data.meta;
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = useCallback((id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     );
-  };
+  }, []);
 
-  const toggleSelectAll = () => {
-    if (selected.length === questions.length) {
-      setSelected([]);
-    } else {
-      setSelected(questions.map((q: any) => q.id));
-    }
-  };
+  const toggleSelectAll = useCallback(() => {
+    setSelected((prev) => {
+      if (prev.length === questions.length) {
+        return [];
+      }
+      return questions.map((q: any) => q.id);
+    });
+  }, [questions]);
 
   return (
     <div>
@@ -226,25 +280,25 @@ export function QuestionsListPage() {
             </div>
           </div>
           <Select
-            options={IS_TRUE_OPTIONS}
+            options={IS_TRUE_FILTER_OPTIONS}
             value={isTrueFilter}
             onChange={(e) => { setIsTrueFilter(e.target.value); setPage(1); }}
             className="w-36"
           />
           <Select
-            options={STATUS_OPTIONS}
+            options={QUESTION_STATUS_OPTIONS}
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="w-44"
           />
           <Select
-            options={LANGUAGE_OPTIONS}
+            options={LANGUAGE_FILTER_OPTIONS}
             value={languageFilter}
             onChange={(e) => { setLanguageFilter(e.target.value); setPage(1); }}
             className="w-36"
           />
           <Select
-            options={DIFFICULTY_OPTIONS}
+            options={DIFFICULTY_FILTER_OPTIONS}
             value={difficultyFilter}
             onChange={(e) => { setDifficultyFilter(e.target.value); setPage(1); }}
             className="w-48"
@@ -302,77 +356,16 @@ export function QuestionsListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {questions.map((q: any) => {
-                  const additionalCategories = q.categories?.filter(
-                    (qc: any) => qc.categoryId !== q.categoryId,
-                  ) ?? [];
-                  return (
-                    <TableRow
-                      key={q.id}
-                      className="cursor-pointer"
-                      onClick={() => navigate(`/questions/${q.id}`)}
-                    >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <div className="py-2.5 px-2.5 -my-2 -mx-2">
-                          <input
-                            type="checkbox"
-                            checked={selected.includes(q.id)}
-                            onChange={() => toggleSelect(q.id)}
-                            className="rounded"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-[300px]">
-                        <p className="text-sm truncate">{q.statement}</p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={q.isTrue ? 'success' : 'danger'}>
-                          {q.isTrue ? 'Факт' : 'Фейк'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className="text-text-secondary">{q.category?.name ?? '—'}</span>
-                          {additionalCategories.map((qc: any) => (
-                            <Badge key={qc.id} variant="default" className="text-xs">
-                              {qc.category?.icon} {qc.category?.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm">
-                          {q.difficulty} — {DIFFICULTY_LABELS[q.difficulty as number] ?? '?'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_BADGE_VARIANT[q.status] ?? 'default'}>
-                          {QUESTION_STATUS_LABELS[q.status] ?? q.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-text-secondary">
-                        {q.timesShown}
-                      </TableCell>
-                      <TableCell className="text-text-secondary">
-                        {q.timesShown > 0
-                          ? `${Math.round((q.timesCorrect / q.timesShown) * 100)}%`
-                          : '—'}
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => {
-                            if (confirm('Удалить утверждение?')) {
-                              deleteOneMutation.mutate(q.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-text-secondary hover:text-red hover:bg-red/10 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {questions.map((q: any) => (
+                  <QuestionRow
+                    key={q.id}
+                    q={q}
+                    selected={selected.includes(q.id)}
+                    onToggleSelect={toggleSelect}
+                    onNavigate={(id) => navigate(`/questions/${id}`)}
+                    onDelete={(id) => deleteOneMutation.mutate(id)}
+                  />
+                ))}
               </TableBody>
             </Table>
 

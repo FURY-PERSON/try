@@ -17,6 +17,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: { position: 'absolute' },
+        lazy: true,
+
       }}
     >
       <Tabs.Screen

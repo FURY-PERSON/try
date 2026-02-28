@@ -32,7 +32,10 @@ export default function ResultsModal() {
   const { colors, gradients, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
-  const { dailyProgress, resetDailyProgress, collectionType, isReplay } = useGameStore();
+  const dailyProgress = useGameStore((s) => s.dailyProgress);
+  const resetDailyProgress = useGameStore((s) => s.resetDailyProgress);
+  const collectionType = useGameStore((s) => s.collectionType);
+  const isReplay = useGameStore((s) => s.isReplay);
   const submissionResult = useGameStore((s) => s.submissionResult);
   const { showIfReady } = useInterstitialAd();
 

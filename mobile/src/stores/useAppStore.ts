@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import uuid from 'react-native-uuid';
 
 type AppState = {
   deviceId: string;
@@ -25,7 +24,7 @@ export const useAppStore = create<AppState>()(
 
       initializeDevice: () => {
         if (!get().deviceId) {
-          set({ deviceId: uuid.v4() as string });
+          set({ deviceId: crypto.randomUUID() });
         }
       },
 
