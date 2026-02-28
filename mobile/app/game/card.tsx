@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -281,6 +282,7 @@ export default function CardScreen() {
             <View style={styles.cardArea}>
               <View style={styles.padded}>
                 <SwipeCard
+                  key={currentIndex}
                   statement={currentQuestion.statement}
                   categoryName={categoryName}
                   cardIndex={currentIndex}
@@ -296,37 +298,35 @@ export default function CardScreen() {
         ) : null}
       </LinearGradient>
 
-      <Modal visible={showExitConfirm} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {t('game.exitTitle')}
-            </Text>
-            <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
-              {t('game.exitDesc')}
-            </Text>
-            <View style={styles.modalButtons}>
-              <Pressable
-                onPress={() => setShowExitConfirm(false)}
-                style={[styles.modalButton, { backgroundColor: colors.surfaceVariant }]}
-              >
-                <Text style={[styles.modalButtonText, { color: colors.textPrimary }]}>
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleExitWithSave}
-                disabled={exitSaving}
-                style={[styles.modalButton, { backgroundColor: colors.primary }]}
-              >
-                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
-                  {t('game.exitSave')}
-                </Text>
-              </Pressable>
-            </View>
+      <OverlayModal visible={showExitConfirm} onClose={() => setShowExitConfirm(false)}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+          <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+            {t('game.exitTitle')}
+          </Text>
+          <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
+            {t('game.exitDesc')}
+          </Text>
+          <View style={styles.modalButtons}>
+            <Pressable
+              onPress={() => setShowExitConfirm(false)}
+              style={[styles.modalButton, { backgroundColor: colors.surfaceVariant }]}
+            >
+              <Text style={[styles.modalButtonText, { color: colors.textPrimary }]}>
+                {t('common.cancel')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleExitWithSave}
+              disabled={exitSaving}
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
+                {t('game.exitSave')}
+              </Text>
+            </Pressable>
           </View>
         </View>
-      </Modal>
+      </OverlayModal>
     </Screen>
   );
 }
@@ -377,13 +377,6 @@ const styles = StyleSheet.create({
   hintCenter: {
     fontSize: 12,
     fontFamily: fontFamily.regular,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
   },
   modalContent: {
     width: '100%',

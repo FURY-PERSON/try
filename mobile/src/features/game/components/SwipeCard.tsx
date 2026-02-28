@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Platform, StyleSheet, Dimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -9,7 +9,6 @@ import Animated, {
   runOnJS,
   interpolate,
   Extrapolation,
-  interpolateColor,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
@@ -48,12 +47,19 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const handleSwipe = (direction: SwipeDirection) => {
+  // Reset position when card changes
+  useEffect(() => {
+    translateX.value = 0;
+    translateY.value = 0;
+  }, [cardIndex, translateX, translateY]);
+
+  const handleSwipeAction = (direction: SwipeDirection) => {
     onSwipe(direction);
   };
 
   const gesture = Gesture.Pan()
     .enabled(!disabled)
+    .activeOffsetX([-15, 15])
     .onUpdate((event) => {
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.3;
@@ -61,10 +67,10 @@ export const SwipeCard: FC<SwipeCardProps> = ({
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD) {
         translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 });
-        runOnJS(handleSwipe)('right');
+        runOnJS(handleSwipeAction)('right');
       } else if (event.translationX < -SWIPE_THRESHOLD) {
         translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 });
-        runOnJS(handleSwipe)('left');
+        runOnJS(handleSwipeAction)('left');
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
@@ -88,13 +94,20 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   });
 
   const cardGlowStyle = useAnimatedStyle(() => {
-    const glowColor = interpolateColor(
+    const progress = interpolate(
       translateX.value,
       [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
-      [colors.red + '30', 'transparent', colors.emerald + '30'],
+      [-1, 0, 1],
+      Extrapolation.CLAMP,
     );
+    // Avoid interpolateColor with 'transparent' / hex+alpha — breaks on Android
+    const opacity = Math.abs(progress) * 0.19;
+    const isRight = progress > 0;
+    const r = isRight ? 16 : 239;
+    const g = isRight ? 185 : 68;
+    const b = isRight ? 129 : 68;
     return {
-      borderColor: glowColor,
+      borderColor: `rgba(${r}, ${g}, ${b}, ${opacity})`,
       borderWidth: 2,
     };
   });
@@ -261,7 +274,7 @@ const styles = StyleSheet.create({
     minHeight: 300,
     ...Platform.select({
       ios: { overflow: 'hidden' as const },
-      android: {},
+      android: {  overflow: 'hidden' as const},
     }),
   },
   topAccent: {

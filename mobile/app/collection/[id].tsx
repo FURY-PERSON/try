@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, Modal, Pressable, Switch } from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable, Switch } from 'react-native';
+import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -237,49 +238,47 @@ export default function CollectionDetailScreen() {
         </View>
       </AnimatedEntrance>
 
-      <Modal visible={showReplayWarning} transparent animationType="fade">
-        <View style={styles.replayOverlay}>
-          <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-            <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
-              {t('category.replayTitle')}
+      <OverlayModal visible={showReplayWarning} onClose={() => setShowReplayWarning(false)}>
+        <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+          <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
+            {t('category.replayTitle')}
+          </Text>
+          <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
+            {t('category.replayDesc')}
+          </Text>
+          <Pressable
+            onPress={() => setDontShowAgain(!dontShowAgain)}
+            style={styles.replayCheckRow}
+          >
+            <Switch
+              value={dontShowAgain}
+              onValueChange={setDontShowAgain}
+              trackColor={{ true: colors.primary }}
+            />
+            <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
+              {t('category.dontShow')}
             </Text>
-            <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
-              {t('category.replayDesc')}
-            </Text>
+          </Pressable>
+          <View style={styles.replayButtons}>
             <Pressable
-              onPress={() => setDontShowAgain(!dontShowAgain)}
-              style={styles.replayCheckRow}
+              onPress={() => setShowReplayWarning(false)}
+              style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}
             >
-              <Switch
-                value={dontShowAgain}
-                onValueChange={setDontShowAgain}
-                trackColor={{ true: colors.primary }}
-              />
-              <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
-                {t('category.dontShow')}
+              <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>
+                {t('common.cancel')}
               </Text>
             </Pressable>
-            <View style={styles.replayButtons}>
-              <Pressable
-                onPress={() => setShowReplayWarning(false)}
-                style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}
-              >
-                <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleConfirmReplay}
-                style={[styles.replayBtn, { backgroundColor: colors.primary }]}
-              >
-                <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>
-                  {t('category.start')}
-                </Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={handleConfirmReplay}
+              style={[styles.replayBtn, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>
+                {t('category.start')}
+              </Text>
+            </Pressable>
           </View>
         </View>
-      </Modal>
+      </OverlayModal>
     </Screen>
   );
 }
@@ -376,13 +375,6 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: 32,
     gap: 12,
-  },
-  replayOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
   },
   replayModal: {
     width: '100%',
