@@ -575,6 +575,31 @@ async function main() {
     console.log('Leaderboard entries seeded for today\'s daily set');
   }
 
+  // Feature flags
+  const defaultFlags = [
+    {
+      key: 'show_ads',
+      name: 'Показ рекламы',
+      description: 'Глобальное управление показом рекламы в приложении',
+      isEnabled: true,
+    },
+    {
+      key: 'maintenance_mode',
+      name: 'Режим обслуживания',
+      description: 'Показывает заглушку вместо контента во время технических работ',
+      isEnabled: false,
+    },
+  ];
+
+  for (const flag of defaultFlags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: flag,
+    });
+  }
+  console.log(`Feature flags seeded: ${defaultFlags.length}`);
+
   console.log('Seeding complete.');
 }
 

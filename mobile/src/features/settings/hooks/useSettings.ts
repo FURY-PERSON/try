@@ -7,14 +7,12 @@ import i18n from '@/i18n';
 export const useSettings = () => {
   const theme = useSettingsStore((s) => s.theme);
   const language = useSettingsStore((s) => s.language);
-  const contentLanguage = useSettingsStore((s) => s.contentLanguage);
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
   const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
-  const setContentLanguage = useSettingsStore((s) => s.setContentLanguage);
   const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled);
   const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
@@ -29,16 +27,8 @@ export const useSettings = () => {
     [setLanguage],
   );
 
-  const changeContentLanguage = useCallback(
-    (contentLang: 'ru' | 'en' | 'both') => {
-      setContentLanguage(contentLang);
-      analytics.logEvent('settings_changed', { setting: 'content_language', value: contentLang });
-    },
-    [setContentLanguage],
-  );
-
   const changeTheme = useCallback(
-    (newTheme: 'light' | 'dark' | 'system') => {
+    (newTheme: 'light' | 'dark') => {
       setTheme(newTheme);
       analytics.logEvent('settings_changed', { setting: 'theme', value: newTheme });
     },
@@ -68,20 +58,17 @@ export const useSettings = () => {
   return {
     theme,
     language,
-    contentLanguage,
     soundEnabled,
     hapticsEnabled,
     notificationsEnabled,
     replayWarningDismissed,
     setTheme,
     setLanguage,
-    setContentLanguage,
     setSoundEnabled,
     setHapticsEnabled,
     setNotificationsEnabled,
     setReplayWarningDismissed,
     changeLanguage,
-    changeContentLanguage,
     changeTheme,
     toggleNotifications,
   };

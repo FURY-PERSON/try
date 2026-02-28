@@ -7,6 +7,7 @@ import {
   Library,
   Bell,
   BookOpen,
+  Flag,
   LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -19,6 +20,7 @@ const NAV_ITEMS = [
   { to: '/categories', icon: FolderTree, label: 'Категории' },
   { to: '/collections', icon: Library, label: 'Подборки' },
   { to: '/notifications', icon: Bell, label: 'Уведомления' },
+  { to: '/feature-flags', icon: Flag, label: 'Feature Flags' },
   { to: '/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
 ];
 

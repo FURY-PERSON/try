@@ -263,3 +263,17 @@ model AvatarEmoji {
 
   @@map("avatar_emojis")
 }
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String   @default("")
+  isEnabled   Boolean  @default(false)
+  payload     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("feature_flags")
+  @@index([isEnabled])
+}

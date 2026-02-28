@@ -1,6 +1,9 @@
 # ─────────────────────────────────────────
 # Fact Front — Makefile
 # ─────────────────────────────────────────
+start-server: ## Запустить сервер 
+	docker compose up --build
+
 
 # ── Production ────────────────────────────────────────────
 deploy: ## Задеплоить production (build + up)

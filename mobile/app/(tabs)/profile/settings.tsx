@@ -57,32 +57,6 @@ export default function SettingsScreen() {
             </View>
 
             <SettingsRow
-              icon={<MaterialCommunityIcons name="translate" size={18} color={colors.primary} />}
-              iconBgColor={colors.primary + '15'}
-              title={t('settings.contentLanguage')}
-            />
-            <View style={styles.chipRow}>
-              <Chip
-                label="🇷🇺 Русский"
-                variant="primary"
-                selected={settings.contentLanguage === 'ru'}
-                onPress={() => settings.changeContentLanguage('ru')}
-              />
-              <Chip
-                label="🇬🇧 English"
-                variant="primary"
-                selected={settings.contentLanguage === 'en'}
-                onPress={() => settings.changeContentLanguage('en')}
-              />
-              <Chip
-                label={t('settings.contentBoth')}
-                variant="primary"
-                selected={settings.contentLanguage === 'both'}
-                onPress={() => settings.changeContentLanguage('both')}
-              />
-            </View>
-
-            <SettingsRow
               icon={<MaterialCommunityIcons name="theme-light-dark" size={18} color={colors.purple} />}
               iconBgColor={colors.purple + '15'}
               title={t('settings.theme')}
@@ -99,12 +73,6 @@ export default function SettingsScreen() {
                 variant="primary"
                 selected={settings.theme === 'dark'}
                 onPress={() => settings.changeTheme('dark')}
-              />
-              <Chip
-                label={t('settings.themeSystem')}
-                variant="primary"
-                selected={settings.theme === 'system'}
-                onPress={() => settings.changeTheme('system')}
               />
             </View>
           </Card>

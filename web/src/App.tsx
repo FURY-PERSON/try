@@ -18,6 +18,7 @@ const CollectionsPage = lazy(() => import('@/pages/CollectionsPage').then((m) =>
 const ReferencePage = lazy(() => import('@/pages/ReferencePage').then((m) => ({ default: m.ReferencePage })));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
+const FeatureFlagsPage = lazy(() => import('@/pages/FeatureFlagsPage').then((m) => ({ default: m.FeatureFlagsPage })));
 
 function PageFallback() {
   return (
@@ -58,6 +59,7 @@ export function App() {
         <Route path="collections" element={<Suspense fallback={<PageFallback />}><CollectionsPage /></Suspense>} />
         <Route path="notifications" element={<Suspense fallback={<PageFallback />}><NotificationsPage /></Suspense>} />
         <Route path="reference" element={<Suspense fallback={<PageFallback />}><ReferencePage /></Suspense>} />
+        <Route path="feature-flags" element={<Suspense fallback={<PageFallback />}><FeatureFlagsPage /></Suspense>} />
       </Route>
       <Route path="*" element={<Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense>} />
     </Routes>

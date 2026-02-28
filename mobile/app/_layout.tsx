@@ -17,9 +17,12 @@ import {
 } from '@expo-google-fonts/nunito';
 import { ThemeProvider, useThemeContext } from '@/theme';
 import { useAppStore } from '@/stores/useAppStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
+import { fetchFeatureFlags } from '@/features/feature-flags/api';
 import { adManager } from '@/services/ads';
 import { initializeFirebase } from '@/services/firebase';
-import '@/i18n';
+import i18n from '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -47,9 +50,15 @@ function AndroidNavigationBar() {
   return null;
 }
 
+const FEATURE_FLAGS_CACHE_TTL_MS = 5 * 60 * 1000;
+
 export default function RootLayout() {
   const initializeDevice = useAppStore((s) => s.initializeDevice);
   const incrementLaunchCount = useAppStore((s) => s.incrementLaunchCount);
+
+  const setFlags = useFeatureFlagsStore((s) => s.setFlags);
+  const setFlagsLoading = useFeatureFlagsStore((s) => s.setLoading);
+  const lastFetchedAt = useFeatureFlagsStore((s) => s.lastFetchedAt);
 
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
@@ -60,12 +69,42 @@ export default function RootLayout() {
     Nunito_900Black,
   });
 
+  const loadFeatureFlags = useCallback(async () => {
+    if (lastFetchedAt && Date.now() - lastFetchedAt < FEATURE_FLAGS_CACHE_TTL_MS) {
+      return;
+    }
+    setFlagsLoading(true);
+    try {
+      const flags = await fetchFeatureFlags();
+      const flagsMap = Object.fromEntries(flags.map((f) => [f.key, f]));
+      setFlags(flagsMap);
+    } catch {
+      // Graceful degradation: работаем с закэшированными или дефолтными флагами
+    } finally {
+      setFlagsLoading(false);
+    }
+  }, [lastFetchedAt, setFlags, setFlagsLoading]);
+
   useEffect(() => {
     initializeDevice();
     incrementLaunchCount();
     adManager.initialize();
     initializeFirebase();
-  }, [initializeDevice, incrementLaunchCount]);
+    void loadFeatureFlags();
+
+    // Sync i18n with persisted language after store hydration
+    const syncLanguage = () => {
+      const { language } = useSettingsStore.getState();
+      i18n.changeLanguage(language);
+    };
+
+    if (useSettingsStore.persist.hasHydrated()) {
+      syncLanguage();
+    } else {
+      const unsubscribe = useSettingsStore.persist.onFinishHydration(syncLanguage);
+      return unsubscribe;
+    }
+  }, [initializeDevice, incrementLaunchCount, loadFeatureFlags]);
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {

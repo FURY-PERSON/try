@@ -4,7 +4,6 @@ import { Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { FloatingTabBar } from '@/components/navigation/FloatingTabBar';
-
 export default function TabsLayout() {
   const { colors } = useThemeContext();
   const { t } = useTranslation();

@@ -21,6 +21,8 @@ services:
       - "3001:3001"
     env_file:
       - ./server/.env.development
+    environment:
+      DATABASE_URL: "postgresql://factfront:factfront_dev@postgres:5432/factfront"
     depends_on:
       postgres:
         condition: service_healthy

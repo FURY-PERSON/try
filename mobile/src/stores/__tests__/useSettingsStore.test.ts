@@ -1,6 +1,6 @@
 describe('useSettingsStore logic', () => {
   type SettingsState = {
-    themePreference: 'light' | 'dark' | 'system';
+    themePreference: 'light' | 'dark';
     language: 'ru' | 'en';
     soundEnabled: boolean;
     hapticsEnabled: boolean;
@@ -8,7 +8,7 @@ describe('useSettingsStore logic', () => {
   };
 
   const createInitialState = (): SettingsState => ({
-    themePreference: 'system',
+    themePreference: 'light',
     language: 'ru',
     soundEnabled: true,
     hapticsEnabled: true,
@@ -22,14 +22,14 @@ describe('useSettingsStore logic', () => {
   });
 
   it('has sensible defaults', () => {
-    expect(state.themePreference).toBe('system');
+    expect(state.themePreference).toBe('light');
     expect(state.language).toBe('ru');
     expect(state.soundEnabled).toBe(true);
     expect(state.hapticsEnabled).toBe(true);
     expect(state.notificationsEnabled).toBe(true);
   });
 
-  it('changes theme preference', () => {
+  it('changes theme preference between light and dark', () => {
     state.themePreference = 'dark';
     expect(state.themePreference).toBe('dark');
 

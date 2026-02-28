@@ -45,6 +45,9 @@ import type {
   AvatarEmojiItem,
   CreateEmojiDto,
   UpdateEmojiDto,
+  FeatureFlag,
+  CreateFeatureFlagDto,
+  UpdateFeatureFlagDto,
 } from '../types';
 
 export function createAdminEndpoints(http: AxiosInstance) {
@@ -254,6 +257,28 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<UploadResult>>('/admin/upload/image', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+      },
+    },
+
+    // ── Feature Flags ──
+    featureFlags: {
+      list() {
+        return http.get<ApiResponse<FeatureFlag[]>>('/admin/feature-flags');
+      },
+      getByKey(key: string) {
+        return http.get<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}`);
+      },
+      create(dto: CreateFeatureFlagDto) {
+        return http.post<ApiResponse<FeatureFlag>>('/admin/feature-flags', dto);
+      },
+      update(key: string, dto: UpdateFeatureFlagDto) {
+        return http.patch<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}`, dto);
+      },
+      toggle(key: string) {
+        return http.patch<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}/toggle`);
+      },
+      delete(key: string) {
+        return http.delete<void>(`/admin/feature-flags/${key}`);
       },
     },
   };

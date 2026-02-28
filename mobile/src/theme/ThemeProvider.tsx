@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
 import { colors } from './colors';
 import { typography } from './typography';
 import { spacing, borderRadius, elevation } from './spacing';
@@ -52,15 +51,9 @@ const darkGradients: ThemeGradients = {
 };
 
 export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
-  const systemColorScheme = useColorScheme();
   const themePreference = useSettingsStore((s) => s.theme);
 
-  const colorScheme: ColorScheme = useMemo(() => {
-    if (themePreference === 'system') {
-      return systemColorScheme === 'dark' ? 'dark' : 'light';
-    }
-    return themePreference;
-  }, [themePreference, systemColorScheme]);
+  const colorScheme: ColorScheme = useMemo(() => themePreference, [themePreference]);
 
   const theme: Theme = useMemo(
     () => ({

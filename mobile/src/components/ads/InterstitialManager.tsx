@@ -5,6 +5,7 @@ import {
 } from 'react-native-google-mobile-ads';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
+import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 
 const interstitial = InterstitialAd.createForAdRequest(adManager.getInterstitialUnitId());
 
@@ -30,7 +31,8 @@ export const useInterstitialAd = () => {
   }, []);
 
   const showIfReady = useCallback(async (): Promise<boolean> => {
-    if (!loadedRef.current || !adManager.canShowInterstitial()) {
+    const showAds = useFeatureFlagsStore.getState().isEnabled('show_ads', true);
+    if (!showAds || !loadedRef.current || !adManager.canShowInterstitial()) {
       return false;
     }
 

@@ -307,6 +307,34 @@ export type NotificationHistoryResponse = {
   totalPages: number;
 };
 
+// ── Feature Flags ──
+
+export type FeatureFlag = {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  isEnabled: boolean;
+  payload: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateFeatureFlagDto = {
+  key: string;
+  name: string;
+  description?: string;
+  isEnabled?: boolean;
+  payload?: Record<string, unknown>;
+};
+
+export type UpdateFeatureFlagDto = {
+  name?: string;
+  description?: string;
+  isEnabled?: boolean;
+  payload?: Record<string, unknown>;
+};
+
 // ── Client Options ──
 
 export type ApiClientOptions = {
