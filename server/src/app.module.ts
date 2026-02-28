@@ -19,7 +19,10 @@ import { AiModule } from './modules/ai/ai.module';
 @Module({
   imports: [
     // Configuration - globally available
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
+    }),
 
     // Rate limiting - configurable via THROTTLE_TTL and THROTTLE_LIMIT env vars
     ThrottlerModule.forRootAsync({

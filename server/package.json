@@ -3,16 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "NODE_ENV=development nest start --watch",
+    
     "build": "nest build",
     "start": "node dist/src/main",
-    "start:prod": "node dist/src/main",
-    "lint": "echo 'lint ok'",
-    "lint:fix": "echo 'lint ok'",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "start:prod": "NODE_ENV=production node dist/src/main",
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
