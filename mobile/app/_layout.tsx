@@ -20,6 +20,8 @@ import { useAppStore } from '@/stores/useAppStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 import { fetchFeatureFlags } from '@/features/feature-flags/api';
+import { useServerStatus } from '@/hooks/useServerStatus';
+import { ServiceUnavailableScreen } from '@/components/feedback/ServiceUnavailableScreen';
 import { adManager } from '@/services/ads';
 import { initializeFirebase } from '@/services/firebase';
 import i18n from '@/i18n';
@@ -35,6 +37,33 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+function AppShell() {
+  const { status, retry } = useServerStatus();
+
+  if (status === 'checking' || status === 'unavailable') {
+    return <ServiceUnavailableScreen status={status} onRetry={retry} />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="(onboarding)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="game"
+        options={{ animation: 'slide_from_bottom' }}
+      />
+      <Stack.Screen
+        name="modal"
+        options={{
+          presentation: Platform.OS === 'ios' ? 'modal' : 'fullScreenModal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+    </Stack>
+  );
+}
 
 function AndroidNavigationBar() {
   const { isDark } = useThemeContext();
@@ -122,22 +151,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <AndroidNavigationBar />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(onboarding)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen
-                name="game"
-                options={{ animation: 'slide_from_bottom' }}
-              />
-              <Stack.Screen
-                name="modal"
-                options={{
-                  presentation: Platform.OS === 'ios' ? 'modal' : 'fullScreenModal',
-                  animation: 'slide_from_bottom',
-                }}
-              />
-            </Stack>
+            <AppShell />
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -181,5 +181,9 @@
     "title": "Oops! Something went wrong",
     "generic": "An error occurred. Try again later.",
     "network": "Check your internet connection"
+  },
+  "serviceUnavailable": {
+    "title": "Service temporarily unavailable",
+    "subtitle": "We're loading new facts.\nPlease try again in a moment"
   }
 }
