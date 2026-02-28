@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2, Library, Search, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Library, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import type { Collection, CollectionWithQuestions, QuestionWithCategory } from '@/shared';
+import type { Collection, CollectionWithItems } from '@/shared';
+import type { CreateCollectionItemDto } from '@/api-client/types';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +32,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageSizeSelect } from '@/components/ui/PageSizeSelect';
 
+// ─── Collection form schema ───────────────────────────────────────────────────
+
 const collectionSchema = z.object({
   title: z.string().min(1, 'Введите название'),
   titleEn: z.string().min(1, 'Введите название (EN)'),
@@ -44,10 +48,39 @@ const collectionSchema = z.object({
 
 type CollectionFormData = z.infer<typeof collectionSchema>;
 
+// ─── Question form schema ─────────────────────────────────────────────────────
+
+const questionSchema = z.object({
+  statement: z.string().min(5, 'Минимум 5 символов'),
+  isTrue: z.enum(['true', 'false']),
+  explanation: z.string().min(5, 'Минимум 5 символов'),
+  source: z.string().optional(),
+  sourceUrl: z.string().url('Введите корректный URL').optional().or(z.literal('')),
+  difficulty: z.coerce.number().min(1).max(5),
+  language: z.enum(['ru', 'en']),
+});
+
+type QuestionFormData = z.infer<typeof questionSchema>;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const TYPE_OPTIONS = [
   { value: 'thematic', label: 'Тематическая' },
   { value: 'featured', label: 'Рекомендуемая' },
   { value: 'seasonal', label: 'Сезонная' },
+];
+
+const DIFFICULTY_OPTIONS = [
+  { value: '1', label: '1 — Очень лёгкий' },
+  { value: '2', label: '2 — Лёгкий' },
+  { value: '3', label: '3 — Средний' },
+  { value: '4', label: '4 — Сложный' },
+  { value: '5', label: '5 — Очень сложный' },
+];
+
+const LANGUAGE_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'en', label: 'English' },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -69,12 +102,288 @@ const TYPE_LABELS: Record<string, string> = {
   thematic: 'Тематическая',
 };
 
+// ─── QuestionEditor — список вопросов внутри формы подборки ──────────────────
+
+function QuestionEditor({
+  items,
+  onChange,
+}: {
+  items: CreateCollectionItemDto[];
+  onChange: (items: CreateCollectionItemDto[]) => void;
+}) {
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  const openAdd = () => {
+    setEditingIndex(null);
+    setQuestionDialogOpen(true);
+  };
+
+  const openEdit = (index: number) => {
+    setEditingIndex(index);
+    setQuestionDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setQuestionDialogOpen(false);
+    setEditingIndex(null);
+  };
+
+  const removeItem = (index: number) => {
+    onChange(items.filter((_, i) => i !== index));
+  };
+
+  const handleSave = (data: QuestionFormData) => {
+    const item: CreateCollectionItemDto = {
+      statement: data.statement,
+      isTrue: data.isTrue === 'true',
+      explanation: data.explanation,
+      source: data.source || undefined,
+      sourceUrl: data.sourceUrl || undefined,
+      difficulty: data.difficulty,
+      language: data.language,
+      sortOrder: editingIndex !== null ? (items[editingIndex]?.sortOrder ?? items.length + 1) : items.length + 1,
+    };
+
+    if (editingIndex !== null) {
+      const updated = [...items];
+      updated[editingIndex] = item;
+      onChange(updated);
+    } else {
+      onChange([...items, item]);
+    }
+    closeDialog();
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-sm font-medium text-text-primary">
+          Вопросы ({items.length})
+        </label>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-primary hover:bg-primary/10 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Добавить вопрос
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-text-secondary text-center py-4 border border-dashed border-border rounded-lg">
+          Вопросов пока нет — нажмите «Добавить вопрос»
+        </p>
+      ) : (
+        <div className="border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+          {items.map((item, i) => (
+            <div key={i} className="px-3 py-2">
+              <div className="flex items-start gap-2">
+                <span className={`mt-0.5 w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${item.isTrue ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  {item.isTrue ? '✓' : '✗'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm text-text-primary line-clamp-2 cursor-pointer select-none"
+                    onClick={() => setExpandedIndex(expandedIndex === i ? null : i)}
+                  >
+                    {item.statement}
+                  </p>
+                  {expandedIndex === i && (
+                    <p className="text-xs text-text-secondary mt-1">{item.explanation}</p>
+                  )}
+                  <div className="flex gap-2 mt-0.5">
+                    <span className="text-xs text-text-secondary">Сложность: {item.difficulty}</span>
+                    <span className="text-xs text-text-secondary uppercase">{item.language}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(i)}
+                    className="p-1 rounded text-text-secondary hover:text-blue hover:bg-blue/10 transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(i)}
+                    className="p-1 rounded text-text-secondary hover:text-red hover:bg-red/10 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <QuestionDialogControlled
+        open={questionDialogOpen}
+        editingIndex={editingIndex}
+        editingItem={editingIndex !== null ? (items[editingIndex] ?? null) : null}
+        onClose={closeDialog}
+        onSave={handleSave}
+      />
+    </div>
+  );
+}
+
+// QuestionDialogControlled pre-fills the form when editing
+function QuestionDialogControlled({
+  open,
+  editingIndex,
+  editingItem,
+  onClose,
+  onSave,
+}: {
+  open: boolean;
+  editingIndex: number | null;
+  editingItem: CreateCollectionItemDto | null;
+  onClose: () => void;
+  onSave: (data: QuestionFormData) => void;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<QuestionFormData>({
+    resolver: zodResolver(questionSchema),
+    defaultValues: { difficulty: 3, language: 'ru', isTrue: 'false' },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (editingItem) {
+      reset({
+        statement: editingItem.statement,
+        isTrue: editingItem.isTrue ? 'true' : 'false',
+        explanation: editingItem.explanation,
+        source: editingItem.source ?? '',
+        sourceUrl: editingItem.sourceUrl ?? '',
+        difficulty: editingItem.difficulty ?? 3,
+        language: (editingItem.language ?? 'ru') as 'ru' | 'en',
+      });
+    } else {
+      reset({ statement: '', isTrue: 'false', explanation: '', source: '', sourceUrl: '', difficulty: 3, language: 'ru' });
+    }
+  }, [open, editingItem, reset]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className="bg-surface rounded-2xl p-6 w-full max-w-lg shadow-xl pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-text-primary">
+              {editingIndex !== null ? `Редактировать вопрос #${editingIndex + 1}` : 'Новый вопрос'}
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form
+            onSubmit={(e) => { e.stopPropagation(); void handleSubmit(onSave)(e); }}
+            className="space-y-3"
+          >
+            <Textarea
+              id="q-statement"
+              label="Утверждение"
+              placeholder="Человек использует только 10% мозга"
+              error={errors.statement?.message}
+              rows={2}
+              {...register('statement')}
+            />
+
+            <div className="grid grid-cols-3 gap-3">
+              <Select
+                id="q-isTrue"
+                label="Ответ"
+                options={[
+                  { value: 'false', label: '✗ Ложь' },
+                  { value: 'true', label: '✓ Правда' },
+                ]}
+                error={errors.isTrue?.message}
+                {...register('isTrue')}
+              />
+              <Select
+                id="q-difficulty"
+                label="Сложность"
+                options={DIFFICULTY_OPTIONS}
+                error={errors.difficulty?.message}
+                {...register('difficulty')}
+              />
+              <Select
+                id="q-language"
+                label="Язык"
+                options={LANGUAGE_OPTIONS}
+                error={errors.language?.message}
+                {...register('language')}
+              />
+            </div>
+
+            <Textarea
+              id="q-explanation"
+              label="Объяснение"
+              placeholder="На самом деле мозг задействован полностью..."
+              error={errors.explanation?.message}
+              rows={2}
+              {...register('explanation')}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                id="q-source"
+                label="Источник"
+                placeholder="Wikipedia"
+                {...register('source')}
+              />
+              <Input
+                id="q-sourceUrl"
+                label="URL источника"
+                placeholder="https://..."
+                error={errors.sourceUrl?.message}
+                {...register('sourceUrl')}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end pt-1">
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Отмена
+              </Button>
+              <Button type="submit">
+                {editingIndex !== null ? 'Сохранить' : 'Добавить'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>,
+    document.body,
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function CollectionsPage() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCollection, setEditingCollection] = useState<CollectionWithQuestions | null>(null);
-  const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
-  const [questionSearch, setQuestionSearch] = useState('');
+  const [editingCollection, setEditingCollection] = useState<CollectionWithItems | null>(null);
+  const [collectionItems, setCollectionItems] = useState<CreateCollectionItemDto[]>([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -94,24 +403,6 @@ export function CollectionsPage() {
   const collections = data?.data.data ?? [];
   const meta = data?.data.meta;
 
-  // Load approved questions for the picker
-  const { data: questionsData } = useQuery({
-    queryKey: ['admin', 'questions', 'approved-for-picker'],
-    queryFn: () => api.admin.questions.list({ status: 'approved', limit: 200 }),
-    enabled: dialogOpen,
-  });
-
-  const allQuestions: QuestionWithCategory[] = questionsData?.data.data ?? [];
-
-  const filteredQuestions = allQuestions.filter((q) => {
-    if (!questionSearch) return true;
-    const search = questionSearch.toLowerCase();
-    return (
-      q.statement.toLowerCase().includes(search) ||
-      q.category?.name?.toLowerCase().includes(search)
-    );
-  });
-
   const {
     register,
     handleSubmit,
@@ -126,11 +417,11 @@ export function CollectionsPage() {
   const iconValue = watch('icon');
 
   const createMutation = useMutation({
-    mutationFn: (data: CollectionFormData & { questionIds: string[] }) =>
+    mutationFn: (payload: CollectionFormData & { items: CreateCollectionItemDto[] }) =>
       api.admin.collections.create({
-        ...data,
-        startDate: data.startDate || undefined,
-        endDate: data.endDate || undefined,
+        ...payload,
+        startDate: payload.startDate || undefined,
+        endDate: payload.endDate || undefined,
       }),
     onSuccess: () => {
       toast.success('Подборка создана');
@@ -146,7 +437,7 @@ export function CollectionsPage() {
       data,
     }: {
       id: string;
-      data: Partial<CollectionFormData> & { questionIds?: string[]; status?: 'draft' | 'published' };
+      data: Partial<CollectionFormData> & { items?: CreateCollectionItemDto[]; status?: 'draft' | 'published' };
     }) =>
       api.admin.collections.update(id, {
         ...data,
@@ -182,8 +473,7 @@ export function CollectionsPage() {
 
   const openCreate = () => {
     setEditingCollection(null);
-    setSelectedQuestionIds([]);
-    setQuestionSearch('');
+    setCollectionItems([]);
     reset({
       title: '',
       titleEn: '',
@@ -203,8 +493,18 @@ export function CollectionsPage() {
       const res = await api.admin.collections.getById(col.id);
       const full = res.data.data;
       setEditingCollection(full);
-      setSelectedQuestionIds(full.questions.map((q) => q.question.id));
-      setQuestionSearch('');
+      setCollectionItems(
+        full.questions.map((item) => ({
+          statement: item.statement,
+          isTrue: item.isTrue,
+          explanation: item.explanation,
+          source: item.source || undefined,
+          sourceUrl: item.sourceUrl || undefined,
+          difficulty: item.difficulty,
+          language: item.language,
+          sortOrder: item.sortOrder,
+        })),
+      );
       reset({
         title: full.title,
         titleEn: full.titleEn,
@@ -225,29 +525,23 @@ export function CollectionsPage() {
   const closeDialog = () => {
     setDialogOpen(false);
     setEditingCollection(null);
-    setSelectedQuestionIds([]);
+    setCollectionItems([]);
     reset();
   };
 
-  const toggleQuestion = (id: string) => {
-    setSelectedQuestionIds((prev) =>
-      prev.includes(id) ? prev.filter((qId) => qId !== id) : [...prev, id],
-    );
-  };
-
   const onSubmit = (data: CollectionFormData) => {
-    if (selectedQuestionIds.length === 0) {
-      toast.error('Выберите хотя бы один вопрос');
+    if (collectionItems.length === 0) {
+      toast.error('Добавьте хотя бы один вопрос');
       return;
     }
 
     if (editingCollection) {
       updateMutation.mutate({
         id: editingCollection.id,
-        data: { ...data, questionIds: selectedQuestionIds },
+        data: { ...data, items: collectionItems },
       });
     } else {
-      createMutation.mutate({ ...data, questionIds: selectedQuestionIds });
+      createMutation.mutate({ ...data, items: collectionItems });
     }
   };
 
@@ -330,7 +624,11 @@ export function CollectionsPage() {
             </TableHeader>
             <TableBody>
               {collections.map((col) => (
-                <TableRow key={col.id}>
+                <TableRow
+                  key={col.id}
+                  className="cursor-pointer hover:bg-surface-secondary/50"
+                  onClick={() => openEdit(col)}
+                >
                   <TableCell className="text-2xl">{col.icon}</TableCell>
                   <TableCell>
                     <div>
@@ -367,7 +665,7 @@ export function CollectionsPage() {
                       : '∞'}
                   </TableCell>
                   <TableCell className="text-text-secondary">{col.sortOrder}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() =>
@@ -445,7 +743,7 @@ export function CollectionsPage() {
         onClose={closeDialog}
         title={editingCollection ? 'Редактировать подборку' : 'Новая подборка'}
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-4">
             <Input
               id="title"
@@ -506,80 +804,9 @@ export function CollectionsPage() {
             <Input id="endDate" label="Дата окончания" type="date" {...register('endDate')} />
           </div>
 
-          {/* Question Picker */}
-          <div>
-            <label className="text-sm font-medium text-text-primary">
-              Вопросы ({selectedQuestionIds.length} выбрано)
-            </label>
-            <div className="relative mt-1.5">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-text-secondary" />
-              <input
-                type="text"
-                value={questionSearch}
-                onChange={(e) => setQuestionSearch(e.target.value)}
-                placeholder="Поиск вопросов..."
-                className="w-full h-10 pl-9 pr-8 rounded-lg border border-border bg-surface text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-              />
-              {questionSearch && (
-                <button
-                  type="button"
-                  onClick={() => setQuestionSearch('')}
-                  className="absolute right-3 top-2.5 text-text-secondary hover:text-text-primary"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Selected questions shown first */}
-            {selectedQuestionIds.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {selectedQuestionIds.map((id) => {
-                  const q = allQuestions.find((q) => q.id === id);
-                  return (
-                    <span
-                      key={id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium cursor-pointer hover:bg-primary/20"
-                      onClick={() => toggleQuestion(id)}
-                    >
-                      {q ? q.statement.slice(0, 40) + (q.statement.length > 40 ? '…' : '') : id}
-                      <X className="w-3 h-3" />
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-2 max-h-48 overflow-y-auto border border-border rounded-lg">
-              {filteredQuestions.length === 0 ? (
-                <p className="p-3 text-sm text-text-secondary text-center">
-                  {allQuestions.length === 0 ? 'Загрузка вопросов...' : 'Ничего не найдено'}
-                </p>
-              ) : (
-                filteredQuestions.map((q) => {
-                  const isSelected = selectedQuestionIds.includes(q.id);
-                  return (
-                    <label
-                      key={q.id}
-                      className={`flex items-start gap-2 px-3 py-2 cursor-pointer hover:bg-surface-secondary border-b border-border last:border-0 ${isSelected ? 'bg-primary/5' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleQuestion(q.id)}
-                        className="mt-0.5 rounded border-border text-primary focus:ring-primary"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-text-primary line-clamp-2">{q.statement}</p>
-                        <p className="text-xs text-text-secondary mt-0.5">
-                          {q.category?.name ?? '—'} · Сложность: {q.difficulty}
-                        </p>
-                      </div>
-                    </label>
-                  );
-                })
-              )}
-            </div>
+          {/* Inline Question Editor */}
+          <div className="border-t border-border pt-4">
+            <QuestionEditor items={collectionItems} onChange={setCollectionItems} />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

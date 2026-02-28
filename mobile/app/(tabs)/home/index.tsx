@@ -244,7 +244,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={48} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={128} />
         }
         contentContainerStyle={{ paddingBottom: 100 }}
       >
@@ -354,9 +354,43 @@ export default function HomeScreen() {
           </Pressable>
         </AnimatedEntrance>
 
-        {/* Section 2: Categories */}
-        {allCategories.length > 0 && (
+        {/* Section 2: Featured Collections */}
+        {collections.length > 0 && (
           <AnimatedEntrance delay={200}>
+            <View style={{ marginTop: spacing.sectionGap }}>
+              <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
+                {t('home.featured').toUpperCase()}
+              </Text>
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={collections}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
+                onScrollBeginDrag={handleCollectionsScroll}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={5}
+                initialNumToRender={5}
+                windowSize={5}
+                renderItem={({ item }) => (
+                  <CollectionCard
+                    collection={item}
+                    language={language}
+                    colors={colors}
+                    borderRadius={borderRadius}
+                    elevation={elevation}
+                    loading={loadingCollection === item.id}
+                    onPress={() => handleOpenCollection(item.id)}
+                  />
+                )}
+              />
+            </View>
+          </AnimatedEntrance>
+        )}
+
+        {/* Section 3: Categories */}
+        {allCategories.length > 0 && (
+          <AnimatedEntrance delay={300}>
             <View style={{ marginTop: spacing.sectionGap }}>
               <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
                 {t('home.categories').toUpperCase()}
@@ -389,8 +423,8 @@ export default function HomeScreen() {
           </AnimatedEntrance>
         )}
 
-        {/* Section 3: Difficulty */}
-        <AnimatedEntrance delay={300}>
+        {/* Section 4: Difficulty */}
+        <AnimatedEntrance delay={400}>
           <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
             <Text style={[styles.sectionOverline, { color: colors.primary }]}>
               {t('home.difficulty').toUpperCase()}
@@ -414,40 +448,6 @@ export default function HomeScreen() {
             </View>
           </View>
         </AnimatedEntrance>
-
-        {/* Section 4: Featured Collections */}
-        {collections.length > 0 && (
-          <AnimatedEntrance delay={400}>
-            <View style={{ marginTop: spacing.sectionGap }}>
-              <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
-                {t('home.featured').toUpperCase()}
-              </Text>
-              <FlatList
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                data={collections}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ gap: 12, paddingVertical: 8, paddingHorizontal: spacing.screenPadding }}
-                onScrollBeginDrag={handleCollectionsScroll}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={5}
-                initialNumToRender={5}
-                windowSize={5}
-                renderItem={({ item }) => (
-                  <CollectionCard
-                    collection={item}
-                    language={language}
-                    colors={colors}
-                    borderRadius={borderRadius}
-                    elevation={elevation}
-                    loading={loadingCollection === item.id}
-                    onPress={() => handleOpenCollection(item.id)}
-                  />
-                )}
-              />
-            </View>
-          </AnimatedEntrance>
-        )}
 
         <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
           <AdBanner placement="home_bottom" />

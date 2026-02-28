@@ -353,85 +353,53 @@ async function main() {
   }
   console.log(`Avatar emojis: ${avatarEmojis.length} entries`);
 
-  // Seed collections
-  const scienceQuestions = await prisma.question.findMany({
-    where: {
-      status: 'approved',
-      OR: [
-        { category: { slug: { in: ['science', 'space', 'nature', 'technology'] } } },
-        { categories: { some: { category: { slug: { in: ['science', 'space', 'nature', 'technology'] } } } } },
-      ],
-    },
-    take: 15,
-    select: { id: true },
-  });
-
-  if (scienceQuestions.length >= 5) {
-    const existing = await prisma.collection.findFirst({ where: { title: 'Удивительная наука' } });
-    if (!existing) {
-      const collection = await prisma.collection.create({
-        data: {
-          title: 'Удивительная наука',
-          titleEn: 'Amazing Science',
-          description: 'Факты и мифы из мира науки, которые вас удивят',
-          descriptionEn: 'Science facts and myths that will surprise you',
-          icon: '🔬',
-          type: 'featured',
-          status: 'published',
-          sortOrder: 1,
+  // Seed collections (questions are standalone CollectionItems, not from the shared Question pool)
+  const scienceCollectionExists = await prisma.collection.findFirst({ where: { title: 'Удивительная наука' } });
+  if (!scienceCollectionExists) {
+    await prisma.collection.create({
+      data: {
+        title: 'Удивительная наука',
+        titleEn: 'Amazing Science',
+        description: 'Факты и мифы из мира науки, которые вас удивят',
+        descriptionEn: 'Science facts and myths that will surprise you',
+        icon: '🔬',
+        type: 'featured',
+        status: 'draft',
+        sortOrder: 1,
+        questions: {
+          create: [
+            { statement: 'Молния никогда не ударяет в одно место дважды', isTrue: false, explanation: 'Молния часто ударяет в одно место несколько раз — особенно в высокие объекты вроде башен и деревьев.', source: '', difficulty: 2, sortOrder: 1 },
+            { statement: 'Стекло — это очень медленно текущая жидкость', isTrue: false, explanation: 'Стекло является аморфным твёрдым телом. Неравномерная толщина старинных стёкол — результат технологии производства, а не течения.', source: '', difficulty: 3, sortOrder: 2 },
+            { statement: 'Вода проводит электричество', isTrue: false, explanation: 'Чистая дистиллированная вода — диэлектрик. Электрический ток проводят растворённые в воде соли и минералы.', source: '', difficulty: 3, sortOrder: 3 },
+          ],
         },
-      });
-      for (let i = 0; i < scienceQuestions.length; i++) {
-        await prisma.collectionQuestion.create({
-          data: {
-            collectionId: collection.id,
-            questionId: scienceQuestions[i].id,
-            sortOrder: i + 1,
-          },
-        });
-      }
-      console.log(`Collection: "Удивительная наука" with ${scienceQuestions.length} questions`);
-    }
+      },
+    });
+    console.log('Collection: "Удивительная наука" created (draft, fill via admin panel)');
   }
 
-  const geoQuestions = await prisma.question.findMany({
-    where: {
-      status: 'approved',
-      OR: [
-        { category: { slug: { in: ['geography', 'history', 'culture'] } } },
-        { categories: { some: { category: { slug: { in: ['geography', 'history', 'culture'] } } } } },
-      ],
-    },
-    take: 15,
-    select: { id: true },
-  });
-
-  if (geoQuestions.length >= 3) {
-    const existing = await prisma.collection.findFirst({ where: { title: 'Вокруг света' } });
-    if (!existing) {
-      const collection = await prisma.collection.create({
-        data: {
-          title: 'Вокруг света',
-          titleEn: 'Around the World',
-          description: 'Проверьте свои знания о странах, городах и культурах',
-          descriptionEn: 'Test your knowledge about countries, cities and cultures',
-          icon: '🌍',
-          type: 'featured',
-          status: 'published',
-          sortOrder: 2,
+  const geoCollectionExists = await prisma.collection.findFirst({ where: { title: 'Вокруг света' } });
+  if (!geoCollectionExists) {
+    await prisma.collection.create({
+      data: {
+        title: 'Вокруг света',
+        titleEn: 'Around the World',
+        description: 'Проверьте свои знания о странах, городах и культурах',
+        descriptionEn: 'Test your knowledge about countries, cities and cultures',
+        icon: '🌍',
+        type: 'featured',
+        status: 'draft',
+        sortOrder: 2,
+        questions: {
+          create: [
+            { statement: 'Австралия — самый маленький континент', isTrue: true, explanation: 'Австралия является одновременно страной и континентом, и это наименьший континент на Земле.', source: '', difficulty: 1, sortOrder: 1 },
+            { statement: 'Великая Китайская стена видна из космоса невооружённым глазом', isTrue: false, explanation: 'Стена слишком узкая (~5–9 метров), чтобы её можно было различить с орбиты. Этот миф опроверг даже первый китайский космонавт Ян Ливэй.', source: '', difficulty: 2, sortOrder: 2 },
+            { statement: 'Египетские пирамиды строили рабы', isTrue: false, explanation: 'Современные археологические данные показывают, что строители пирамид были квалифицированными оплачиваемыми рабочими, получавшими еду и медицинскую помощь.', source: '', difficulty: 3, sortOrder: 3 },
+          ],
         },
-      });
-      for (let i = 0; i < geoQuestions.length; i++) {
-        await prisma.collectionQuestion.create({
-          data: {
-            collectionId: collection.id,
-            questionId: geoQuestions[i].id,
-            sortOrder: i + 1,
-          },
-        });
-      }
-      console.log(`Collection: "Вокруг света" with ${geoQuestions.length} questions`);
-    }
+      },
+    });
+    console.log('Collection: "Вокруг света" created (draft, fill via admin panel)');
   }
 
   // Seed test users, daily set, and leaderboard entries for testing

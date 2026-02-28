@@ -6,7 +6,7 @@ import type {
   DailySetWithQuestions,
   Category,
   Collection,
-  CollectionWithQuestions,
+  CollectionWithItems,
   ApiResponse,
   PaginatedResponse,
 } from '../../shared';
@@ -143,7 +143,7 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<PaginatedResponse<Collection>>('/admin/collections', { params });
       },
       getById(id: string) {
-        return http.get<ApiResponse<CollectionWithQuestions>>(`/admin/collections/${id}`);
+        return http.get<ApiResponse<CollectionWithItems>>(`/admin/collections/${id}`);
       },
       create(dto: CreateCollectionDto) {
         return http.post<ApiResponse<Collection>>('/admin/collections', dto);

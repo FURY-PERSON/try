@@ -228,11 +228,11 @@ export class CollectionsService {
     });
 
     await this.prisma.$transaction(async (tx) => {
-      // Save question history
-      await tx.userQuestionHistory.createMany({ data: historyData });
-
-      // Update question stats atomically (no N+1: uses raw SQL increment)
-      await updateQuestionStatsBatch(tx, dto.results);
+      // Save question history only for non-collection sessions (collection items are not in Question table)
+      if (session.type !== 'collection') {
+        await tx.userQuestionHistory.createMany({ data: historyData });
+        await updateQuestionStatsBatch(tx, dto.results);
+      }
 
       // Update user stats and streak
       await tx.user.update({
@@ -426,23 +426,6 @@ export class CollectionsService {
       include: {
         questions: {
           orderBy: { sortOrder: 'asc' },
-          include: {
-            question: {
-              select: {
-                id: true,
-                statement: true,
-                isTrue: true,
-                explanation: true,
-                source: true,
-                sourceUrl: true,
-                language: true,
-                categoryId: true,
-                difficulty: true,
-                illustrationUrl: true,
-                category: { select: { name: true, nameEn: true } },
-              },
-            },
-          },
         },
       },
     });
@@ -460,30 +443,30 @@ export class CollectionsService {
       throw new BadRequestException('Collection has expired');
     }
 
-    const allQuestions = collection.questions.map((cq) => cq.question);
-    const questions = allQuestions.slice(0, count);
+    const allItems = collection.questions;
+    const items = allItems.slice(0, count);
     const sessionId = this.createSession(
       userId,
       'collection',
       collectionId,
       null,
-      questions,
+      items,
     );
 
     return {
       sessionId,
-      questions: questions.map((q) => ({
-        id: q.id,
-        statement: q.statement,
-        isTrue: q.isTrue,
-        explanation: q.explanation,
-        source: q.source,
-        sourceUrl: q.sourceUrl,
-        language: q.language,
-        categoryId: q.categoryId,
-        difficulty: q.difficulty,
-        illustrationUrl: q.illustrationUrl,
-        category: q.category,
+      questions: items.map((item) => ({
+        id: item.id,
+        statement: item.statement,
+        isTrue: item.isTrue,
+        explanation: item.explanation,
+        source: item.source,
+        sourceUrl: item.sourceUrl,
+        language: item.language,
+        categoryId: null,
+        difficulty: item.difficulty,
+        illustrationUrl: null,
+        category: null,
       })),
     };
   }

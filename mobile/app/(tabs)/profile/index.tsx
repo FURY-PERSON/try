@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={48} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={128} />}
       >
         {/* Profile Header with Gradient */}
         <AnimatedEntrance delay={0}>

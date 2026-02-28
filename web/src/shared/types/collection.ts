@@ -19,14 +19,59 @@ export type Collection = {
   _count: { questions: number };
 };
 
-export type CollectionWithQuestions = Collection & {
-  questions: {
-    sortOrder: number;
-    question: {
-      id: string;
-      statement: string;
-      difficulty: number;
-      category: { name: string };
-    };
-  }[];
+export type CollectionItem = {
+  id: string;
+  collectionId: string;
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source: string;
+  sourceUrl: string | null;
+  difficulty: number;
+  sortOrder: number;
+  language: string;
+};
+
+export type CollectionWithItems = Collection & {
+  questions: CollectionItem[];
+};
+
+/** @deprecated use CollectionWithItems */
+export type CollectionWithQuestions = CollectionWithItems;
+
+export type CreateCollectionItemDto = {
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source?: string;
+  sourceUrl?: string;
+  difficulty?: number;
+  language?: string;
+  sortOrder?: number;
+};
+
+export type CreateCollectionDto = {
+  title: string;
+  titleEn: string;
+  description?: string;
+  descriptionEn?: string;
+  icon?: string;
+  imageUrl?: string;
+  type?: CollectionType;
+  items: CreateCollectionItemDto[];
+  startDate?: string;
+  endDate?: string;
+  sortOrder?: number;
+};
+
+export type UpdateCollectionDto = Partial<Omit<CreateCollectionDto, 'items'>> & {
+  items?: CreateCollectionItemDto[];
+  status?: CollectionStatus;
+};
+
+export type CollectionQueryDto = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  type?: string;
 };

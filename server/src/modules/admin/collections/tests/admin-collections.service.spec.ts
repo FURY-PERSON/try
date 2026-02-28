@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { AdminCollectionsService } from '../admin-collections.service';
 import { PrismaService } from '@/prisma/prisma.service';
+
+const SAMPLE_ITEMS = [
+  { statement: 'Земля плоская', isTrue: false, explanation: 'Земля — шар', difficulty: 2 },
+  { statement: 'Вода мокрая', isTrue: true, explanation: 'Да, мокрая', difficulty: 1 },
+];
 
 describe('AdminCollectionsService', () => {
   let service: AdminCollectionsService;
@@ -15,10 +20,7 @@ describe('AdminCollectionsService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
-    question: {
-      findMany: jest.fn(),
-    },
-    collectionQuestion: {
+    collectionItem: {
       deleteMany: jest.fn(),
       createMany: jest.fn(),
     },
@@ -75,7 +77,7 @@ describe('AdminCollectionsService', () => {
   });
 
   describe('findOne', () => {
-    it('returns collection with questions', async () => {
+    it('returns collection with items', async () => {
       const col = { id: 'col-1', questions: [], title: 'Test' };
       mockPrisma.collection.findUnique.mockResolvedValue(col);
 
@@ -87,18 +89,12 @@ describe('AdminCollectionsService', () => {
     it('throws NotFoundException if not found', async () => {
       mockPrisma.collection.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('create', () => {
-    it('creates collection with questions', async () => {
-      mockPrisma.question.findMany.mockResolvedValue([
-        { id: 'q-1' },
-        { id: 'q-2' },
-      ]);
+    it('creates collection with inline items', async () => {
       mockPrisma.collection.create.mockResolvedValue({
         id: 'col-new',
         title: 'Мифы',
@@ -108,22 +104,21 @@ describe('AdminCollectionsService', () => {
       const result = await service.create({
         title: 'Мифы',
         titleEn: 'Myths',
-        questionIds: ['q-1', 'q-2'],
+        items: SAMPLE_ITEMS,
       } as any);
 
       expect(result.id).toBe('col-new');
-    });
-
-    it('throws BadRequestException if some questions not found', async () => {
-      mockPrisma.question.findMany.mockResolvedValue([{ id: 'q-1' }]);
-
-      await expect(
-        service.create({
-          title: 'T',
-          titleEn: 'T',
-          questionIds: ['q-1', 'q-missing'],
-        } as any),
-      ).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.collection.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            questions: {
+              create: expect.arrayContaining([
+                expect.objectContaining({ statement: 'Земля плоская', isTrue: false }),
+              ]),
+            },
+          }),
+        }),
+      );
     });
   });
 
@@ -149,31 +144,18 @@ describe('AdminCollectionsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('replaces questions when questionIds provided', async () => {
+    it('replaces items when items provided', async () => {
       mockPrisma.collection.findUnique.mockResolvedValue({ id: 'col-1' });
-      mockPrisma.question.findMany.mockResolvedValue([
-        { id: 'q-3' },
-        { id: 'q-4' },
-      ]);
-      mockPrisma.collectionQuestion.deleteMany.mockResolvedValue({});
-      mockPrisma.collectionQuestion.createMany.mockResolvedValue({});
+      mockPrisma.collectionItem.deleteMany.mockResolvedValue({});
+      mockPrisma.collectionItem.createMany.mockResolvedValue({});
       mockPrisma.collection.update.mockResolvedValue({ id: 'col-1' });
 
-      await service.update('col-1', { questionIds: ['q-3', 'q-4'] } as any);
+      await service.update('col-1', { items: SAMPLE_ITEMS } as any);
 
-      expect(mockPrisma.collectionQuestion.deleteMany).toHaveBeenCalledWith({
+      expect(mockPrisma.collectionItem.deleteMany).toHaveBeenCalledWith({
         where: { collectionId: 'col-1' },
       });
-      expect(mockPrisma.collectionQuestion.createMany).toHaveBeenCalled();
-    });
-
-    it('throws BadRequestException if updated questions not found', async () => {
-      mockPrisma.collection.findUnique.mockResolvedValue({ id: 'col-1' });
-      mockPrisma.question.findMany.mockResolvedValue([{ id: 'q-3' }]);
-
-      await expect(
-        service.update('col-1', { questionIds: ['q-3', 'q-missing'] } as any),
-      ).rejects.toThrow(BadRequestException);
+      expect(mockPrisma.collectionItem.createMany).toHaveBeenCalled();
     });
   });
 
@@ -190,9 +172,7 @@ describe('AdminCollectionsService', () => {
     it('throws NotFoundException if not found', async () => {
       mockPrisma.collection.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });

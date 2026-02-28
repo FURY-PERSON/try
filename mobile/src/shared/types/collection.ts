@@ -18,10 +18,10 @@ export type CollectionSessionQuestion = {
   source: string;
   sourceUrl: string | null;
   language: string;
-  categoryId: string;
+  categoryId: string | null;
   difficulty: number;
   illustrationUrl: string | null;
-  category?: { name: string; nameEn: string };
+  category?: { name: string; nameEn: string } | null;
 };
 
 export type CollectionSession = {

@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createPaginatedResponse } from '@/common/dto/pagination.dto';
@@ -45,16 +44,6 @@ export class AdminCollectionsService {
       include: {
         questions: {
           orderBy: { sortOrder: 'asc' },
-          include: {
-            question: {
-              select: {
-                id: true,
-                statement: true,
-                difficulty: true,
-                category: { select: { name: true } },
-              },
-            },
-          },
         },
       },
     });
@@ -67,23 +56,6 @@ export class AdminCollectionsService {
   }
 
   async create(dto: CreateCollectionDto) {
-    // Validate all question IDs exist and are approved
-    const questions = await this.prisma.question.findMany({
-      where: {
-        id: { in: dto.questionIds },
-        status: 'approved',
-      },
-      select: { id: true },
-    });
-
-    if (questions.length !== dto.questionIds.length) {
-      const foundIds = new Set(questions.map((q) => q.id));
-      const missing = dto.questionIds.filter((id) => !foundIds.has(id));
-      throw new BadRequestException(
-        `Questions not found or not approved: ${missing.join(', ')}`,
-      );
-    }
-
     const collection = await this.prisma.collection.create({
       data: {
         title: dto.title,
@@ -97,9 +69,15 @@ export class AdminCollectionsService {
         endDate: dto.endDate ? new Date(dto.endDate) : null,
         sortOrder: dto.sortOrder ?? 0,
         questions: {
-          create: dto.questionIds.map((qId, index) => ({
-            questionId: qId,
-            sortOrder: index + 1,
+          create: dto.items.map((item, index) => ({
+            statement: item.statement,
+            isTrue: item.isTrue,
+            explanation: item.explanation,
+            source: item.source ?? '',
+            sourceUrl: item.sourceUrl,
+            difficulty: item.difficulty ?? 3,
+            language: item.language ?? 'ru',
+            sortOrder: item.sortOrder ?? index + 1,
           })),
         },
       },
@@ -120,38 +98,28 @@ export class AdminCollectionsService {
       throw new NotFoundException(`Collection with id "${id}" not found`);
     }
 
-    // If questionIds provided, replace all questions
-    if (dto.questionIds) {
-      const questions = await this.prisma.question.findMany({
-        where: {
-          id: { in: dto.questionIds },
-          status: 'approved',
-        },
-        select: { id: true },
-      });
-
-      if (questions.length !== dto.questionIds.length) {
-        const foundIds = new Set(questions.map((q) => q.id));
-        const missing = dto.questionIds.filter((qid) => !foundIds.has(qid));
-        throw new BadRequestException(
-          `Questions not found or not approved: ${missing.join(', ')}`,
-        );
-      }
-
-      await this.prisma.collectionQuestion.deleteMany({
+    // If items provided, replace all existing items
+    if (dto.items) {
+      await this.prisma.collectionItem.deleteMany({
         where: { collectionId: id },
       });
 
-      await this.prisma.collectionQuestion.createMany({
-        data: dto.questionIds.map((qId, index) => ({
+      await this.prisma.collectionItem.createMany({
+        data: dto.items.map((item, index) => ({
           collectionId: id,
-          questionId: qId,
-          sortOrder: index + 1,
+          statement: item.statement,
+          isTrue: item.isTrue,
+          explanation: item.explanation,
+          source: item.source ?? '',
+          sourceUrl: item.sourceUrl,
+          difficulty: item.difficulty ?? 3,
+          language: item.language ?? 'ru',
+          sortOrder: item.sortOrder ?? index + 1,
         })),
       });
     }
 
-    const { questionIds, ...updateData } = dto;
+    const { items, ...updateData } = dto;
 
     return this.prisma.collection.update({
       where: { id },

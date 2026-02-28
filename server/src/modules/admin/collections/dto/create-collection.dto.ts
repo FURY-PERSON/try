@@ -5,10 +5,59 @@ import {
   IsArray,
   IsInt,
   Min,
+  Max,
   ArrayMinSize,
   IsDateString,
+  IsBoolean,
+  ValidateNested,
+  MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class CreateCollectionItemDto {
+  @ApiProperty({ example: 'Человек использует только 10% мозга', description: 'Question statement' })
+  @IsString()
+  @MinLength(5)
+  statement: string;
+
+  @ApiProperty({ example: false, description: 'True if the statement is correct' })
+  @IsBoolean()
+  isTrue: boolean;
+
+  @ApiProperty({ example: 'На самом деле мозг задействован полностью', description: 'Explanation' })
+  @IsString()
+  @MinLength(5)
+  explanation: string;
+
+  @ApiPropertyOptional({ example: 'Wikipedia', description: 'Source name' })
+  @IsOptional()
+  @IsString()
+  source?: string;
+
+  @ApiPropertyOptional({ description: 'Source URL' })
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string;
+
+  @ApiPropertyOptional({ example: 3, minimum: 1, maximum: 5, default: 3 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  difficulty?: number;
+
+  @ApiPropertyOptional({ enum: ['ru', 'en'], default: 'ru' })
+  @IsOptional()
+  @IsEnum(['ru', 'en'])
+  language?: string;
+
+  @ApiPropertyOptional({ default: 0, description: 'Sort order within collection' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  sortOrder?: number;
+}
 
 export class CreateCollectionDto {
   @ApiProperty({ example: 'Мифы о здоровье', description: 'Title in Russian' })
@@ -44,11 +93,12 @@ export class CreateCollectionDto {
   @IsEnum(['featured', 'seasonal', 'thematic'])
   type?: string;
 
-  @ApiProperty({ description: 'Array of question IDs', type: [String] })
+  @ApiProperty({ description: 'Array of questions for this collection', type: [CreateCollectionItemDto] })
   @IsArray()
-  @IsString({ each: true })
   @ArrayMinSize(1)
-  questionIds: string[];
+  @ValidateNested({ each: true })
+  @Type(() => CreateCollectionItemDto)
+  items: CreateCollectionItemDto[];
 
   @ApiPropertyOptional({ description: 'Start date (ISO string)' })
   @IsOptional()

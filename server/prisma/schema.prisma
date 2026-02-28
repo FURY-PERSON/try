@@ -78,7 +78,6 @@ model Question {
   categories         QuestionCategory[]
   dailySets          DailySetQuestion[]
   history            UserQuestionHistory[]
-  collectionQuestions CollectionQuestion[]
 
   @@index([status])
   @@index([categoryId])
@@ -172,21 +171,26 @@ model Collection {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  questions CollectionQuestion[]
+  questions CollectionItem[]
 
   @@index([status, sortOrder])
 }
 
-model CollectionQuestion {
+model CollectionItem {
   id           String     @id @default(cuid())
   collectionId String
-  questionId   String
-  sortOrder    Int
+  statement    String
+  isTrue       Boolean
+  explanation  String
+  source       String     @default("")
+  sourceUrl    String?
+  difficulty   Int        @default(3)
+  sortOrder    Int        @default(0)
+  language     String     @default("ru")
 
-  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  question   Question   @relation(fields: [questionId], references: [id])
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
-  @@unique([collectionId, questionId])
+  @@index([collectionId])
 }
 
 model QuestionCategory {

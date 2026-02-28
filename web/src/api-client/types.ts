@@ -103,6 +103,17 @@ export type CreateCategoryDto = {
 
 export type UpdateCategoryDto = Partial<CreateCategoryDto>;
 
+export type CreateCollectionItemDto = {
+  statement: string;
+  isTrue: boolean;
+  explanation: string;
+  source?: string;
+  sourceUrl?: string;
+  difficulty?: number;
+  language?: string;
+  sortOrder?: number;
+};
+
 export type CreateCollectionDto = {
   title: string;
   titleEn: string;
@@ -110,13 +121,14 @@ export type CreateCollectionDto = {
   descriptionEn?: string;
   icon?: string;
   type?: 'featured' | 'seasonal' | 'thematic';
-  questionIds: string[];
+  items: CreateCollectionItemDto[];
   startDate?: string;
   endDate?: string;
   sortOrder?: number;
 };
 
-export type UpdateCollectionDto = Partial<CreateCollectionDto> & {
+export type UpdateCollectionDto = Partial<Omit<CreateCollectionDto, 'items'>> & {
+  items?: CreateCollectionItemDto[];
   status?: 'draft' | 'published';
 };
 
