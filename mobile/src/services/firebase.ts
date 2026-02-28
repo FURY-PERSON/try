@@ -26,6 +26,7 @@ export async function initializeFirebase(): Promise<void> {
   await crashlyticsInstance.setCrashlyticsCollectionEnabled(true);
 
   const analyticsInstance = analytics();
+  //await analyticsInstance.setAnalyticsCollectionEnabled(!__DEV__);
   await analyticsInstance.setAnalyticsCollectionEnabled(true);
   await analyticsInstance.setConsent({
     analytics_storage: true,
