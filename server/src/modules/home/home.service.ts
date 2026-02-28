@@ -9,11 +9,18 @@ export class HomeService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getFeed(userId: string) {
+    // Load anti-repeat data once, shared across categories and difficulty
+    const [excludedIds, answeredIds] = await Promise.all([
+      getExcludedQuestionIds(this.prisma, userId),
+      getAllAnsweredQuestionIds(this.prisma, userId),
+    ]);
+    const answeredSet = new Set(answeredIds);
+
     const [daily, categories, collections, difficultyProgress, user] = await Promise.all([
       this.getDailyStatus(userId),
-      this.getCategoriesWithCount(userId),
+      this.getCategoriesWithCount(excludedIds, answeredSet),
       this.getPublishedCollections(userId),
-      this.getDifficultyProgress(userId),
+      this.getDifficultyProgress(answeredSet),
       this.prisma.user.findUnique({
         where: { id: userId },
         select: { currentStreak: true, nickname: true, avatarEmoji: true },
@@ -38,7 +45,6 @@ export class HomeService {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    // Find today's published daily set
     const dailySet = await this.prisma.dailySet.findUnique({
       where: { date: today },
       select: {
@@ -59,7 +65,6 @@ export class HomeService {
       };
     }
 
-    // Check if user already completed this daily set
     const entry = await this.prisma.leaderboardEntry.findUnique({
       where: {
         userId_dailySetId: { userId, dailySetId: dailySet.id },
@@ -73,7 +78,6 @@ export class HomeService {
     });
 
     if (entry) {
-      // Calculate unlock date (7 days after completion)
       const unlocksAt = new Date(entry.createdAt);
       unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
 
@@ -94,7 +98,6 @@ export class HomeService {
       };
     }
 
-    // Check if user completed ANY daily set within the last 7 days (weekly lockout)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
 
@@ -116,7 +119,6 @@ export class HomeService {
       const unlocksAt = new Date(recentEntry.createdAt);
       unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
 
-      // If still locked
       if (unlocksAt > new Date()) {
         return {
           set: {
@@ -149,7 +151,10 @@ export class HomeService {
     };
   }
 
-  private async getCategoriesWithCount(userId: string) {
+  private async getCategoriesWithCount(
+    excludedIds: string[],
+    answeredSet: Set<string>,
+  ) {
     const categories = await this.prisma.category.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
@@ -166,68 +171,96 @@ export class HomeService {
       },
     });
 
-    const excludedIds = await getExcludedQuestionIds(this.prisma, userId);
-    const answeredIds = await getAllAnsweredQuestionIds(this.prisma, userId);
-    const answeredSet = new Set(answeredIds);
+    if (categories.length === 0) return [];
 
-    const counts = await Promise.all(
-      categories.map(async (cat) => {
-        const catWhere = {
-          OR: [
-            { categoryId: cat.id },
-            { categories: { some: { categoryId: cat.id } } },
-          ],
-          status: 'approved' as const,
-        };
+    const categoryIds = categories.map((c) => c.id);
 
-        const [availableCount, totalCount, catQuestions] = await Promise.all([
-          this.prisma.question.count({
-            where: {
-              ...catWhere,
-              ...(excludedIds.length > 0 ? { NOT: { id: { in: excludedIds } } } : {}),
-            },
-          }),
-          this.prisma.question.count({ where: catWhere }),
-          this.prisma.question.findMany({
-            where: catWhere,
-            select: { id: true },
-          }),
-        ]);
+    // Batch query: get all approved question IDs with their categoryId
+    // This replaces 3 queries per category with 1 total query
+    const allQuestions = await this.prisma.question.findMany({
+      where: {
+        status: 'approved',
+        OR: [
+          { categoryId: { in: categoryIds } },
+          { categories: { some: { categoryId: { in: categoryIds } } } },
+        ],
+      },
+      select: {
+        id: true,
+        categoryId: true,
+        categories: { select: { categoryId: true } },
+      },
+    });
 
-        const answeredCount = catQuestions.filter((q) => answeredSet.has(q.id)).length;
+    // Build maps: categoryId -> question IDs
+    const catQuestionMap = new Map<string, Set<string>>();
+    for (const cid of categoryIds) {
+      catQuestionMap.set(cid, new Set());
+    }
 
-        return {
-          ...cat,
-          availableCount,
-          totalCount,
-          answeredCount,
-          isCompleted: totalCount > 0 && answeredCount >= totalCount,
-        };
-      }),
-    );
+    for (const q of allQuestions) {
+      // Primary category
+      if (catQuestionMap.has(q.categoryId)) {
+        catQuestionMap.get(q.categoryId)!.add(q.id);
+      }
+      // Secondary categories
+      for (const c of q.categories) {
+        if (catQuestionMap.has(c.categoryId)) {
+          catQuestionMap.get(c.categoryId)!.add(q.id);
+        }
+      }
+    }
 
-    return counts;
+    const excludedSet = new Set(excludedIds);
+
+    return categories.map((cat) => {
+      const questionIds = catQuestionMap.get(cat.id) ?? new Set<string>();
+      const totalCount = questionIds.size;
+      let availableCount = 0;
+      let answeredCount = 0;
+
+      for (const qid of questionIds) {
+        if (!excludedSet.has(qid)) availableCount++;
+        if (answeredSet.has(qid)) answeredCount++;
+      }
+
+      return {
+        ...cat,
+        availableCount,
+        totalCount,
+        answeredCount,
+        isCompleted: totalCount > 0 && answeredCount >= totalCount,
+      };
+    });
   }
 
-  private async getDifficultyProgress(userId: string) {
-    const answeredIds = await getAllAnsweredQuestionIds(this.prisma, userId);
-    const answeredSet = new Set(answeredIds);
-
+  private async getDifficultyProgress(answeredSet: Set<string>) {
     const difficultyMap: Record<string, number[]> = {
       easy: [1, 2],
       medium: [3],
       hard: [4, 5],
     };
 
+    // Single query for all difficulties at once
+    const allQuestions = await this.prisma.question.findMany({
+      where: { status: 'approved', difficulty: { in: [1, 2, 3, 4, 5] } },
+      select: { id: true, difficulty: true },
+    });
+
     const result: Record<string, { totalCount: number; answeredCount: number }> = {};
 
     for (const [key, levels] of Object.entries(difficultyMap)) {
-      const questions = await this.prisma.question.findMany({
-        where: { status: 'approved', difficulty: { in: levels } },
-        select: { id: true },
-      });
-      const totalCount = questions.length;
-      const answeredCount = questions.filter((q) => answeredSet.has(q.id)).length;
+      const levelSet = new Set(levels);
+      let totalCount = 0;
+      let answeredCount = 0;
+
+      for (const q of allQuestions) {
+        if (levelSet.has(q.difficulty)) {
+          totalCount++;
+          if (answeredSet.has(q.id)) answeredCount++;
+        }
+      }
+
       result[key] = { totalCount, answeredCount };
     }
 
@@ -267,7 +300,6 @@ export class HomeService {
       },
     });
 
-    // Use UserCollectionProgress to determine completion (not answered question count)
     const completedProgress = await this.prisma.userCollectionProgress.findMany({
       where: {
         userId,

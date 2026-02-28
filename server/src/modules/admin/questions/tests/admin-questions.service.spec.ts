@@ -9,6 +9,7 @@ describe('AdminQuestionsService', () => {
   const mockPrisma = {
     question: {
       findMany: jest.fn(),
+      findFirst: jest.fn(),
       findUnique: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
@@ -100,6 +101,7 @@ describe('AdminQuestionsService', () => {
     it('creates question with moderation status', async () => {
       const createdQuestion = { id: 'q-new', status: 'moderation', category: {}, categories: [], dailySets: [] };
       mockPrisma.category.findUnique.mockResolvedValue({ id: 'cat-1' });
+      mockPrisma.question.findFirst.mockResolvedValue(null); // no duplicate
       mockPrisma.question.create.mockResolvedValue({ id: 'q-new', status: 'moderation' });
       mockPrisma.questionCategory.createMany.mockResolvedValue({ count: 1 });
       mockPrisma.question.findUnique.mockResolvedValue(createdQuestion);

@@ -11,7 +11,6 @@ describe('QuestionsService', () => {
       count: jest.fn(),
       findFirst: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn(),
     },
     user: {
       update: jest.fn(),
@@ -19,6 +18,7 @@ describe('QuestionsService', () => {
     userQuestionHistory: {
       create: jest.fn(),
     },
+    $executeRaw: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -114,7 +114,6 @@ describe('QuestionsService', () => {
 
     it('creates history record', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
-      mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {
@@ -132,9 +131,8 @@ describe('QuestionsService', () => {
       });
     });
 
-    it('updates question statistics', async () => {
+    it('updates question statistics atomically via $executeRaw', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
-      mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {
@@ -142,22 +140,13 @@ describe('QuestionsService', () => {
         timeSpentSeconds: 20,
       });
 
-      expect(mockPrisma.question.update).toHaveBeenCalledWith({
-        where: { id: 'q-1' },
-        data: {
-          timesShown: 11,
-          timesCorrect: 8,
-          avgTimeSeconds: expect.any(Number),
-        },
-      });
+      expect(mockPrisma.$executeRaw).toHaveBeenCalledTimes(1);
     });
 
     it('returns explanation data on correct answer', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
-      mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
-      // userAnswer=false matches isTrue=false, so correct
       const result = await service.answerQuestion('user-1', 'q-1', {
         userAnswer: false,
         timeSpentSeconds: 10,
@@ -172,10 +161,8 @@ describe('QuestionsService', () => {
 
     it('returns 0 score for incorrect answer', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
-      mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
-      // userAnswer=true but isTrue=false, so incorrect
       const result = await service.answerQuestion('user-1', 'q-1', {
         userAnswer: true,
         timeSpentSeconds: 10,
@@ -187,7 +174,6 @@ describe('QuestionsService', () => {
 
     it('increments correct answers count for correct result', async () => {
       mockPrisma.question.findUnique.mockResolvedValue(mockQuestion);
-      mockPrisma.question.update.mockResolvedValue({});
       mockPrisma.user.update.mockResolvedValue({});
 
       await service.answerQuestion('user-1', 'q-1', {

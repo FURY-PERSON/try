@@ -7,6 +7,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { StartCollectionDto } from './dto/start-collection.dto';
 import { SubmitCollectionDto } from './dto/submit-collection.dto';
 import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
+import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
 
 interface SessionData {
   userId: string;
@@ -229,30 +230,8 @@ export class CollectionsService {
       // Save question history
       await tx.userQuestionHistory.createMany({ data: historyData });
 
-      // Update question stats
-      for (const result of dto.results) {
-        const isCorrect = result.result === 'correct';
-        const question = await tx.question.findUnique({
-          where: { id: result.questionId },
-        });
-        if (question) {
-          const newTimesShown = question.timesShown + 1;
-          const newTimesCorrect = question.timesCorrect + (isCorrect ? 1 : 0);
-          const newAvgTime =
-            (question.avgTimeSeconds * question.timesShown +
-              result.timeSpentSeconds) /
-            newTimesShown;
-
-          await tx.question.update({
-            where: { id: result.questionId },
-            data: {
-              timesShown: newTimesShown,
-              timesCorrect: newTimesCorrect,
-              avgTimeSeconds: newAvgTime,
-            },
-          });
-        }
-      }
+      // Update question stats atomically (no N+1: uses raw SQL increment)
+      await updateQuestionStatsBatch(tx, dto.results);
 
       // Update user stats and streak
       await tx.user.update({

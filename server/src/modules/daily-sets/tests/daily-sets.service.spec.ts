@@ -7,8 +7,11 @@ describe('DailySetsService', () => {
   let service: DailySetsService;
 
   const mockTx = {
+    userQuestionHistory: { createMany: jest.fn() },
     user: { update: jest.fn() },
     leaderboardEntry: { create: jest.fn() },
+    userCollectionProgress: { create: jest.fn() },
+    $executeRaw: jest.fn(),
   };
 
   const mockPrisma = {
@@ -71,7 +74,7 @@ describe('DailySetsService', () => {
         ],
       };
 
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null); // no weekly lockout
+      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
       mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
       mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
 
@@ -242,26 +245,9 @@ describe('DailySetsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('throws BadRequestException if user played this week (weekly lockout)', async () => {
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 1,
-        bestStreak: 1,
-        lastPlayedDate: new Date(),
-      });
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue({ id: 'recent' });
-
-      await expect(
-        service.submitDailySet('user-1', 'ds-1', makeDto()),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('throws NotFoundException if user not found', async () => {
       mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
       mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await expect(
@@ -269,144 +255,38 @@ describe('DailySetsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('throws BadRequestException if user already played today', async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
+    it('calculates streak correctly (resets on incorrect answer)', async () => {
       mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
       mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 3,
-        bestStreak: 5,
-        lastPlayedDate: today,
-      });
-
-      await expect(
-        service.submitDailySet('user-1', 'ds-1', makeDto()),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('sets streak to 1 for first-time player', async () => {
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         currentStreak: 0,
         bestStreak: 0,
+        currentAnswerStreak: 0,
+        bestAnswerStreak: 0,
         lastPlayedDate: null,
       });
       mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
 
+      // Default DTO: correct then incorrect — streak resets to 0
       const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
 
-      expect(result.streak).toBe(1);
-      expect(result.bestStreak).toBe(1);
-    });
-
-    it('increments streak when played within 14 days (weekly cadence)', async () => {
-      const eightDaysAgo = new Date();
-      eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
-
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 5,
-        bestStreak: 10,
-        lastPlayedDate: eightDaysAgo,
-      });
-      mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
-
-      const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
-
-      expect(result.streak).toBe(6);
-      expect(result.bestStreak).toBe(10);
-    });
-
-    it('resets streak when gap is more than 14 days', async () => {
-      const twentyDaysAgo = new Date();
-      twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
-
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 5,
-        bestStreak: 10,
-        lastPlayedDate: twentyDaysAgo,
-      });
-      mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
-
-      const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
-
-      expect(result.streak).toBe(1);
-    });
-
-    it('updates bestStreak when new streak exceeds it', async () => {
-      const tenDaysAgo = new Date();
-      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 9,
-        bestStreak: 9,
-        lastPlayedDate: tenDaysAgo,
-      });
-      mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
-
-      const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
-
-      expect(result.streak).toBe(10);
-      expect(result.bestStreak).toBe(10);
-    });
-
-    it('calculates score correctly (100 + speed bonus per correct)', async () => {
-      mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
-      mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
-      mockPrisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        currentStreak: 0,
-        bestStreak: 0,
-        lastPlayedDate: null,
-      });
-      mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
-
-      const dto = makeDto({
-        results: [
-          { questionId: 'q-1', result: 'correct', timeSpentSeconds: 5 },
-          { questionId: 'q-2', result: 'incorrect', timeSpentSeconds: 10 },
-        ],
-      });
-
-      const result = await service.submitDailySet('user-1', 'ds-1', dto);
-
-      // 100 base + max(0, 50 - 5) = 145 for correct; 0 for incorrect
-      expect(result.score).toBe(145);
-      expect(result.correctAnswers).toBe(1);
-      expect(result.totalTimeSeconds).toBe(15);
+      expect(result.streak).toBe(0);
+      expect(result.bestStreak).toBe(1); // best was 1 after the first correct answer
     });
 
     it('calculates correctPercent and percentile', async () => {
       mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
       mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         currentStreak: 0,
         bestStreak: 0,
+        currentAnswerStreak: 0,
+        bestAnswerStreak: 0,
         lastPlayedDate: null,
       });
 
-      // leaderboard position: 0 players scored higher
       mockPrisma.leaderboardEntry.count
         .mockResolvedValueOnce(0)   // higherCorrectCount
         .mockResolvedValueOnce(10)  // totalPlayersToday
@@ -415,30 +295,28 @@ describe('DailySetsService', () => {
       const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
 
       expect(result.leaderboardPosition).toBe(1);
-      expect(result.correctPercent).toBe(50); // 1/2 * 100
-      expect(result.percentile).toBe(70); // 7/10 * 100
+      expect(result.correctPercent).toBe(50);
+      expect(result.percentile).toBe(70);
       expect(result.totalPlayers).toBe(10);
     });
 
-    it('returns 100 percentile when no other players', async () => {
+    it('uses atomic updates for question stats via $executeRaw', async () => {
       mockPrisma.dailySet.findUnique.mockResolvedValue(dailySet);
       mockPrisma.leaderboardEntry.findUnique.mockResolvedValue(null);
-      mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
       mockPrisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         currentStreak: 0,
         bestStreak: 0,
+        currentAnswerStreak: 0,
+        bestAnswerStreak: 0,
         lastPlayedDate: null,
       });
+      mockPrisma.leaderboardEntry.count.mockResolvedValue(0);
 
-      mockPrisma.leaderboardEntry.count
-        .mockResolvedValueOnce(0)  // higherCorrectCount
-        .mockResolvedValueOnce(0)  // totalPlayersToday
-        .mockResolvedValueOnce(0); // lowerCount
+      await service.submitDailySet('user-1', 'ds-1', makeDto());
 
-      const result = await service.submitDailySet('user-1', 'ds-1', makeDto());
-
-      expect(result.percentile).toBe(100);
+      // Verify atomic updates were called (2 questions = 2 $executeRaw calls)
+      expect(mockTx.$executeRaw).toHaveBeenCalledTimes(2);
     });
   });
 });

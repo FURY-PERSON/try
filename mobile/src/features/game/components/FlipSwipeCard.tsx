@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Linking,
   Pressable,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -26,9 +26,12 @@ import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 import type { SwipeDirection } from '../types';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
-const CARD_WIDTH = SCREEN_WIDTH - 48;
+// Static transform object — avoids per-frame allocation in worklets
+const PERSPECTIVE = { perspective: 1200 } as const;
+
+// Static LinearGradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_H = { x: 1, y: 0 } as const;
 
 type AnswerFeedback = {
   statement: string;
@@ -55,7 +58,7 @@ type FlipSwipeCardProps = {
 
 type FlipPhase = 'front' | 'flipping' | 'back';
 
-export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
+const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
   statement,
   categoryName,
   cardIndex,
@@ -63,21 +66,30 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   feedback,
   onSwipe,
   onDismiss,
-  disabled = false,
   isSubmitting = false,
   nextStatement,
   nextCategoryName,
 }) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
+
+  const swipeThreshold = useMemo(() => screenWidth * 0.25, [screenWidth]);
+  const cardWidth = useMemo(() => screenWidth - 48, [screenWidth]);
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const flipProgress = useSharedValue(0);
   const phase = useSharedValue<FlipPhase>('front');
   const entranceProgress = useSharedValue(1);
+  const isSubmittingShared = useSharedValue(false);
 
   const FLIP_DURATION = 500;
+
+  // Sync isSubmitting prop -> shared value (avoids gesture handler recreation)
+  useEffect(() => {
+    isSubmittingShared.value = isSubmitting;
+  }, [isSubmitting, isSubmittingShared]);
 
   // Stack card content is buffered so it only updates AFTER the main card
   // is repositioned at center (via useEffect). This prevents the stack card
@@ -90,7 +102,10 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   });
 
   // Guard against stale feedback from a previous card
-  const activeFeedback = feedback?.statement === statement ? feedback : null;
+  const activeFeedback = useMemo(
+    () => (feedback?.statement === statement ? feedback : null),
+    [feedback, statement],
+  );
 
   // Reset animation state when cardIndex changes, then update stack content
   useEffect(() => {
@@ -103,7 +118,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     // Update stack content AFTER shared values reset — main card is now
     // at center covering the stack, so the content switch is invisible.
     setStackContent({ nextStatement, nextCategoryName });
-  }, [cardIndex, translateX, translateY, flipProgress, phase, entranceProgress]);
+  }, [cardIndex]);
 
   // Trigger flip when feedback arrives
   useEffect(() => {
@@ -118,28 +133,20 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         }
       });
     }
-  }, [activeFeedback, flipProgress, phase]);
-
-  const handleSwipeAction = (direction: SwipeDirection) => {
-    onSwipe(direction);
-  };
-
-  const handleDismissAction = () => {
-    onDismiss();
-  };
+  }, [activeFeedback]);
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
       if (phase.value === 'flipping') return;
       // Block front-phase gesture when submitting
-      if (phase.value === 'front' && disabled) return;
+      if (phase.value === 'front' && isSubmittingShared.value) return;
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
       if (phase.value === 'flipping') return;
-      if (phase.value === 'front' && disabled) return;
+      if (phase.value === 'front' && isSubmittingShared.value) return;
 
       const snapBack = { duration: 200, easing: Easing.out(Easing.cubic) };
       // Slow return synced with flip animation
@@ -147,14 +154,14 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
 
       if (phase.value === 'front') {
         // Phase 1: swipe to answer — return to center in sync with flip
-        if (event.translationX > SWIPE_THRESHOLD) {
+        if (event.translationX > swipeThreshold) {
           translateX.value = withTiming(0, flipReturn);
           translateY.value = withTiming(0, flipReturn);
-          runOnJS(handleSwipeAction)('right');
-        } else if (event.translationX < -SWIPE_THRESHOLD) {
+          runOnJS(onSwipe)('right');
+        } else if (event.translationX < -swipeThreshold) {
           translateX.value = withTiming(0, flipReturn);
           translateY.value = withTiming(0, flipReturn);
-          runOnJS(handleSwipeAction)('left');
+          runOnJS(onSwipe)('left');
         } else {
           // Below threshold — quick snap back, no flip
           translateX.value = withTiming(0, snapBack);
@@ -162,14 +169,14 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         }
       } else if (phase.value === 'back') {
         // Phase 2: swipe to dismiss, fly off then advance
-        if (Math.abs(event.translationX) > SWIPE_THRESHOLD * 0.8) {
+        if (Math.abs(event.translationX) > swipeThreshold * 0.8) {
           const dir = event.translationX > 0 ? 1 : -1;
           translateX.value = withTiming(
-            dir * SCREEN_WIDTH * 1.5,
+            dir * screenWidth * 1.5,
             { duration: 300 },
             (finished) => {
               if (finished) {
-                runOnJS(handleDismissAction)();
+                runOnJS(onDismiss)();
               }
             },
           );
@@ -185,7 +192,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   const cardDragStyle = useAnimatedStyle(() => {
     const rotation = interpolate(
       translateX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-screenWidth / 2, 0, screenWidth / 2],
       [-15, 0, 15],
       Extrapolation.CLAMP,
     );
@@ -198,38 +205,43 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     };
   });
 
-  // Front face: 0 → 180deg (opacity toggle at 90deg for Android reliability)
+  // Front face: 0 -> 180deg (opacity toggle at 90deg for Android reliability)
   const frontFaceStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { perspective: 1200 },
+        PERSPECTIVE,
         { rotateY: `${flipProgress.value}deg` },
       ],
-      backfaceVisibility: 'hidden' as const,
       opacity: flipProgress.value < 90 ? 1 : 0,
     };
   });
 
-  // Back face: 180 → 360deg (opacity toggle at 90deg for Android reliability)
+  // Back face: 180 -> 360deg (opacity toggle at 90deg for Android reliability)
   const backFaceStyle = useAnimatedStyle(() => {
     return {
       transform: [
-        { perspective: 1200 },
+        PERSPECTIVE,
         { rotateY: `${flipProgress.value + 180}deg` },
       ],
-      backfaceVisibility: 'hidden' as const,
       opacity: flipProgress.value < 90 ? 0 : 1,
     };
   });
 
-  // Glow border based on drag (only before flip)
-  const cardGlowStyle = useAnimatedStyle(() => {
+  // Combined glow + submitting border (replaces separate cardGlowStyle + submittingStyle)
+  const cardBorderStyle = useAnimatedStyle(() => {
+    // Submitting state takes priority (only on front face)
+    if (isSubmittingShared.value && flipProgress.value === 0) {
+      return {
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+        borderWidth: 2,
+      };
+    }
     if (flipProgress.value > 0) {
       return { borderColor: colors.border, borderWidth: 2 };
     }
     const progress = interpolate(
       translateX.value,
-      [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
+      [-swipeThreshold, 0, swipeThreshold],
       [-1, 0, 1],
       Extrapolation.CLAMP,
     );
@@ -253,7 +265,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     if (flipProgress.value > 0) return { opacity: 0 };
     const o = interpolate(
       translateX.value,
-      [0, SWIPE_THRESHOLD],
+      [0, swipeThreshold],
       [0, 1],
       Extrapolation.CLAMP,
     );
@@ -265,22 +277,11 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
     if (flipProgress.value > 0) return { opacity: 0 };
     const o = interpolate(
       translateX.value,
-      [-SWIPE_THRESHOLD, 0],
+      [-swipeThreshold, 0],
       [1, 0],
       Extrapolation.CLAMP,
     );
     return { opacity: o };
-  });
-
-  // Submitting indicator (border while waiting for API)
-  const submittingStyle = useAnimatedStyle(() => {
-    if (!isSubmitting || flipProgress.value > 0) {
-      return { borderColor: colors.border, borderWidth: 2 };
-    }
-    return {
-      borderColor: 'rgba(99, 102, 241, 0.3)',
-      borderWidth: 2,
-    };
   });
 
   const secondStackStyle = useAnimatedStyle(() => {
@@ -324,6 +325,12 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   const truthLabel = activeFeedback?.isTrue ? t('game.fact') : t('game.fake');
   const truthColor = activeFeedback?.isTrue ? colors.emerald : colors.red;
 
+  // Dynamic styles for dimension-dependent widths
+  const dynamicStyles = useMemo(() => ({
+    stackCard: { width: cardWidth },
+    card: { width: cardWidth },
+  }), [cardWidth]);
+
   return (
     <View style={styles.wrapper}>
       {/* Third card in stack */}
@@ -331,6 +338,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         <Animated.View
           style={[
             styles.stackCard,
+            dynamicStyles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
@@ -347,6 +355,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         <Animated.View
           style={[
             styles.stackCard,
+            dynamicStyles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
@@ -359,8 +368,8 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         >
           <LinearGradient
             colors={gradients.primary}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            start={GRADIENT_START}
+            end={GRADIENT_END_H}
             style={[
               styles.topAccent,
               {
@@ -415,6 +424,7 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
         <Animated.View
           style={[
             styles.card,
+            dynamicStyles.card,
             mainEntranceStyle,
             cardDragStyle,
           ]}
@@ -422,12 +432,12 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
           {/* ---- FRONT FACE ---- */}
           <Animated.View style={[styles.faceOuter, frontFaceStyle]}>
             <Animated.View
-              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardGlowStyle, submittingStyle]}
+              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardBorderStyle]}
             >
             <LinearGradient
               colors={gradients.primary}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              start={GRADIENT_START}
+              end={GRADIENT_END_H}
               style={[
                 styles.topAccent,
                 {
@@ -515,8 +525,8 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
               <>
                 <LinearGradient
                   colors={resultGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+                  start={GRADIENT_START}
+                  end={GRADIENT_END_H}
                   style={[
                     styles.resultBanner,
                     {
@@ -603,19 +613,19 @@ export const FlipSwipeCard: FC<FlipSwipeCardProps> = ({
   );
 };
 
+export const FlipSwipeCard = React.memo(FlipSwipeCardInner);
+
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
   },
   stackCard: {
     position: 'absolute',
-    width: CARD_WIDTH,
     left: 0,
     bottom: 0,
     height: '100%',
   },
   card: {
-    width: CARD_WIDTH,
     minHeight: 300,
   },
   faceOuter: {

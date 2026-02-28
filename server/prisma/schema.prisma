@@ -29,6 +29,8 @@ model User {
   questionHistory    UserQuestionHistory[]
   leaderboardEntries LeaderboardEntry[]
   collectionProgress UserCollectionProgress[]
+
+  @@index([lastPlayedDate])
 }
 
 model Category {
@@ -77,6 +79,12 @@ model Question {
   dailySets          DailySetQuestion[]
   history            UserQuestionHistory[]
   collectionQuestions CollectionQuestion[]
+
+  @@index([status])
+  @@index([categoryId])
+  @@index([status, categoryId])
+  @@index([status, difficulty])
+  @@index([language])
 }
 
 model DailySet {
@@ -135,6 +143,7 @@ model LeaderboardEntry {
 
   @@unique([userId, dailySetId])
   @@index([dailySetId, score(sort: Desc)])
+  @@index([userId, createdAt])
 }
 
 model AdminUser {

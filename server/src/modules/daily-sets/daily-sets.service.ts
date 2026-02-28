@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
+import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
 
 const CARDS_PER_DAILY_SET = 15;
 const WEEKLY_LOCKOUT_DAYS = 7;
@@ -277,23 +278,6 @@ export class DailySetsService {
       throw new NotFoundException('User not found');
     }
 
-    // Check weekly lockout: user can only play once per 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
-
-    const recentCompletion = await this.prisma.leaderboardEntry.findFirst({
-      where: {
-        userId,
-        createdAt: { gte: sevenDaysAgo },
-      },
-    });
-
-    if (recentCompletion) {
-      throw new BadRequestException(
-        'You have already completed a daily set this week. Try again later.',
-      );
-    }
-
     // Calculate streaks and score in a single pass
     let currentStreak = user.currentStreak;
     let bestStreak = user.bestStreak;
@@ -330,31 +314,8 @@ export class DailySetsService {
         // Save question history
         await tx.userQuestionHistory.createMany({ data: historyData });
 
-        // Update question stats (timesShown, timesCorrect, avgTimeSeconds)
-        for (const result of dto.results) {
-          const isCorrect = result.result === 'correct';
-          const question = await tx.question.findUnique({
-            where: { id: result.questionId },
-          });
-          if (question) {
-            const newTimesShown = question.timesShown + 1;
-            const newTimesCorrect =
-              question.timesCorrect + (isCorrect ? 1 : 0);
-            const newAvgTime =
-              (question.avgTimeSeconds * question.timesShown +
-                result.timeSpentSeconds) /
-              newTimesShown;
-
-            await tx.question.update({
-              where: { id: result.questionId },
-              data: {
-                timesShown: newTimesShown,
-                timesCorrect: newTimesCorrect,
-                avgTimeSeconds: newAvgTime,
-              },
-            });
-          }
-        }
+        // Update question stats atomically (no N+1: uses raw SQL increment)
+        await updateQuestionStatsBatch(tx, dto.results);
 
         // Update user streak and stats
         await tx.user.update({

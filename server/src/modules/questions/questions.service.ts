@@ -107,20 +107,15 @@ export class QuestionsService {
       },
     });
 
-    const newTimesShown = question.timesShown + 1;
-    const newTimesCorrect = question.timesCorrect + (isCorrect ? 1 : 0);
-    const newAvgTimeSeconds =
-      (question.avgTimeSeconds * question.timesShown + dto.timeSpentSeconds) /
-      newTimesShown;
-
-    await this.prisma.question.update({
-      where: { id: questionId },
-      data: {
-        timesShown: newTimesShown,
-        timesCorrect: newTimesCorrect,
-        avgTimeSeconds: newAvgTimeSeconds,
-      },
-    });
+    // Atomic update to avoid race conditions
+    await this.prisma.$executeRaw`
+      UPDATE "Question"
+      SET
+        "avgTimeSeconds" = ("avgTimeSeconds" * "timesShown" + ${dto.timeSpentSeconds}::float) / ("timesShown" + 1),
+        "timesShown" = "timesShown" + 1,
+        "timesCorrect" = "timesCorrect" + ${isCorrect ? 1 : 0}
+      WHERE "id" = ${questionId}
+    `;
 
     await this.prisma.user.update({
       where: { id: userId },

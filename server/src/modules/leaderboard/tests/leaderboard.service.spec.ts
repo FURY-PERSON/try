@@ -6,15 +6,17 @@ describe('LeaderboardService', () => {
   let service: LeaderboardService;
 
   const mockPrisma = {
-    dailySet: {
-      findMany: jest.fn(),
-    },
-    leaderboardEntry: {
-      groupBy: jest.fn(),
-    },
     user: {
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+      count: jest.fn(),
     },
+    userQuestionHistory: {
+      count: jest.fn(),
+      aggregate: jest.fn(),
+    },
+    $queryRaw: jest.fn(),
+    $queryRawUnsafe: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -30,9 +32,10 @@ describe('LeaderboardService', () => {
   });
 
   describe('getAllTimeLeaderboard', () => {
-    it('returns empty when no entries', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([]);
+    it('returns empty when no users with score', async () => {
       mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.user.count.mockResolvedValue(0);
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getAllTimeLeaderboard('user-1');
 
@@ -41,77 +44,41 @@ describe('LeaderboardService', () => {
       expect(result.totalPlayers).toBe(0);
     });
 
-    it('sorts by correctAnswers DESC then totalTimeSeconds ASC', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([
-        { userId: 'u-1', _sum: { correctAnswers: 10, score: 500, totalTimeSeconds: 200 }, _count: { _all: 2 } },
-        { userId: 'u-2', _sum: { correctAnswers: 10, score: 500, totalTimeSeconds: 100 }, _count: { _all: 2 } },
-        { userId: 'u-3', _sum: { correctAnswers: 15, score: 700, totalTimeSeconds: 300 }, _count: { _all: 3 } },
-      ]);
+    it('returns top users sorted by correctAnswers', async () => {
       mockPrisma.user.findMany.mockResolvedValue([
-        { id: 'u-1', nickname: 'Alice' },
-        { id: 'u-2', nickname: 'Bob' },
-        { id: 'u-3', nickname: 'Charlie' },
+        { id: 'u-1', nickname: 'Alice', avatarEmoji: '🦊', totalCorrectAnswers: 20, totalScore: 500 },
+        { id: 'u-2', nickname: 'Bob', avatarEmoji: '🐱', totalCorrectAnswers: 15, totalScore: 400 },
       ]);
+      mockPrisma.user.count.mockResolvedValue(2);
 
       const result = await service.getAllTimeLeaderboard('u-2');
 
-      expect(result.entries[0].userId).toBe('u-3'); // 15 correct
-      expect(result.entries[1].userId).toBe('u-2'); // 10 correct, 100s (faster)
-      expect(result.entries[2].userId).toBe('u-1'); // 10 correct, 200s (slower)
+      expect(result.entries).toHaveLength(2);
+      expect(result.entries[0].userId).toBe('u-1');
       expect(result.entries[0].rank).toBe(1);
+      expect(result.entries[1].userId).toBe('u-2');
       expect(result.entries[1].rank).toBe(2);
-      expect(result.entries[2].rank).toBe(3);
-    });
-
-    it('returns correct user position', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([
-        { userId: 'u-1', _sum: { correctAnswers: 20, score: 900, totalTimeSeconds: 100 }, _count: { _all: 2 } },
-        { userId: 'u-2', _sum: { correctAnswers: 10, score: 500, totalTimeSeconds: 200 }, _count: { _all: 2 } },
-      ]);
-      mockPrisma.user.findMany.mockResolvedValue([
-        { id: 'u-1', nickname: 'A' },
-        { id: 'u-2', nickname: 'B' },
-      ]);
-
-      const result = await service.getAllTimeLeaderboard('u-2');
-
       expect(result.userPosition).toBe(2);
       expect(result.totalPlayers).toBe(2);
     });
 
     it('returns null userPosition when user has no entries', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([
-        { userId: 'u-1', _sum: { correctAnswers: 10, score: 500, totalTimeSeconds: 100 }, _count: { _all: 1 } },
-      ]);
       mockPrisma.user.findMany.mockResolvedValue([
-        { id: 'u-1', nickname: 'A' },
+        { id: 'u-1', nickname: 'A', avatarEmoji: null, totalCorrectAnswers: 10, totalScore: 100 },
       ]);
+      mockPrisma.user.count.mockResolvedValue(1);
+      mockPrisma.user.findUnique.mockResolvedValue({ totalCorrectAnswers: 0, totalScore: 0 });
 
       const result = await service.getAllTimeLeaderboard('u-999');
 
       expect(result.userPosition).toBeNull();
     });
 
-    it('calculates totalQuestions from count * 15', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([
-        { userId: 'u-1', _sum: { correctAnswers: 30, score: 1500, totalTimeSeconds: 300 }, _count: { _all: 3 } },
-      ]);
-      mockPrisma.user.findMany.mockResolvedValue([
-        { id: 'u-1', nickname: 'A' },
-      ]);
-
-      const result = await service.getAllTimeLeaderboard('u-1');
-
-      expect(result.entries[0].totalQuestions).toBe(45); // 3 * 15
-    });
-
     it('handles null nickname gracefully', async () => {
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([
-        { userId: 'u-1', _sum: { correctAnswers: 5, score: 200, totalTimeSeconds: 50 }, _count: { _all: 1 } },
-      ]);
       mockPrisma.user.findMany.mockResolvedValue([
-        { id: 'u-1', nickname: null },
+        { id: 'u-1', nickname: null, avatarEmoji: null, totalCorrectAnswers: 5, totalScore: 200 },
       ]);
+      mockPrisma.user.count.mockResolvedValue(1);
 
       const result = await service.getAllTimeLeaderboard('u-1');
 
@@ -120,36 +87,25 @@ describe('LeaderboardService', () => {
   });
 
   describe('getWeeklyLeaderboard', () => {
-    it('returns empty when no daily sets in current week', async () => {
-      mockPrisma.dailySet.findMany.mockResolvedValue([]);
+    it('returns aggregated results from UserQuestionHistory', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
+      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getWeeklyLeaderboard('u-1');
 
       expect(result.entries).toEqual([]);
       expect(result.totalPlayers).toBe(0);
     });
-
-    it('filters by daily sets in date range', async () => {
-      mockPrisma.dailySet.findMany.mockResolvedValue([
-        { id: 'ds-1' },
-        { id: 'ds-2' },
-      ]);
-      mockPrisma.leaderboardEntry.groupBy.mockResolvedValue([]);
-      mockPrisma.user.findMany.mockResolvedValue([]);
-
-      await service.getWeeklyLeaderboard('u-1');
-
-      expect(mockPrisma.leaderboardEntry.groupBy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { dailySetId: { in: ['ds-1', 'ds-2'] } },
-        }),
-      );
-    });
   });
 
   describe('getMonthlyLeaderboard', () => {
-    it('returns empty when no daily sets in current month', async () => {
-      mockPrisma.dailySet.findMany.mockResolvedValue([]);
+    it('returns empty when no activity in current month', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
+      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getMonthlyLeaderboard('u-1');
 
@@ -159,13 +115,31 @@ describe('LeaderboardService', () => {
   });
 
   describe('getYearlyLeaderboard', () => {
-    it('returns empty when no daily sets in current year', async () => {
-      mockPrisma.dailySet.findMany.mockResolvedValue([]);
+    it('returns empty when no activity in current year', async () => {
+      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
+      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
+      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getYearlyLeaderboard('u-1');
 
       expect(result.entries).toEqual([]);
       expect(result.totalPlayers).toBe(0);
+    });
+  });
+
+  describe('getStreakLeaderboard', () => {
+    it('returns top users by streak', async () => {
+      mockPrisma.user.findMany.mockResolvedValue([
+        { id: 'u-1', nickname: 'A', avatarEmoji: '🦊', currentAnswerStreak: 5, bestAnswerStreak: 10 },
+      ]);
+      mockPrisma.user.count.mockResolvedValue(1);
+
+      const result = await service.getStreakLeaderboard('u-1');
+
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0].bestStreak).toBe(10);
+      expect(result.totalPlayers).toBe(1);
     });
   });
 });

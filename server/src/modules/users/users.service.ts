@@ -73,63 +73,48 @@ export class UsersService {
   }
 
   async getUserStats(userId: string): Promise<UserStats> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        totalGamesPlayed: true,
-        totalCorrectAnswers: true,
-        totalScore: true,
-        currentAnswerStreak: true,
-        bestAnswerStreak: true,
-      },
-    });
+    const yearAgo = new Date();
+    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+    yearAgo.setHours(0, 0, 0, 0);
+
+    // Run all independent queries in parallel
+    const [user, factsLearned, scoreAgg, leaderboardEntries, collectionProgress] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            totalGamesPlayed: true,
+            totalCorrectAnswers: true,
+            totalScore: true,
+            currentAnswerStreak: true,
+            bestAnswerStreak: true,
+          },
+        }),
+        this.prisma.userQuestionHistory.count({ where: { userId } }),
+        this.prisma.leaderboardEntry.aggregate({
+          where: { userId },
+          _avg: { score: true },
+        }),
+        this.prisma.leaderboardEntry.findMany({
+          where: { userId, createdAt: { gte: yearAgo } },
+          select: { dailySet: { select: { date: true } } },
+        }),
+        this.prisma.userCollectionProgress.findMany({
+          where: { userId, completedAt: { gte: yearAgo } },
+          select: { completedAt: true },
+        }),
+      ]);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    // factsLearned = total questions answered (all modes)
-    const factsLearned = await this.prisma.userQuestionHistory.count({
-      where: { userId },
-    });
 
     const correctPercent =
       factsLearned > 0
         ? Math.round((user.totalCorrectAnswers / factsLearned) * 100)
         : 0;
 
-    // Average score per game from leaderboard entries
-    const scoreAgg = await this.prisma.leaderboardEntry.aggregate({
-      where: { userId },
-      _avg: { score: true },
-    });
     const avgScore = scoreAgg._avg.score ?? 0;
-
-    // Activity map: session count per day (last 365 days)
-    const yearAgo = new Date();
-    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-    yearAgo.setHours(0, 0, 0, 0);
-
-    // Get activity from leaderboard entries (daily sets)
-    const leaderboardEntries = await this.prisma.leaderboardEntry.findMany({
-      where: {
-        userId,
-        createdAt: { gte: yearAgo },
-      },
-      select: {
-        dailySet: { select: { date: true } },
-      },
-    });
-
-    // Get activity from collection progress (categories, difficulty, collections)
-    const collectionProgress =
-      await this.prisma.userCollectionProgress.findMany({
-        where: {
-          userId,
-          completedAt: { gte: yearAgo },
-        },
-        select: { completedAt: true },
-      });
 
     const activityMap: Record<string, number> = {};
 

@@ -10,6 +10,13 @@ describe('DeviceAuthGuard', () => {
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    nicknameAdjective: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    nicknameAnimal: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
   };
 
@@ -52,7 +59,7 @@ describe('DeviceAuthGuard', () => {
 
   it('auto-registers new user when device-id not found', async () => {
     mockPrisma.user.findUnique.mockResolvedValue(null);
-    const newUser = { id: 'user-new', deviceId: 'new-device-12345678' };
+    const newUser = { id: 'user-new', deviceId: 'new-device-12345678', nickname: 'Быстрый Лис', avatarEmoji: '🦊' };
     mockPrisma.user.create.mockResolvedValue(newUser);
 
     const context = createMockContext('new-device-12345678');
@@ -60,7 +67,7 @@ describe('DeviceAuthGuard', () => {
 
     expect(result).toBe(true);
     expect(mockPrisma.user.create).toHaveBeenCalledWith({
-      data: { deviceId: 'new-device-12345678' },
+      data: expect.objectContaining({ deviceId: 'new-device-12345678' }),
     });
   });
 

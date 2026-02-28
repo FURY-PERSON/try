@@ -5,17 +5,16 @@ import { PrismaService } from '@/prisma/prisma.service';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let prisma: PrismaService;
 
   const mockPrisma = {
     user: {
       findUnique: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     userQuestionHistory: {
       count: jest.fn(),
-      findMany: jest.fn(),
     },
     leaderboardEntry: {
       aggregate: jest.fn(),
@@ -23,6 +22,12 @@ describe('UsersService', () => {
     },
     userCollectionProgress: {
       findMany: jest.fn(),
+    },
+    nicknameAdjective: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    nicknameAnimal: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
   };
 
@@ -35,9 +40,12 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    prisma = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
+    // Reset defaults
+    mockPrisma.nicknameAdjective.findMany.mockResolvedValue([]);
+    mockPrisma.nicknameAnimal.findMany.mockResolvedValue([]);
+    mockPrisma.user.findMany.mockResolvedValue([]);
   });
 
   describe('register', () => {
@@ -51,16 +59,16 @@ describe('UsersService', () => {
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
 
-    it('creates new user if deviceId not found', async () => {
+    it('creates new user with nickname if deviceId not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      const newUser = { id: '2', deviceId: 'device-new' };
+      const newUser = { id: '2', deviceId: 'device-new', nickname: 'Быстрый Лис', avatarEmoji: '🦊' };
       mockPrisma.user.create.mockResolvedValue(newUser);
 
       const result = await service.register('device-new');
 
       expect(result).toEqual(newUser);
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
-        data: { deviceId: 'device-new' },
+        data: expect.objectContaining({ deviceId: 'device-new' }),
       });
     });
   });
@@ -110,6 +118,10 @@ describe('UsersService', () => {
   describe('getUserStats', () => {
     it('throws NotFoundException if user not found', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
+      mockPrisma.userQuestionHistory.count.mockResolvedValue(0);
+      mockPrisma.leaderboardEntry.aggregate.mockResolvedValue({ _avg: { score: null } });
+      mockPrisma.leaderboardEntry.findMany.mockResolvedValue([]);
+      mockPrisma.userCollectionProgress.findMany.mockResolvedValue([]);
 
       await expect(service.getUserStats('nonexistent')).rejects.toThrow(
         NotFoundException,
@@ -119,12 +131,13 @@ describe('UsersService', () => {
     it('returns correct stats', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         totalGamesPlayed: 50,
-        bestStreak: 14,
+        totalCorrectAnswers: 40,
+        totalScore: 1000,
+        currentAnswerStreak: 3,
+        bestAnswerStreak: 14,
       });
 
-      mockPrisma.userQuestionHistory.count
-        .mockResolvedValueOnce(50) // total
-        .mockResolvedValueOnce(40); // correct
+      mockPrisma.userQuestionHistory.count.mockResolvedValue(50);
 
       mockPrisma.leaderboardEntry.aggregate.mockResolvedValue({
         _avg: { score: 85.5 },
@@ -152,12 +165,13 @@ describe('UsersService', () => {
     it('returns 0% when no games played', async () => {
       mockPrisma.user.findUnique.mockResolvedValue({
         totalGamesPlayed: 0,
-        bestStreak: 0,
+        totalCorrectAnswers: 0,
+        totalScore: 0,
+        currentAnswerStreak: 0,
+        bestAnswerStreak: 0,
       });
 
-      mockPrisma.userQuestionHistory.count
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      mockPrisma.userQuestionHistory.count.mockResolvedValue(0);
 
       mockPrisma.leaderboardEntry.aggregate.mockResolvedValue({
         _avg: { score: null },

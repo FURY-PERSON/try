@@ -20,6 +20,10 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { DailySetQuestion } from '@/shared';
 
+// Static LinearGradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 export default function CardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string }>();
@@ -158,8 +162,8 @@ export default function CardScreen() {
     <Screen padded={false} backgroundColor={gradients.card[0]}>
       <LinearGradient
         colors={gradients.card}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        start={GRADIENT_START}
+        end={GRADIENT_END_V}
         style={styles.gradient}
       >
         <View style={[styles.padded, { paddingTop: insets.top }]}>

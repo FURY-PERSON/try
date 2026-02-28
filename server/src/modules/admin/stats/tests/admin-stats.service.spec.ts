@@ -13,9 +13,13 @@ describe('AdminStatsService', () => {
       count: jest.fn(),
       aggregate: jest.fn(),
       findMany: jest.fn(),
+      groupBy: jest.fn(),
     },
     dailySet: {
       count: jest.fn(),
+    },
+    category: {
+      findMany: jest.fn(),
     },
   };
 
@@ -50,6 +54,9 @@ describe('AdminStatsService', () => {
         _sum: { timesCorrect: 500, timesShown: 1000 },
       });
 
+      mockPrisma.question.groupBy.mockResolvedValue([]);
+      mockPrisma.category.findMany.mockResolvedValue([]);
+
       const result = await service.getDashboard();
 
       expect(result.totalUsers).toBe(100);
@@ -68,6 +75,8 @@ describe('AdminStatsService', () => {
         _avg: { timesCorrect: null, timesShown: null },
         _sum: { timesCorrect: null, timesShown: null },
       });
+      mockPrisma.question.groupBy.mockResolvedValue([]);
+      mockPrisma.category.findMany.mockResolvedValue([]);
 
       const result = await service.getDashboard();
 

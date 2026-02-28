@@ -41,30 +41,44 @@ function randomItem<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateNicknameFromFallback(language: string = 'ru'): {
-  nickname: string;
-  avatarEmoji: string;
-} {
-  const animal = randomItem(FALLBACK_ANIMALS);
-  const adjective =
-    language === 'en' ? randomItem(FALLBACK_ADJECTIVES_EN) : randomItem(FALLBACK_ADJECTIVES_RU);
-  const animalName = language === 'en' ? animal.en : animal.ru;
-
-  return {
-    nickname: `${adjective} ${animalName}`,
-    avatarEmoji: animal.emoji,
-  };
+// In-memory cache for nickname data (loaded once, refreshed every hour)
+interface NicknameCache {
+  adjectives: { textRu: string; textEn: string }[];
+  animals: { textRu: string; textEn: string; emoji: string }[];
+  loadedAt: number;
 }
 
-export async function generateNickname(
-  prisma: PrismaService,
-  language: string = 'ru',
-): Promise<{ nickname: string; avatarEmoji: string }> {
-  const adjectives = await prisma.nicknameAdjective.findMany({ where: { isActive: true } });
-  const animals = await prisma.nicknameAnimal.findMany({ where: { isActive: true } });
+let nicknameCache: NicknameCache | null = null;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+async function loadNicknameData(prisma: PrismaService): Promise<NicknameCache> {
+  const now = Date.now();
+  if (nicknameCache && now - nicknameCache.loadedAt < CACHE_TTL_MS) {
+    return nicknameCache;
+  }
+
+  const [adjectives, animals] = await Promise.all([
+    prisma.nicknameAdjective.findMany({ where: { isActive: true } }),
+    prisma.nicknameAnimal.findMany({ where: { isActive: true } }),
+  ]);
+
+  nicknameCache = { adjectives, animals, loadedAt: now };
+  return nicknameCache;
+}
+
+function generateNicknameFromData(
+  adjectives: { textRu: string; textEn: string }[],
+  animals: { textRu: string; textEn: string; emoji: string }[],
+  language: string,
+): { nickname: string; avatarEmoji: string } {
   if (adjectives.length === 0 || animals.length === 0) {
-    return generateNicknameFromFallback(language);
+    // Fallback to built-in data
+    const animal = randomItem(FALLBACK_ANIMALS);
+    const adjective = language === 'en'
+      ? randomItem(FALLBACK_ADJECTIVES_EN)
+      : randomItem(FALLBACK_ADJECTIVES_RU);
+    const animalName = language === 'en' ? animal.en : animal.ru;
+    return { nickname: `${adjective} ${animalName}`, avatarEmoji: animal.emoji };
   }
 
   const adj = randomItem(adjectives);
@@ -82,23 +96,41 @@ export async function generateUniqueNickname(
   prisma: PrismaService,
   language: string = 'ru',
 ): Promise<{ nickname: string; avatarEmoji: string }> {
+  // Load data once (cached)
+  const data = await loadNicknameData(prisma);
   const maxAttempts = 10;
 
+  // Generate all candidates at once
+  const candidates: { nickname: string; avatarEmoji: string }[] = [];
   for (let i = 0; i < maxAttempts; i++) {
-    const { nickname, avatarEmoji } = await generateNickname(prisma, language);
+    const { nickname, avatarEmoji } = generateNicknameFromData(
+      data.adjectives,
+      data.animals,
+      language,
+    );
     const candidate = i === 0 ? nickname : `${nickname} ${Math.floor(10 + Math.random() * 90)}`;
+    candidates.push({ nickname: candidate, avatarEmoji });
+  }
 
-    const existing = await prisma.user.findUnique({
-      where: { nickname: candidate },
-    });
+  // Batch check uniqueness — 1 query instead of up to 10
+  const existingNicknames = await prisma.user.findMany({
+    where: { nickname: { in: candidates.map((c) => c.nickname) } },
+    select: { nickname: true },
+  });
+  const takenSet = new Set(existingNicknames.map((u) => u.nickname));
 
-    if (!existing) {
-      return { nickname: candidate, avatarEmoji };
+  for (const candidate of candidates) {
+    if (!takenSet.has(candidate.nickname)) {
+      return candidate;
     }
   }
 
-  // Fallback: add timestamp suffix
-  const { nickname, avatarEmoji } = await generateNickname(prisma, language);
+  // Fallback: add timestamp suffix (guaranteed unique)
+  const { nickname, avatarEmoji } = generateNicknameFromData(
+    data.adjectives,
+    data.animals,
+    language,
+  );
   return {
     nickname: `${nickname} ${Date.now() % 10000}`,
     avatarEmoji,

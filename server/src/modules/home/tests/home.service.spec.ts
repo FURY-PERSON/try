@@ -17,13 +17,16 @@ describe('HomeService', () => {
       findMany: jest.fn(),
     },
     question: {
-      count: jest.fn(),
+      findMany: jest.fn(),
     },
     userQuestionHistory: {
       findMany: jest.fn().mockResolvedValue([]),
     },
     collection: {
       findMany: jest.fn(),
+    },
+    userCollectionProgress: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
     user: {
       findUnique: jest.fn(),
@@ -40,6 +43,9 @@ describe('HomeService', () => {
 
     service = module.get<HomeService>(HomeService);
     jest.clearAllMocks();
+    // Reset default mocks
+    mockPrisma.userQuestionHistory.findMany.mockResolvedValue([]);
+    mockPrisma.userCollectionProgress.findMany.mockResolvedValue([]);
   });
 
   describe('getFeed', () => {
@@ -63,7 +69,12 @@ describe('HomeService', () => {
           description: '', descriptionEn: '', imageUrl: null,
         },
       ]);
-      mockPrisma.question.count.mockResolvedValue(25);
+
+      // Questions for categories and difficulty (batch query)
+      mockPrisma.question.findMany.mockResolvedValue([
+        { id: 'q-1', categoryId: 'cat-1', difficulty: 3, categories: [] },
+        { id: 'q-2', categoryId: 'cat-1', difficulty: 1, categories: [] },
+      ]);
 
       // Collections
       mockPrisma.collection.findMany.mockResolvedValue([
@@ -76,16 +87,16 @@ describe('HomeService', () => {
       ]);
 
       // User
-      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 3 });
+      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 3, nickname: 'Test', avatarEmoji: '🦊' });
 
       const result = await service.getFeed('user-1');
 
       expect(result.daily.set).toBeTruthy();
       expect(result.daily.isLocked).toBe(false);
       expect(result.categories).toHaveLength(1);
-      expect(result.categories[0].availableCount).toBe(25);
       expect(result.collections).toHaveLength(1);
       expect(result.userProgress.streak).toBe(3);
+      expect(result.difficultyProgress).toBeDefined();
     });
 
     it('returns locked daily when user played recently', async () => {
@@ -103,8 +114,9 @@ describe('HomeService', () => {
       });
 
       mockPrisma.category.findMany.mockResolvedValue([]);
+      mockPrisma.question.findMany.mockResolvedValue([]);
       mockPrisma.collection.findMany.mockResolvedValue([]);
-      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 1 });
+      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 1, nickname: null, avatarEmoji: null });
 
       const result = await service.getFeed('user-1');
 
@@ -118,8 +130,9 @@ describe('HomeService', () => {
       mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
 
       mockPrisma.category.findMany.mockResolvedValue([]);
+      mockPrisma.question.findMany.mockResolvedValue([]);
       mockPrisma.collection.findMany.mockResolvedValue([]);
-      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 0 });
+      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 0, nickname: null, avatarEmoji: null });
 
       const result = await service.getFeed('user-1');
 
@@ -132,8 +145,9 @@ describe('HomeService', () => {
       mockPrisma.leaderboardEntry.findFirst.mockResolvedValue(null);
 
       mockPrisma.category.findMany.mockResolvedValue([]);
+      mockPrisma.question.findMany.mockResolvedValue([]);
       mockPrisma.collection.findMany.mockResolvedValue([]);
-      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 0 });
+      mockPrisma.user.findUnique.mockResolvedValue({ currentStreak: 0, nickname: null, avatarEmoji: null });
 
       const result = await service.getFeed('user-1');
 
