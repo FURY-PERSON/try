@@ -22,17 +22,30 @@ export class DeviceAuthGuard implements CanActivate {
       );
     }
 
-    let user = await this.prisma.user.findUnique({
+    const existing = await this.prisma.user.findUnique({
       where: { deviceId },
     });
 
-    if (!user) {
+    let user;
+    if (existing) {
+      user = existing;
+    } else {
       const { nickname, avatarEmoji } = await generateUniqueNickname(
         this.prisma,
       );
-      user = await this.prisma.user.create({
-        data: { deviceId, nickname, avatarEmoji },
-      });
+      try {
+        user = await this.prisma.user.create({
+          data: { deviceId, nickname, avatarEmoji },
+        });
+      } catch {
+        // Race condition: another request created the user between findUnique and create
+        user = await this.prisma.user.findUnique({
+          where: { deviceId },
+        });
+        if (!user) {
+          throw new UnauthorizedException('Failed to resolve device user.');
+        }
+      }
     }
 
     (request as any).user = user;

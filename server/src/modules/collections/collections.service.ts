@@ -261,6 +261,7 @@ export class CollectionsService {
           totalCorrectAnswers: { increment: correctAnswers },
           totalScore: { increment: score },
           totalGamesPlayed: { increment: 1 },
+          lastPlayedDate: new Date(),
           currentStreak,
           bestStreak,
           currentAnswerStreak,

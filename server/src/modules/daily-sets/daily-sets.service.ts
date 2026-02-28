@@ -330,6 +330,32 @@ export class DailySetsService {
         // Save question history
         await tx.userQuestionHistory.createMany({ data: historyData });
 
+        // Update question stats (timesShown, timesCorrect, avgTimeSeconds)
+        for (const result of dto.results) {
+          const isCorrect = result.result === 'correct';
+          const question = await tx.question.findUnique({
+            where: { id: result.questionId },
+          });
+          if (question) {
+            const newTimesShown = question.timesShown + 1;
+            const newTimesCorrect =
+              question.timesCorrect + (isCorrect ? 1 : 0);
+            const newAvgTime =
+              (question.avgTimeSeconds * question.timesShown +
+                result.timeSpentSeconds) /
+              newTimesShown;
+
+            await tx.question.update({
+              where: { id: result.questionId },
+              data: {
+                timesShown: newTimesShown,
+                timesCorrect: newTimesCorrect,
+                avgTimeSeconds: newAvgTime,
+              },
+            });
+          }
+        }
+
         // Update user streak and stats
         await tx.user.update({
           where: { id: userId },
@@ -353,6 +379,17 @@ export class DailySetsService {
             score,
             correctAnswers,
             totalTimeSeconds,
+          },
+        });
+
+        // Record collection progress (same as other game modes)
+        await tx.userCollectionProgress.create({
+          data: {
+            userId,
+            collectionType: 'daily',
+            referenceId: dailySetId,
+            correctAnswers,
+            totalQuestions: dto.results.length,
           },
         });
       });
