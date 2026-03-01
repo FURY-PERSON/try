@@ -4,7 +4,7 @@ import { API_URL } from '@/constants/config';
 
 type ServerStatus = 'checking' | 'available' | 'unavailable';
 
-const HEALTH_URL = `${API_URL}/api/health`;
+const HEALTH_URL = `${API_URL}/health`;
 const CHECK_TIMEOUT_MS = 5_000;
 const AUTO_RETRY_INTERVAL_MS = 30_000;
 
