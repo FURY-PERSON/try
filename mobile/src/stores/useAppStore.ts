@@ -1,3 +1,4 @@
+import { randomUUID } from 'expo-crypto';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,7 +25,7 @@ export const useAppStore = create<AppState>()(
 
       initializeDevice: () => {
         if (!get().deviceId) {
-          set({ deviceId: crypto.randomUUID() });
+          set({ deviceId: randomUUID() });
         }
       },
 
