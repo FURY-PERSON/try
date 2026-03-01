@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:stage": "vite --mode stage",
+    "dev:prod": "vite --mode production",
 
-    "build:dev": "tsc -b && vite build --mode development",
-    "build:stage": "tsc -b && vite build --mode stage",
-    "build:prod": "tsc -b && vite build --mode production"
+
+    "build": "vite build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

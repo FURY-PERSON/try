@@ -20,7 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG VITE_API_URL=""
 ENV VITE_API_URL=${VITE_API_URL}
-RUN npm run build:prod
+RUN npm run build
 
 # ───────────────────────────────────────
 # Stage 4 — Production image (nginx)
