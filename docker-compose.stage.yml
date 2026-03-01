@@ -1,14 +1,12 @@
 services:
   postgres:
     image: postgres:16-alpine
-    env_file:
-      - ./server/.env.stage
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_stage_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U factfront"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,9 +16,31 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "3002:3001"
-    env_file:
-      - ./server/.env.stage
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      AI_LLM_PROVIDER: ${AI_LLM_PROVIDER}
+      AI_LLM_MODEL: ${AI_LLM_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AI_IMAGE_PROVIDER: ${AI_IMAGE_PROVIDER}
+      AI_IMAGE_MODEL: ${AI_IMAGE_MODEL}
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_REGION: ${S3_REGION}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL}
+      THROTTLE_TTL: ${THROTTLE_TTL}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -30,13 +50,8 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3002}
-    env_file:
-      - ./web/.env.stage
+        VITE_API_URL: ${VITE_API_URL}
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - server
-
-volumes:
-  postgres_stage_data:
