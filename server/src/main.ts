@@ -32,8 +32,8 @@ async function bootstrap() {
   // Global response transform interceptor
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Security middleware
-  app.use(helmet());
+  // Security middleware (CSP disabled for Swagger UI compatibility)
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   // Compression
   app.use(compression());
