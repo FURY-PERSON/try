@@ -5,6 +5,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-factfront}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factfront_prod}
       POSTGRES_DB: ${POSTGRES_DB:-factfront}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-factfront}"]
       interval: 5s
@@ -50,6 +52,9 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL}
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - server
+
+volumes:
+  postgres_data:
