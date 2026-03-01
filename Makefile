@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────
 # Fact Front — Makefile
 # ─────────────────────────────────────────
-start-server: ## Запустить сервер 
+start-server: ## Запустить сервер
 	docker compose up --build
 
 logs: ## Логи production сервера
@@ -38,6 +38,9 @@ xcode-prod: ## Открыть Xcode с конфигом production (затем P
 STAGE_HOST=root@5.42.105.253
 STAGE_SSH_KEY=ssh/stage
 STAGE_DIR=/root/app
+DOMAIN=6804903-vp245627.twc1.net
+CERTBOT_EMAIL=mikhailhoroshik@gmail.com
+SSH=ssh -i $(STAGE_SSH_KEY) -o ServerAliveInterval=30 -o ServerAliveCountMax=20
 
 sync-stage: ## Синхронизировать файлы на stage сервер
 	rsync -avz --progress \
@@ -48,11 +51,57 @@ sync-stage: ## Синхронизировать файлы на stage серве
 		-e "ssh -i $(STAGE_SSH_KEY)" \
 		. $(STAGE_HOST):$(STAGE_DIR)
 
+init-stage: sync-stage ## Первоначальная настройка HTTPS (запускать один раз на новом сервере)
+	$(SSH) $(STAGE_HOST) "\
+		cd $(STAGE_DIR) && \
+		cp stage.env .env && \
+		docker compose -f docker-compose.stage.yml down --remove-orphans && \
+		docker run --rm \
+			-p 80:80 \
+			-v /etc/letsencrypt:/etc/letsencrypt \
+			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
+			certbot/certbot certonly \
+			--standalone \
+			--email $(CERTBOT_EMAIL) \
+			--agree-tos \
+			--no-eff-email \
+			-d $(DOMAIN) && \
+		docker compose -f docker-compose.stage.yml up -d --build"
+
 deploy-stage: sync-stage ## Задеплоить stage окружение (sync + запуск на сервере)
-	ssh -i $(STAGE_SSH_KEY) $(STAGE_HOST) \
+	$(SSH) $(STAGE_HOST) \
 		"cd $(STAGE_DIR) && \
 		cp stage.env .env && \
-		docker compose -f docker-compose.stage.yml up postgres server web -d --build"
+		docker compose -f docker-compose.stage.yml up -d --build"
+
+certbot-stage: ## Получить SSL сертификат и запустить nginx (после снятия rate limit)
+	$(SSH) $(STAGE_HOST) "\
+		cd $(STAGE_DIR) && \
+		docker run --rm \
+			-p 80:80 \
+			-v /etc/letsencrypt:/etc/letsencrypt \
+			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
+			certbot/certbot certonly \
+			--standalone \
+			--email $(CERTBOT_EMAIL) \
+			--agree-tos \
+			--no-eff-email \
+			-d $(DOMAIN) && \
+		docker compose -f docker-compose.stage.yml up -d nginx"
+
+renew-cert-stage: ## Обновить SSL сертификат
+	$(SSH) $(STAGE_HOST) "\
+		cd $(STAGE_DIR) && \
+		docker compose -f docker-compose.stage.yml stop nginx && \
+		docker run --rm \
+			-p 80:80 \
+			-v /etc/letsencrypt:/etc/letsencrypt \
+			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
+			certbot/certbot renew --standalone && \
+		docker compose -f docker-compose.stage.yml start nginx"
+
+logs-stage: ## Логи stage сервера (все сервисы)
+	$(SSH) $(STAGE_HOST) "cd $(STAGE_DIR) && docker compose -f docker-compose.stage.yml logs -f"
 
 # ── Production ────────────────────────────────────────────
 deploy-prod: ## сервер и админку на деплое
