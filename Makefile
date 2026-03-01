@@ -27,8 +27,24 @@ stage-mobile-android: ## Запустить mobile (Expo) на Android в stage 
 	cd mobile && npm run start:stage
 
 # ── Stage ─────────────────────────────────────────────────
-deploy-stage: ## Задеплоить stage окружение
-	docker compose -f docker-compose.stage.yml up postgres server web -d --build
+STAGE_HOST=root@5.42.105.253
+STAGE_SSH_KEY=ssh/stage
+STAGE_DIR=/root/app
+
+sync-stage: ## Синхронизировать файлы на stage сервер
+	rsync -avz --progress \
+		--exclude 'node_modules' \
+		--exclude '.git' \
+		--exclude 'mobile' \
+		--exclude '*.log' \
+		-e "ssh -i $(STAGE_SSH_KEY)" \
+		. $(STAGE_HOST):$(STAGE_DIR)
+
+deploy-stage: sync-stage ## Задеплоить stage окружение (sync + запуск на сервере)
+	ssh -i $(STAGE_SSH_KEY) $(STAGE_HOST) \
+		"cd $(STAGE_DIR) && \
+		cp stage.env .env && \
+		docker compose -f docker-compose.stage.yml up postgres server web -d --build"
 
 # ── Production ────────────────────────────────────────────
 deploy-prod: ## сервер и админку на деплое
