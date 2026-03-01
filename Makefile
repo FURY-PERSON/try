@@ -4,17 +4,6 @@
 start-server: ## Запустить сервер 
 	docker compose up --build
 
-
-# ── Production ────────────────────────────────────────────
-deploy: ## Задеплоить production (build + up)
-	./deploy.sh
-
-deploy-fresh: ## Задеплоить с нуля (без Docker кеша)
-	./deploy.sh --no-cache
-
-stop: ## Остановить production контейнеры
-	./deploy.sh --down
-
 logs: ## Логи production сервера
 	docker compose logs -f server
 
@@ -31,22 +20,22 @@ dev-mobile-ios: ## Запустить mobile (Expo) на iOS
 dev-mobile-android: ## Запустить mobile (Expo) на Android
 	cd mobile && npm run start:development
 
-# ── Database ──────────────────────────────────────────────
-db-up: ## Запустить только PostgreSQL (для локальной разработки)
-	docker compose up postgres -d
+stage-mobile-ios: ## Запустить mobile (Expo) на iOS в stage режиме
+	cd mobile && npm run start:stage
 
-db-migrate-dev: ## Применить миграции (dev)
-	cd server && npx prisma migrate dev
+stage-mobile-android: ## Запустить mobile (Expo) на Android в stage режиме
+	cd mobile && npm run start:stage
 
-db-migrate-prod: ## Применить миграции (prod — внутри контейнера)
-	docker compose exec server npx prisma migrate deploy
+# ── Stage ─────────────────────────────────────────────────
+deploy-stage: ## Задеплоить stage окружение
+	docker compose -f docker-compose.stage.yml up postgres server web -d --build
 
-db-studio: ## Открыть Prisma Studio
-	cd server && npx prisma studio
+# ── Production ────────────────────────────────────────────
+deploy-prod: ## сервер и админку на деплое
+	docker compose -f docker-compose.prod.yml up postgres server web -d --build
 
 # ── Help ──────────────────────────────────────────────────
 help: ## Показать список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-22s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help
-.PHONY: deploy deploy-fresh stop logs dev-server dev-web dev-mobile-ios dev-mobile-android db-up db-migrate-dev db-migrate-prod db-studio help

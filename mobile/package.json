@@ -6,17 +6,20 @@
   "scripts": {
     "android:development-debug": "NODE_ENV=development npx expo run:android --variant=debug",
     "android:development-release": "NODE_ENV=development npx expo run:android --variant=release",
+    "android:stage-debug": "NODE_ENV=stage npx expo run:android --variant=debug",
+    "android:stage-release": "NODE_ENV=stage npx expo run:android --variant=release",
     "android:production-debug": "NODE_ENV=production npx expo run:android --variant=debug",
     "android:production-release": "NODE_ENV=production npx expo run:android --variant=release",
 
-
-
     "ios:development-debug": "NODE_ENV=development npx expo run:ios --configuration Debug",
     "ios:development-release": "NODE_ENV=development npx expo run:ios --configuration Release",
+    "ios:stage-debug": "NODE_ENV=stage npx expo run:ios --configuration Debug",
+    "ios:stage-release": "NODE_ENV=stage npx expo run:ios --configuration Release",
     "ios:production-debug": "NODE_ENV=production npx expo run:ios --configuration Debug",
     "ios:production-release": "NODE_ENV=production npx expo run:ios --configuration Release",
 
     "start:development": "NODE_ENV=development expo start --reset-cache",
+    "start:stage": "NODE_ENV=stage expo start --reset-cache",
     "start:production": "NODE_ENV=production expo start --reset-cache",
 
 

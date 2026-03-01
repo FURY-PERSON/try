@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development nest start --watch",
+    "dev:stage": "NODE_ENV=stage nest start --watch",
     
     "build": "nest build",
     "start": "node dist/src/main",

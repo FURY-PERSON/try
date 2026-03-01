@@ -13,6 +13,16 @@
         "simulator": true
       }
     },
+    "stage": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "stage"
+      },
+      "ios": {
+        "simulator": true
+      }
+    },
     "preview": {
       "distribution": "internal",
       "env": {

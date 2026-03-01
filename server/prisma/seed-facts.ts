@@ -32,8 +32,8 @@ function loadAndMerge(files: string[]): Record<string, QuestionEntry[]> {
 }
 
 async function main() {
-  if (process.env.NODE_ENV !== 'development') {
-    console.log(`⛔ Seed skipped: NODE_ENV="${process.env.NODE_ENV ?? 'undefined'}" (required: development)`);
+  if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'stage') {
+    console.log(`⛔ Seed skipped: NODE_ENV="${process.env.NODE_ENV ?? 'undefined'}" (required: development or stage)`);
     return;
   }
 

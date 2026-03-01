@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -318,6 +320,60 @@ async function main() {
         console.log(`Statement: "${stmt.statement.substring(0, 50)}..." (${stmt.isTrue ? 'ФАКТ' : 'ФЕЙК'})`);
       }
     }
+  }
+
+  // Seed 200 questions from JSON (status: moderation — not approved)
+  const questionsJsonPath = path.join(__dirname, 'seed-questions-200.json');
+  if (fs.existsSync(questionsJsonPath)) {
+    const questionsJson: Record<string, Array<{
+      statement: string;
+      isTrue: boolean;
+      explanation: string;
+      source: string;
+      sourceUrl: string | null;
+      language: string;
+      difficulty: number;
+    }>> = JSON.parse(fs.readFileSync(questionsJsonPath, 'utf-8'));
+
+    const categorySlugMap: Record<string, string> = {
+      'Наука': 'science',
+      'История': 'history',
+      'География': 'geography',
+      'Языки': 'languages',
+      'Природа': 'nature',
+      'Космос': 'space',
+      'Культура': 'culture',
+      'Технологии': 'technology',
+      'Спорт': 'sport',
+      'Здоровье': 'health',
+    };
+
+    let seeded200 = 0;
+    for (const [categoryName, questions] of Object.entries(questionsJson)) {
+      const slug = categorySlugMap[categoryName];
+      const category = slug ? await prisma.category.findUnique({ where: { slug } }) : null;
+
+      for (const q of questions) {
+        const existing = await prisma.question.findFirst({ where: { statement: q.statement } });
+        if (!existing) {
+          await prisma.question.create({
+            data: {
+              statement: q.statement,
+              isTrue: q.isTrue,
+              explanation: q.explanation,
+              source: q.source ?? '',
+              sourceUrl: q.sourceUrl ?? null,
+              language: q.language ?? 'ru',
+              difficulty: q.difficulty ?? 2,
+              status: 'moderation',
+              categoryId: category?.id ?? null,
+            },
+          });
+          seeded200++;
+        }
+      }
+    }
+    console.log(`Questions from seed-questions-200.json: ${seeded200} added (status: moderation)`);
   }
 
   // Seed nickname adjectives

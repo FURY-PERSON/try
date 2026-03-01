@@ -12,7 +12,7 @@ export const API_URL =
   DEFAULT_API_URL;
 
 export const APP_ENV =
-  (process.env.EXPO_PUBLIC_ENV as 'development' | 'production' | undefined) ??
+  (process.env.EXPO_PUBLIC_ENV as 'development' | 'stage' | 'production' | undefined) ??
   'development';
 
 export const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';

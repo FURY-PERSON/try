@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - ./server/.env.stage
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_stage_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U factfront"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3001"
+    env_file:
+      - ./server/.env.stage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3002}
+    env_file:
+      - ./web/.env.stage
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  postgres_stage_data:
