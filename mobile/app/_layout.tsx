@@ -80,7 +80,7 @@ function AndroidNavigationBar() {
 }
 
 const FEATURE_FLAGS_CACHE_TTL_MS = 5 * 60 * 1000;
-const SPLASH_MIN_DURATION_MS = 500;
+const SPLASH_MIN_DURATION_MS = 800;
 const SPLASH_MAX_DURATION_MS = 2500;
 
 export default function RootLayout() {

@@ -31,7 +31,8 @@ export const useCardGame = (
   const isReplay = useGameStore((s) => s.isReplay);
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [liveStreak, setLiveStreak] = useState(0);
+  const currentStreak = useGameStore((s) => s.currentStreak);
+  const [liveStreak, setLiveStreak] = useState(currentStreak);
   const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
   const savedProgressIds = useRef<Set<string>>(new Set());
   const savedProgressSessionRef = useRef(sessionId);

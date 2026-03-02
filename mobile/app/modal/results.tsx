@@ -13,6 +13,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +33,7 @@ export default function ResultsModal() {
   const { colors, gradients, spacing, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const dailyProgress = useGameStore((s) => s.dailyProgress);
   const resetDailyProgress = useGameStore((s) => s.resetDailyProgress);
   const collectionType = useGameStore((s) => s.collectionType);
@@ -105,6 +107,8 @@ export default function ResultsModal() {
   };
 
   const handleGoHome = () => {
+    queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
+    queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
     resetDailyProgress();
     router.dismissAll();
   };
@@ -193,15 +197,8 @@ export default function ResultsModal() {
       <AnimatedEntrance delay={600} direction="up">
         <View style={styles.footer}>
           <Button
-            label={t('common.share')}
-            variant="primary"
-            size="lg"
-            onPress={handleShare}
-            iconLeft={<Feather name="share-2" size={18} color="#FFFFFF" />}
-          />
-          <Button
             label={t('results.goHome')}
-            variant="secondary"
+            variant="primary"
             size="lg"
             onPress={handleGoHome}
           />

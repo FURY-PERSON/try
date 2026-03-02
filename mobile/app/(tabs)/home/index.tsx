@@ -99,10 +99,10 @@ export default function HomeScreen() {
 
   const handleStartDaily = useCallback(() => {
     if (dailyData && !daily?.isLocked) {
-      startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET);
+      startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
       router.push('/game/card');
     }
-  }, [dailyData, daily?.isLocked, startDailySet, router]);
+  }, [dailyData, daily?.isLocked, startDailySet, router, streak]);
 
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
@@ -128,7 +128,7 @@ export default function HomeScreen() {
                   difficulty,
                   replay: true,
                 });
-                startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true);
+                startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true, streak);
                 analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
                 router.push({
                   pathname: '/game/card',
@@ -154,7 +154,7 @@ export default function HomeScreen() {
         difficulty,
         count: 50,
       });
-      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions);
+      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
       router.push({
         pathname: '/game/card',
@@ -175,7 +175,7 @@ export default function HomeScreen() {
         type: 'random',
         count: 100,
       });
-      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions);
+      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
       router.push({
         pathname: '/game/card',

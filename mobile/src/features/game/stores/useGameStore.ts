@@ -11,19 +11,23 @@ type GameStoreState = {
   currentCardStartTime: number | null;
   submissionResult: SubmissionResult | null;
 
+  // Current server streak (passed from home screen on game start)
+  currentStreak: number;
+
   // Collection session tracking
   sessionId: string | null;
   collectionType: CollectionType;
   collectionQuestions: CollectionSessionQuestion[];
   isReplay: boolean;
 
-  startDailySet: (dailySetId: string | null, totalCards: number) => void;
+  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number) => void;
   startCollectionSession: (
     sessionId: string,
     collectionType: CollectionType,
     totalCards: number,
     questions: CollectionSessionQuestion[],
     isReplay?: boolean,
+    streak?: number,
   ) => void;
   startCard: () => void;
   submitCardResult: (result: CardResult) => void;
@@ -45,12 +49,13 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   isPlaying: false,
   currentCardStartTime: null,
   submissionResult: null,
+  currentStreak: 0,
   sessionId: null,
   collectionType: 'daily' as CollectionType,
   collectionQuestions: [],
   isReplay: false,
 
-  startDailySet: (dailySetId: string | null, totalCards: number) => {
+  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number) => {
     set({
       dailyProgress: {
         dailySetId,
@@ -61,6 +66,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       },
       isPlaying: true,
       submissionResult: null,
+      currentStreak: streak ?? get().currentStreak,
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],
@@ -74,6 +80,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
     totalCards: number,
     questions: CollectionSessionQuestion[],
     isReplay?: boolean,
+    streak?: number,
   ) => {
     set({
       dailyProgress: {
@@ -85,6 +92,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       },
       isPlaying: true,
       submissionResult: null,
+      currentStreak: streak ?? get().currentStreak,
       sessionId,
       collectionType,
       collectionQuestions: questions,
@@ -134,6 +142,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       isPlaying: false,
       currentCardStartTime: null,
       submissionResult: null,
+      currentStreak: 0,
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],

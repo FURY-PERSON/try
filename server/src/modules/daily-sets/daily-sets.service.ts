@@ -9,7 +9,6 @@ import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
 
 const CARDS_PER_DAILY_SET = 15;
-const WEEKLY_LOCKOUT_DAYS = 7;
 
 @Injectable()
 export class DailySetsService {
@@ -18,27 +17,6 @@ export class DailySetsService {
   async getTodaySet(userId: string) {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-
-    // Check weekly lockout: did user complete any daily set in the last 7 days?
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
-
-    const recentEntry = await this.prisma.leaderboardEntry.findFirst({
-      where: {
-        userId,
-        createdAt: { gte: sevenDaysAgo },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        score: true,
-        correctAnswers: true,
-        totalTimeSeconds: true,
-        createdAt: true,
-        dailySet: {
-          select: { id: true, date: true, theme: true, themeEn: true },
-        },
-      },
-    });
 
     // Find published daily set for today
     let dailySet = await this.prisma.dailySet.findUnique({
@@ -70,32 +48,6 @@ export class DailySetsService {
     // Only return if status is published
     if (dailySet && dailySet.status !== 'published') {
       dailySet = null;
-    }
-
-    // If user played recently, check lockout
-    if (recentEntry) {
-      const unlocksAt = new Date(recentEntry.createdAt);
-      unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
-
-      if (unlocksAt > new Date()) {
-        // User is locked out
-        return {
-          id: dailySet?.id ?? null,
-          date: dailySet?.date ?? today,
-          theme: dailySet?.theme ?? null,
-          themeEn: dailySet?.themeEn ?? null,
-          status: dailySet?.status ?? 'locked',
-          questions: [],
-          completed: true,
-          isLocked: true,
-          unlocksAt,
-          userEntry: {
-            score: recentEntry.score,
-            correctAnswers: recentEntry.correctAnswers,
-            totalTimeSeconds: recentEntry.totalTimeSeconds,
-          },
-        };
-      }
     }
 
     if (dailySet) {

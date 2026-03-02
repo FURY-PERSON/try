@@ -27,7 +27,6 @@ const GRADIENT_END_V = { x: 0, y: 1 } as const;
 export default function CardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string }>();
-  // streak from store used only as initial value; liveStreak from hook tracks per-answer
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
   const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);

@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { getExcludedQuestionIds, getAllAnsweredQuestionIds } from '@/modules/shared/anti-repeat';
 
-const WEEKLY_LOCKOUT_DAYS = 7;
-
 @Injectable()
 export class HomeService {
   constructor(private readonly prisma: PrismaService) {}
@@ -65,6 +63,7 @@ export class HomeService {
       };
     }
 
+    // Check if user already completed today's set
     const entry = await this.prisma.leaderboardEntry.findUnique({
       where: {
         userId_dailySetId: { userId, dailySetId: dailySet.id },
@@ -73,14 +72,10 @@ export class HomeService {
         score: true,
         correctAnswers: true,
         totalTimeSeconds: true,
-        createdAt: true,
       },
     });
 
     if (entry) {
-      const unlocksAt = new Date(entry.createdAt);
-      unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
-
       return {
         set: {
           id: dailySet.id,
@@ -89,53 +84,13 @@ export class HomeService {
           themeEn: dailySet.themeEn,
         },
         isLocked: true,
-        unlocksAt,
+        unlocksAt: null,
         lastResult: {
           score: entry.score,
           correctAnswers: entry.correctAnswers,
           totalTimeSeconds: entry.totalTimeSeconds,
         },
       };
-    }
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - WEEKLY_LOCKOUT_DAYS);
-
-    const recentEntry = await this.prisma.leaderboardEntry.findFirst({
-      where: {
-        userId,
-        createdAt: { gte: sevenDaysAgo },
-      },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        score: true,
-        correctAnswers: true,
-        totalTimeSeconds: true,
-        createdAt: true,
-      },
-    });
-
-    if (recentEntry) {
-      const unlocksAt = new Date(recentEntry.createdAt);
-      unlocksAt.setDate(unlocksAt.getDate() + WEEKLY_LOCKOUT_DAYS);
-
-      if (unlocksAt > new Date()) {
-        return {
-          set: {
-            id: dailySet.id,
-            date: dailySet.date,
-            theme: dailySet.theme,
-            themeEn: dailySet.themeEn,
-          },
-          isLocked: true,
-          unlocksAt,
-          lastResult: {
-            score: recentEntry.score,
-            correctAnswers: recentEntry.correctAnswers,
-            totalTimeSeconds: recentEntry.totalTimeSeconds,
-          },
-        };
-      }
     }
 
     return {
