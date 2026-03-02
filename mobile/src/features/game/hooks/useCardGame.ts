@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGameStore } from '../stores/useGameStore';
 import { gameApi } from '../api/gameApi';
@@ -33,6 +33,14 @@ export const useCardGame = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [liveStreak, setLiveStreak] = useState(0);
   const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
+  const savedProgressIds = useRef<Set<string>>(new Set());
+  const savedProgressSessionRef = useRef(sessionId);
+
+  // Reset tracked IDs when session changes
+  if (savedProgressSessionRef.current !== sessionId) {
+    savedProgressIds.current = new Set();
+    savedProgressSessionRef.current = sessionId;
+  }
 
   const currentIndex = dailyProgress.currentCardIndex;
   const currentQuestion = questions[currentIndex];
@@ -220,6 +228,30 @@ export const useCardGame = (
       setPendingResult(null);
       submitCardResult(pendingResult);
 
+      // Fire-and-forget: save individual answer progress for collection modes
+      if (
+        collectionType !== 'daily' &&
+        !isReplay &&
+        sessionId &&
+        !savedProgressIds.current.has(pendingResult.questionId)
+      ) {
+        const progressResult = {
+          questionId: pendingResult.questionId,
+          result: pendingResult.correct
+            ? ('correct' as const)
+            : ('incorrect' as const),
+          timeSpentSeconds: Math.round(pendingResult.timeSpentMs / 1000),
+        };
+        collectionsApi
+          .saveProgress(sessionId, [progressResult])
+          .then(() => {
+            savedProgressIds.current.add(pendingResult.questionId);
+          })
+          .catch(() => {
+            // Silently ignore — answer will be included in final submit()
+          });
+      }
+
       // Submit full set when all cards are done (skip for replays)
       // Need to read fresh state after submitCardResult
       const newProgress = useGameStore.getState().dailyProgress;
@@ -240,7 +272,7 @@ export const useCardGame = (
     } else {
       setFeedback(null);
     }
-  }, [pendingResult, submitCardResult, collectionType, dailySetId, sessionId, submitDailySetResults, submitCollectionResults]);
+  }, [pendingResult, submitCardResult, collectionType, dailySetId, sessionId, isReplay, submitDailySetResults, submitCollectionResults]);
 
   return {
     currentQuestion,

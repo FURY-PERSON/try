@@ -64,4 +64,15 @@ export const collectionsApi = {
     );
     return response.data.data;
   },
+
+  async saveProgress(
+    sessionId: string,
+    results: GameResult[],
+  ): Promise<{ saved: number }> {
+    const response = await apiClient.post<{ data: { saved: number } }>(
+      `/v1/collections/${sessionId}/progress`,
+      { results },
+    );
+    return response.data.data;
+  },
 };

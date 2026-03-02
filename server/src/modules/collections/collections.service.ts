@@ -6,8 +6,16 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { StartCollectionDto } from './dto/start-collection.dto';
 import { SubmitCollectionDto } from './dto/submit-collection.dto';
+import { SaveProgressDto } from './dto/save-progress.dto';
 import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
 import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
+
+interface StreakState {
+  currentStreak: number;
+  bestStreak: number;
+  currentAnswerStreak: number;
+  bestAnswerStreak: number;
+}
 
 interface SessionData {
   userId: string;
@@ -17,6 +25,9 @@ interface SessionData {
   questionIds: string[];
   createdAt: number;
   replay: boolean;
+  savedQuestionIds: Set<string>;
+  preGameStreak: StreakState | null;
+  currentStreakState: StreakState | null;
 }
 
 const DIFFICULTY_MAP: Record<string, number[]> = {
@@ -196,11 +207,19 @@ export class CollectionsService {
       throw new NotFoundException('User not found');
     }
 
+    // Use pre-game streak snapshot if saveProgress() already updated DB values
+    const streakStart = session.preGameStreak ?? {
+      currentStreak: user.currentStreak,
+      bestStreak: user.bestStreak,
+      currentAnswerStreak: user.currentAnswerStreak,
+      bestAnswerStreak: user.bestAnswerStreak,
+    };
+
     // Calculate streaks and score in a single pass
-    let currentStreak = user.currentStreak;
-    let bestStreak = user.bestStreak;
-    let currentAnswerStreak = user.currentAnswerStreak;
-    let bestAnswerStreak = user.bestAnswerStreak;
+    let currentStreak = streakStart.currentStreak;
+    let bestStreak = streakStart.bestStreak;
+    let currentAnswerStreak = streakStart.currentAnswerStreak;
+    let bestAnswerStreak = streakStart.bestAnswerStreak;
     let score = 0;
 
     const historyData = dto.results.map((r) => {
@@ -230,8 +249,16 @@ export class CollectionsService {
     await this.prisma.$transaction(async (tx) => {
       // Save question history only for non-collection sessions (collection items are not in Question table)
       if (session.type !== 'collection') {
-        await tx.userQuestionHistory.createMany({ data: historyData });
-        await updateQuestionStatsBatch(tx, dto.results);
+        const newHistoryData = historyData.filter(
+          (h) => !session.savedQuestionIds.has(h.questionId),
+        );
+        const newResults = dto.results.filter(
+          (r) => !session.savedQuestionIds.has(r.questionId),
+        );
+        if (newHistoryData.length > 0) {
+          await tx.userQuestionHistory.createMany({ data: newHistoryData });
+          await updateQuestionStatsBatch(tx, newResults);
+        }
       }
 
       // Update user stats and streak
@@ -273,6 +300,112 @@ export class CollectionsService {
       streak: currentStreak,
       bestStreak,
     };
+  }
+
+  async saveProgress(
+    userId: string,
+    sessionId: string,
+    dto: SaveProgressDto,
+  ) {
+    const session = this.sessions.get(sessionId);
+
+    if (!session) {
+      throw new NotFoundException('Session not found or expired');
+    }
+
+    if (session.userId !== userId) {
+      throw new BadRequestException('Session does not belong to this user');
+    }
+
+    // Refresh session TTL
+    session.createdAt = Date.now();
+
+    // Skip recording for replay sessions
+    if (session.replay) {
+      return { saved: 0 };
+    }
+
+    // Skip for collection-type sessions (collection items are not in Question table)
+    if (session.type === 'collection') {
+      return { saved: 0 };
+    }
+
+    // Filter: only save questions that belong to session AND not already saved
+    const sessionQuestionIds = new Set(session.questionIds);
+    const newResults = dto.results.filter(
+      (r) =>
+        sessionQuestionIds.has(r.questionId) &&
+        !session.savedQuestionIds.has(r.questionId),
+    );
+
+    if (newResults.length === 0) {
+      return { saved: 0 };
+    }
+
+    const historyData = newResults.map((r) => ({
+      userId,
+      questionId: r.questionId,
+      result: r.result,
+      timeSpentSeconds: r.timeSpentSeconds,
+      score: 0,
+    }));
+
+    // Capture pre-game streak on first call
+    if (!session.preGameStreak) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      session.preGameStreak = {
+        currentStreak: user.currentStreak,
+        bestStreak: user.bestStreak,
+        currentAnswerStreak: user.currentAnswerStreak,
+        bestAnswerStreak: user.bestAnswerStreak,
+      };
+      session.currentStreakState = { ...session.preGameStreak };
+    }
+
+    // Calculate updated streak from new results
+    let { currentStreak, bestStreak, currentAnswerStreak, bestAnswerStreak } =
+      session.currentStreakState!;
+    for (const r of newResults) {
+      if (r.result === 'correct') {
+        currentStreak++;
+        currentAnswerStreak++;
+      } else {
+        currentStreak = 0;
+        currentAnswerStreak = 0;
+      }
+      bestStreak = Math.max(bestStreak, currentStreak);
+      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+    }
+    const newStreakState = {
+      currentStreak,
+      bestStreak,
+      currentAnswerStreak,
+      bestAnswerStreak,
+    };
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userQuestionHistory.createMany({ data: historyData });
+      await updateQuestionStatsBatch(tx, newResults);
+      await tx.user.update({
+        where: { id: userId },
+        data: newStreakState,
+      });
+    });
+
+    // Update session state after successful transaction
+    session.currentStreakState = newStreakState;
+
+    // Track saved question IDs to avoid duplicates
+    for (const r of newResults) {
+      session.savedQuestionIds.add(r.questionId);
+    }
+
+    return { saved: newResults.length };
   }
 
   private async startRandom(userId: string, count: number) {
@@ -576,6 +709,9 @@ export class CollectionsService {
       questionIds: questions.map((q) => q.id),
       createdAt: Date.now(),
       replay,
+      savedQuestionIds: new Set(),
+      preGameStreak: null,
+      currentStreakState: null,
     });
 
     return sessionId;
