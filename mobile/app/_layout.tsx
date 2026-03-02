@@ -80,6 +80,7 @@ function AndroidNavigationBar() {
 }
 
 const FEATURE_FLAGS_CACHE_TTL_MS = 5 * 60 * 1000;
+const SPLASH_MIN_DURATION_MS = 500;
 const SPLASH_MAX_DURATION_MS = 2500;
 
 export default function RootLayout() {
@@ -118,9 +119,10 @@ export default function RootLayout() {
     }
   }, [lastFetchedAt, setFlags, setFlagsLoading]);
 
-  // Load app data + enforce max splash duration
+  // Load app data + enforce min/max splash duration
   useEffect(() => {
     let cancelled = false;
+    const startedAt = Date.now();
 
     const timeout = setTimeout(() => {
       if (!cancelled) setDataReady(true);
@@ -147,6 +149,12 @@ export default function RootLayout() {
 
       const { language } = useSettingsStore.getState();
       i18n.changeLanguage(language);
+
+      // Ensure splash is shown for at least SPLASH_MIN_DURATION_MS
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < SPLASH_MIN_DURATION_MS) {
+        await new Promise((r) => setTimeout(r, SPLASH_MIN_DURATION_MS - elapsed));
+      }
 
       if (!cancelled) setDataReady(true);
     }

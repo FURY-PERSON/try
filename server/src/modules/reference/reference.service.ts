@@ -1,6 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 
+const FALLBACK_ADJECTIVES: Record<string, string[]> = {
+  ru: [
+    'Быстрый', 'Умный', 'Хитрый', 'Весёлый', 'Храбрый',
+    'Ловкий', 'Мудрый', 'Дерзкий', 'Тихий', 'Яркий',
+    'Смелый', 'Шустрый', 'Грозный', 'Нежный', 'Дикий',
+    'Славный', 'Милый', 'Редкий', 'Гордый', 'Хмурый',
+  ],
+  en: [
+    'Swift', 'Clever', 'Sly', 'Jolly', 'Brave',
+    'Nimble', 'Wise', 'Bold', 'Quiet', 'Bright',
+    'Daring', 'Hasty', 'Mighty', 'Gentle', 'Wild',
+    'Noble', 'Lucky', 'Rare', 'Proud', 'Keen',
+  ],
+};
+
+const FALLBACK_ANIMALS: Array<{ ru: string; en: string; emoji: string }> = [
+  { ru: 'Лис', en: 'Fox', emoji: '🦊' },
+  { ru: 'Кот', en: 'Cat', emoji: '🐱' },
+  { ru: 'Сова', en: 'Owl', emoji: '🦉' },
+  { ru: 'Волк', en: 'Wolf', emoji: '🐺' },
+  { ru: 'Медведь', en: 'Bear', emoji: '🐻' },
+  { ru: 'Орёл', en: 'Eagle', emoji: '🦅' },
+  { ru: 'Панда', en: 'Panda', emoji: '🐼' },
+  { ru: 'Тигр', en: 'Tiger', emoji: '🐯' },
+  { ru: 'Дельфин', en: 'Dolphin', emoji: '🐬' },
+  { ru: 'Пингвин', en: 'Penguin', emoji: '🐧' },
+  { ru: 'Хамелеон', en: 'Chameleon', emoji: '🦎' },
+  { ru: 'Единорог', en: 'Unicorn', emoji: '🦄' },
+  { ru: 'Дракон', en: 'Dragon', emoji: '🐉' },
+  { ru: 'Ёж', en: 'Hedgehog', emoji: '🦔' },
+  { ru: 'Лев', en: 'Lion', emoji: '🦁' },
+  { ru: 'Кролик', en: 'Rabbit', emoji: '🐰' },
+  { ru: 'Жираф', en: 'Giraffe', emoji: '🦒' },
+  { ru: 'Осьминог', en: 'Octopus', emoji: '🐙' },
+  { ru: 'Фламинго', en: 'Flamingo', emoji: '🦩' },
+  { ru: 'Коала', en: 'Koala', emoji: '🐨' },
+];
+
+function randomItem<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 @Injectable()
 export class ReferenceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -19,7 +61,10 @@ export class ReferenceService {
     ]);
 
     if (adjectives.length === 0 || animals.length === 0) {
-      return { placeholder: language === 'en' ? 'Swift Fox' : 'Быстрый Лис', emoji: '🦊' };
+      const animal = randomItem(FALLBACK_ANIMALS);
+      const adjective = randomItem(FALLBACK_ADJECTIVES[language] ?? FALLBACK_ADJECTIVES.ru);
+      const animalName = language === 'en' ? animal.en : animal.ru;
+      return { placeholder: `${adjective} ${animalName}`, emoji: animal.emoji };
     }
 
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];

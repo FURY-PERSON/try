@@ -78,7 +78,7 @@ export class UsersService {
     yearAgo.setHours(0, 0, 0, 0);
 
     // Run all independent queries in parallel
-    const [user, factsLearned, scoreAgg, leaderboardEntries, collectionProgress] =
+    const [user, factsLearned, totalAnswers, scoreAgg, leaderboardEntries, collectionProgress] =
       await Promise.all([
         this.prisma.user.findUnique({
           where: { id: userId },
@@ -95,6 +95,9 @@ export class UsersService {
           FROM "UserQuestionHistory"
           WHERE "userId" = ${userId}
         `.then((rows) => Number(rows[0]?.count ?? 0)),
+        this.prisma.userQuestionHistory.count({
+          where: { userId },
+        }),
         this.prisma.leaderboardEntry.aggregate({
           where: { userId },
           _avg: { score: true },
@@ -114,8 +117,8 @@ export class UsersService {
     }
 
     const correctPercent =
-      factsLearned > 0
-        ? Math.round((user.totalCorrectAnswers / factsLearned) * 100)
+      totalAnswers > 0
+        ? Math.round((user.totalCorrectAnswers / totalAnswers) * 100)
         : 0;
 
     const avgScore = scoreAgg._avg.score ?? 0;

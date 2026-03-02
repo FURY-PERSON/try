@@ -146,8 +146,8 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     }
   }, [activeFeedback]);
 
-  // Card moves 2.5x faster than finger for snappier feel
-  const SWIPE_SPEED_MULTIPLIER = 1.3;
+  // Card moves faster than finger for snappier feel
+  const SWIPE_SPEED_MULTIPLIER = 1.5;
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-15, 15])

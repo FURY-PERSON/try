@@ -104,7 +104,7 @@ export default function OnboardingStep4() {
           </AnimatedEntrance>
 
           {/* Avatar emoji */}
-          <AnimatedEntrance delay={200} direction="up">
+          <AnimatedEntrance delay={200} direction="up" style={{ alignItems: 'center' }}>
             <Pressable
               onPress={() => setShowEmojiPicker(!showEmojiPicker)}
               style={[styles.avatarCircle, { backgroundColor: colors.primary + '15' }]}
@@ -149,7 +149,7 @@ export default function OnboardingStep4() {
           )}
 
           {/* Nickname input */}
-          <AnimatedEntrance delay={300} direction="up">
+          <AnimatedEntrance delay={300} direction="up" style={{ alignSelf: 'stretch' }}>
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[
