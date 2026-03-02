@@ -34,21 +34,21 @@ export type { CollectionListItem, CollectionDetail };
 export const collectionsApi = {
   async getList(): Promise<CollectionListItem[]> {
     const response = await apiClient.get<{ data: CollectionListItem[] }>(
-      '/api/v1/collections',
+      '/v1/collections',
     );
     return response.data.data;
   },
 
   async getById(id: string): Promise<CollectionDetail> {
     const response = await apiClient.get<{ data: CollectionDetail }>(
-      `/api/v1/collections/${id}`,
+      `/v1/collections/${id}`,
     );
     return response.data.data;
   },
 
   async start(params: StartParams): Promise<CollectionSession> {
     const response = await apiClient.post<{ data: CollectionSession }>(
-      '/api/v1/collections/start',
+      '/v1/collections/start',
       params,
     );
     return response.data.data;
@@ -59,7 +59,7 @@ export const collectionsApi = {
     results: GameResult[],
   ): Promise<CollectionSubmitResult> {
     const response = await apiClient.post<{ data: CollectionSubmitResult }>(
-      `/api/v1/collections/${sessionId}/submit`,
+      `/v1/collections/${sessionId}/submit`,
       { results },
     );
     return response.data.data;

@@ -12,11 +12,11 @@ export const leaderboardApi = {
   ): Promise<LeaderboardResponse> {
     if (mode === 'streak') {
       const periodParam = period ? `?period=${period}` : '';
-      const response = await apiClient.get<ApiLeaderboardResponse>(`/api/v1/leaderboard/streak${periodParam}`);
+      const response = await apiClient.get<ApiLeaderboardResponse>(`/v1/leaderboard/streak${periodParam}`);
       return response.data.data;
     }
     const response = await apiClient.get<ApiLeaderboardResponse>(
-      `/api/v1/leaderboard/${period}?type=${mode}`,
+      `/v1/leaderboard/${period}?type=${mode}`,
     );
     return response.data.data;
   },

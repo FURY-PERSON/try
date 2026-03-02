@@ -2,8 +2,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 const DEFAULT_API_URL = Platform.select({
-  android: 'http://10.0.2.2:3001',
-  default: 'http://localhost:3001',
+  android: 'http://10.0.2.2:3001/api',
+  default: 'http://localhost:3001/api',
 });
 
 export const API_URL =

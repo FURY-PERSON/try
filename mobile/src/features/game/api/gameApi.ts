@@ -29,7 +29,7 @@ type GameResult = {
 
 export const gameApi = {
   async getTodaySet(): Promise<DailySetWithQuestions> {
-    const response = await apiClient.get<DailySetResponse>('/api/v1/daily-sets/today');
+    const response = await apiClient.get<DailySetResponse>('/v1/daily-sets/today');
     return response.data.data;
   },
 
@@ -39,7 +39,7 @@ export const gameApi = {
     timeSpentSeconds: number,
   ): Promise<SubmitAnswerResponse['data']> {
     const response = await apiClient.post<SubmitAnswerResponse>(
-      `/api/v1/questions/${questionId}/answer`,
+      `/v1/questions/${questionId}/answer`,
       { userAnswer, timeSpentSeconds },
     );
     return response.data.data;
@@ -50,7 +50,7 @@ export const gameApi = {
     results: GameResult[],
   ): Promise<SubmissionResult> {
     const response = await apiClient.post<SubmitDailySetResponse>(
-      `/api/v1/daily-sets/${dailySetId}/submit`,
+      `/v1/daily-sets/${dailySetId}/submit`,
       { results },
     );
     return response.data.data;

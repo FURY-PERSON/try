@@ -1,80 +1,109 @@
-# MASTER ORCHESTRATOR: Разработка мобильного приложения
+# CLAUDE.md
 
-## Контекст проекта
-Я — соло-разработчик. Цель — создать бесплатное мобильное приложение с монетизацией через рекламу, приносящее пассивный доход ~$300/месяц. Публикация: App Store, Google Play, RuStore, Huawei AppGallery.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Обязательный технологический стек
+## Project Overview
 
-| Слой | Технология | Версия |
-|------|-----------|--------|
-| Мобильное приложение | Expo (React Native) | SDK 52+ |
-| Язык | TypeScript | 5.x |
-| Серверная часть | NestJS | 10.x |
-| База данных | PostgreSQL | 16+ |
-| ORM | Prisma | 5.x |
-| Веб-интерфейс (если нужен) | React.js + Vite | React 19, Vite 6 |
-| Runtime | Node.js | 20 LTS |
+**Fact Front** — a mobile quiz app with an admin panel and REST API.
 
-## Структура репозитория
+**Stack:** Expo (React Native) · NestJS · PostgreSQL (Prisma) · React + Vite
+
+## Development Commands
+
+### Root (via Makefile)
+
+```bash
+make dev-db        # Start PostgreSQL in Docker
+make dev-server    # Start NestJS API in watch mode (port 3001)
+make dev-web       # Start web admin panel (port 5173)
+make dev-all       # Start all services at once
+make mobile-ios    # Expo iOS simulator
+make mobile-android  # Expo Android emulator
 ```
-project-root/
-├── server/              # NestJS API (самостоятельный проект)
-├── web/                 # React + Vite админ-панель (самостоятельный проект)
-├── mobile/              # Expo приложение (самостоятельный проект)
-├── docs/                # Документация фаз
-├── docker-compose.yml   # Docker Compose для деплоя
-├── .prettierrc          # Общий конфиг Prettier
-└── CLAUDE.md
+
+### Server (`/server`)
+
+```bash
+npm run dev        # NestJS watch mode
+npm run build      # TypeScript build
+npx prisma generate     # Regenerate Prisma client after schema changes
+npx prisma migrate dev  # Apply migrations
 ```
-Каждый проект — самостоятельный, со своим package.json и зависимостями.
-Общие типы и утилиты встроены в `src/shared/` каждого проекта (web, mobile).
-API-клиент встроен в `web/src/api-client/`.
 
-## Порядок выполнения фаз
+Tests: `*.spec.ts` files, run with Jest (`npm test`). Module alias `@/` maps to `src/`.
 
-Выполняй фазы СТРОГО последовательно. После каждой фазы сохраняй результаты в `docs/phase-N-output.md`.
+Swagger docs available at `http://localhost:3001/api/docs` in development.
 
-### Фаза 1 → Креативный директор
-Загрузи контекст из `.claude/agents/01-creative-director.md` и выполни все задачи.
-Результат сохрани в `docs/phase-1-idea.md`.
+### Web (`/web`)
 
-### Фаза 2 → Бизнес-аналитик
-Загрузи `.claude/agents/02-business-analyst.md`.
-Используй результаты Фазы 1 как входные данные.
-Результат сохрани в `docs/phase-2-requirements.md`.
+```bash
+npm run dev        # Vite dev server (proxies /api → localhost:3001)
+npm run build      # Production build
+```
 
-### Фаза 3 → UI/UX Дизайнер
-Загрузи `.claude/agents/03-ui-ux-designer.md`.
-Используй результаты Фаз 1-2.
-Результат сохрани в `docs/phase-3-design.md`.
+Playwright E2E tests live in `/web/e2e`.
 
-### Фаза 4 → Tech Lead
-Загрузи `.claude/agents/04-tech-lead.md`.
-Используй результаты Фаз 1-3.
-Результат сохрани в `docs/phase-4-architecture.md`.
+### Mobile (`/mobile`)
 
-### Фаза 5a → Backend-разработчик
-Загрузи `.claude/agents/06-backend-developer.md`.
-Реализуй серверную часть в `server/`.
+```bash
+npm run start:development   # Expo dev server
+npm run lint                # ESLint check
+npm run lint:fix            # Auto-fix linting
+npm run test                # Jest tests
+```
 
-### Фаза 5b → Mobile-разработчик
-Загрузи `.claude/agents/05-mobile-developer.md`.
-Реализуй мобильное приложение в `mobile/`.
+## Architecture
 
-### Фаза 5c → Web-разработчик (если требуется)
-Загрузи `.claude/agents/07-web-developer.md`.
-Реализуй веб-интерфейс в `web/`.
+### Services
 
-### Фаза 6 → QA-инженер
-Загрузи `.claude/agents/08-qa-engineer.md`.
-Протестируй всё приложение.
+| Service | Location | Port | Purpose |
+|---------|----------|------|---------|
+| NestJS API | `server/` | 3001 | REST API, Swagger |
+| React Admin | `web/` | 5173 | Admin panel |
+| Expo App | `mobile/` | — | iOS/Android app |
+| PostgreSQL | Docker | 5432 | Primary database |
 
-## Глобальные правила
+### Server Modules (`server/src/`)
 
-1. **Язык кода**: TypeScript ВЕЗДЕ, strict mode, no any
-2. **Стиль**: ESLint + Prettier
-3. **Коммиты**: Conventional Commits (feat:, fix:, chore:, docs:)
-4. **Файлы**: создавай ПОЛНЫЕ файлы, никаких "// остальной код..."
-5. **Ошибки**: обработка ВСЕХ edge cases, graceful degradation
-6. **i18n**: русский + английский с первого дня
-7. **Один разработчик**: все решения оптимизированы под соло-разработку
+11 feature modules: `users`, `categories`, `questions`, `daily-sets`, `leaderboard`, `collections`, `home`, `reference`, `ai`, `admin`, `feature-flags`, `health`.
+
+- Auth: device ID + JWT for mobile/web users; email/password + JWT for admins
+- AI: Anthropic and OpenAI SDKs for question generation
+- Storage: Cloudflare R2 via AWS SDK
+- Scheduling: `@nestjs/schedule` for daily set generation and other cron tasks
+- Rate limiting: Global `ThrottlerGuard`
+
+### Database (Prisma)
+
+Schema at `server/prisma/schema.prisma`. Key models: `User`, `Category`, `Question`, `DailySet`, `DailySetQuestion`, `LeaderboardEntry`, `Collection`, `AdminUser`, `FeatureFlag`, `Notification`.
+
+### Mobile (`mobile/`)
+
+- Routing via Expo Router (file-based)
+- Firebase: Analytics, Crashlytics, FCM push notifications
+- Localization: i18next (RU/EN)
+- State: Zustand
+- Forms: React Hook Form + Zod
+
+## Deployment
+
+Stage server: `5.42.105.253` (SSH: `ssh root@5.42.105.253 -i ssh/stage`)
+
+```bash
+make -C deploy/stage deploy   # Sync + rebuild Docker containers
+make -C deploy/stage init     # First-time setup (SSL + deploy)
+make -C deploy/stage logs     # Tail logs
+make -C deploy/stage certbot  # Get SSL cert (if rate-limited during init)
+```
+
+For production, fill in `deploy/prod/Makefile` (IP, domain) and `deploy/prod/prod.env` before running.
+
+## Environment Files
+
+| File | Used for |
+|------|---------|
+| `server/.env` | Local server dev |
+| `server/.env.development` | Docker Compose local |
+| `deploy/stage/stage.env` | Stage server |
+| `deploy/prod/prod.env` | Production (fill `CHANGE_ME` values) |
+| `mobile/.env.*` | Expo per-environment API URLs |

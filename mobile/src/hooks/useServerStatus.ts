@@ -5,22 +5,14 @@ import { API_URL } from '@/constants/config';
 type ServerStatus = 'checking' | 'available' | 'unavailable';
 
 const HEALTH_URL = `${API_URL}/health`;
-const CHECK_TIMEOUT_MS = 5_000;
 const AUTO_RETRY_INTERVAL_MS = 30_000;
 
 async function checkServerHealth(): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), CHECK_TIMEOUT_MS);
   try {
-    const response = await fetch(HEALTH_URL, {
-      method: 'GET',
-      signal: controller.signal,
-    });
+    const response = await fetch(HEALTH_URL, { method: 'GET' });
     return response.ok;
-  } catch {
+  } catch (error) {
     return false;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -30,7 +22,7 @@ export function useServerStatus() {
 
   const check = useCallback(async () => {
     const net = await NetInfo.fetch();
-    if (!net.isConnected) {
+    if (!net.isConnected || net.isInternetReachable === false) {
       // Нет интернета — не показываем экран ошибки сервера
       setStatus('available');
       return;
