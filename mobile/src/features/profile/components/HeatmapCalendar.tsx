@@ -17,7 +17,7 @@ const LABEL_COLUMN_WIDTH = 28;
 
 // Indigo-based palette (Midnight Scholar)
 const LIGHT_COLORS = ['#F1F5F9', '#C7D2FE', '#A5B4FC', '#818CF8', '#6366F1'];
-const DARK_COLORS = ['#1E293B', '#312E81', '#4338CA', '#6366F1', '#818CF8'];
+const DARK_COLORS = ['#2A3349', '#312E81', '#4338CA', '#6366F1', '#818CF8'];
 
 const MONTHS_RU = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

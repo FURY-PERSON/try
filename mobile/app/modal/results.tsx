@@ -106,7 +106,7 @@ export default function ResultsModal() {
 
   const handleGoHome = () => {
     resetDailyProgress();
-    router.replace('/(tabs)/home');
+    router.dismissAll();
   };
 
   return (

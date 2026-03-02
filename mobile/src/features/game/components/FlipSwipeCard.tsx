@@ -13,6 +13,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   runOnJS,
   interpolate,
   Extrapolation,
@@ -75,6 +76,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
   const { width: screenWidth } = useWindowDimensions();
 
   const swipeThreshold = useMemo(() => screenWidth * 0.25, [screenWidth]);
+  const dismissThreshold = useMemo(() => screenWidth * 0.20 / 1.1, [screenWidth]);
   const cardWidth = useMemo(() => screenWidth - 48, [screenWidth]);
 
   const translateX = useSharedValue(0);
@@ -144,54 +146,65 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     }
   }, [activeFeedback]);
 
+  // Card moves 2.5x faster than finger for snappier feel
+  const SWIPE_SPEED_MULTIPLIER = 1.3;
+
   const gesture = Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
       if (phase.value === 'flipping') return;
-      // Block front-phase gesture when submitting
       if (phase.value === 'front' && isSubmittingShared.value) return;
-      translateX.value = event.translationX;
+      translateX.value = event.translationX * SWIPE_SPEED_MULTIPLIER;
       translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
       if (phase.value === 'flipping') return;
       if (phase.value === 'front' && isSubmittingShared.value) return;
 
+      const amplifiedX = event.translationX * SWIPE_SPEED_MULTIPLIER;
+      const amplifiedVelocityX = event.velocityX * SWIPE_SPEED_MULTIPLIER;
+
       const snapBack = { duration: 200, easing: Easing.out(Easing.cubic) };
-      // Slow return synced with flip animation
       const flipReturn = { duration: FLIP_DURATION, easing: Easing.inOut(Easing.ease) };
 
+      // Dynamic inertia: 0 at ≤800 px/s, scales up to 1 at ≥1600 px/s
+      const absVel = Math.abs(event.velocityX);
+      const inertiaFactor = Math.min(1, Math.max(0, (absVel - 800) / 800));
+
+      // withSpring with velocity gives natural inertia — card overshoots
+      // then settles to target in one smooth animation (no jerk)
+      const springToZero = (vel: number) =>
+        withSpring(0, { velocity: vel, damping: 18, stiffness: 120, mass: 1 });
+
       if (phase.value === 'front') {
-        // Phase 1: swipe to answer — return to center in sync with flip
-        if (event.translationX > swipeThreshold) {
-          translateX.value = withTiming(0, flipReturn);
+        // Phase 1: swipe to answer
+        if (amplifiedX > swipeThreshold) {
+          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
           runOnJS(onSwipe)('right');
-        } else if (event.translationX < -swipeThreshold) {
-          translateX.value = withTiming(0, flipReturn);
+        } else if (amplifiedX < -swipeThreshold) {
+          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
           runOnJS(onSwipe)('left');
         } else {
-          // Below threshold — quick snap back, no flip
-          translateX.value = withTiming(0, snapBack);
+          // Below threshold — spring back with inertia
+          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, snapBack);
         }
       } else if (phase.value === 'back') {
-        // Phase 2: swipe to dismiss, fly off then advance
-        if (Math.abs(event.translationX) > swipeThreshold * 0.8) {
-          const dir = event.translationX > 0 ? 1 : -1;
+        // Phase 2: swipe to dismiss
+        if (Math.abs(amplifiedX) > dismissThreshold) {
+          const flyDir = amplifiedX > 0 ? 1 : -1;
           translateX.value = withTiming(
-            dir * screenWidth * 1.5,
-            { duration: 300 },
+            flyDir * screenWidth * 1.5,
+            { duration: 200, easing: Easing.in(Easing.cubic) },
             (finished) => {
-              if (finished) {
-                runOnJS(onDismiss)();
-              }
+              if (finished) runOnJS(onDismiss)();
             },
           );
-          translateY.value = withTiming(0, { duration: 300 });
+          translateY.value = withTiming(0, { duration: 200 });
         } else {
-          translateX.value = withTiming(0, snapBack);
+          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, snapBack);
         }
       }

@@ -126,10 +126,12 @@ export default function ProfileScreen() {
               <ListItem
                 title={t('profile.correctPercent')}
                 rightText={isLoading ? '...' : `${stats?.correctPercent ?? 0}%`}
+                isFirst
               />
               <ListItem
                 title={t('profile.bestStreak')}
                 rightText={isLoading ? '...' : String(stats?.bestStreak ?? 0)}
+                isLast
               />
             </Card>
           </AnimatedEntrance>

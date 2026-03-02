@@ -117,8 +117,12 @@ export const Button: FC<ButtonProps> = ({
           {
             color: btnColors.text,
             fontSize: sizeConfig.fontSize,
+            paddingHorizontal: 6,
           },
         ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
       >
         {label}
       </Text>

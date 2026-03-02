@@ -23,6 +23,8 @@ type ListItemProps = {
   variant?: ListItemVariant;
   onPress?: () => void;
   accessibilityLabel?: string;
+  isFirst?: boolean;
+  isLast?: boolean;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -37,6 +39,8 @@ export const ListItem: FC<ListItemProps> = ({
   variant = 'default',
   onPress,
   accessibilityLabel,
+  isFirst,
+  isLast,
 }) => {
   const { colors, borderRadius, elevation } = useThemeContext();
   const scale = useSharedValue(1);
@@ -55,13 +59,27 @@ export const ListItem: FC<ListItemProps> = ({
     scale.value = withSpring(1, { damping: 15, stiffness: 300 });
   };
 
+  // Compute border radius for items inside a Card with padding: 0
+  const itemBorderRadius = isCard
+    ? borderRadius.lg
+    : (isFirst || isLast)
+      ? {
+          borderTopLeftRadius: isFirst ? borderRadius.xl : 0,
+          borderTopRightRadius: isFirst ? borderRadius.xl : 0,
+          borderBottomLeftRadius: isLast ? borderRadius.xl : 0,
+          borderBottomRightRadius: isLast ? borderRadius.xl : 0,
+        }
+      : {};
+
   const content = (
     <View
       style={[
         styles.container,
         {
           backgroundColor: colors.surface,
-          borderRadius: isCard ? borderRadius.lg : 0,
+          ...(typeof itemBorderRadius === 'number'
+            ? { borderRadius: itemBorderRadius }
+            : itemBorderRadius),
         },
         isCard && {
           ...elevation.sm,

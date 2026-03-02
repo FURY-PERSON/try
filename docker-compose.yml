@@ -1,14 +1,16 @@
 services:
   postgres:
     image: postgres:16-alpine
-    env_file:
-      - ./server/.env.development
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U factfront"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -22,7 +24,7 @@ services:
     env_file:
       - ./server/.env.development
     environment:
-      DATABASE_URL: "postgresql://factfront:factfront_dev@postgres:5432/factfront"
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/postgres"
     depends_on:
       postgres:
         condition: service_healthy

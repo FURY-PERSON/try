@@ -67,7 +67,7 @@ export default function CardScreen() {
       router.replace('/modal/results');
     } catch {
       setShowExitConfirm(false);
-      router.replace('/(tabs)/home');
+      router.dismissAll();
     } finally {
       setExitSaving(false);
     }
@@ -245,7 +245,7 @@ export default function CardScreen() {
               onPress={() => setShowExitConfirm(false)}
               style={[styles.modalButton, { backgroundColor: colors.surfaceVariant }]}
             >
-              <Text style={[styles.modalButtonText, { color: colors.textPrimary }]}>
+              <Text style={[styles.modalButtonText, { color: colors.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {t('common.cancel')}
               </Text>
             </Pressable>
@@ -254,7 +254,7 @@ export default function CardScreen() {
               disabled={exitSaving}
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
             >
-              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
+              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {t('game.exitSave')}
               </Text>
             </Pressable>
@@ -336,6 +336,7 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 14,
+    paddingHorizontal: 6,
     borderRadius: 12,
     alignItems: 'center',
   },

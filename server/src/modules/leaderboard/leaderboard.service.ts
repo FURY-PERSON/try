@@ -241,70 +241,114 @@ export class LeaderboardService {
     userId: string,
     dateFilter: { gte: Date; lte: Date },
   ): Promise<LeaderboardResponse> {
-    // Find active user IDs in this period
-    interface ActiveRow { userId: string }
-    const activeRows = await this.prisma.$queryRaw<ActiveRow[]>`
-      SELECT DISTINCT "userId"
+    // Fetch all answer history within the period to compute streaks
+    interface HistoryRow { userId: string; result: string; answeredAt: Date }
+    const history = await this.prisma.$queryRaw<HistoryRow[]>`
+      SELECT "userId", "result", "answeredAt"
       FROM "UserQuestionHistory"
       WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+      ORDER BY "userId", "answeredAt" ASC
     `;
-    const activeUserIds = activeRows.map((r) => r.userId);
 
-    if (activeUserIds.length === 0) {
+    if (history.length === 0) {
       const userContext = await this.buildUnrankedStreakContext(userId);
       return { entries: [], userPosition: null, totalPlayers: 0, userContext, currentUserId: userId };
     }
 
-    // Get top 100 active users by streak
-    const [top100, totalPlayers] = await Promise.all([
-      this.prisma.user.findMany({
-        where: {
-          id: { in: activeUserIds },
-          bestAnswerStreak: { gt: 0 },
-        },
-        select: {
-          id: true,
-          nickname: true,
-          avatarEmoji: true,
-          currentAnswerStreak: true,
-          bestAnswerStreak: true,
-        },
-        orderBy: [
-          { bestAnswerStreak: 'desc' },
-          { currentAnswerStreak: 'desc' },
-        ],
-        take: TOP_LIMIT,
-      }),
-      this.prisma.user.count({
-        where: {
-          id: { in: activeUserIds },
-          bestAnswerStreak: { gt: 0 },
-        },
-      }),
-    ]);
+    // Compute max streak per user within the period
+    const streakMap = new Map<string, number>();
+    let currentUserId: string | null = null;
+    let currentStreak = 0;
+    let maxStreak = 0;
 
-    const entries: LeaderboardEntryResult[] = top100.map((u, index) => ({
-      rank: index + 1,
-      userId: u.id,
-      nickname: u.nickname,
-      avatarEmoji: u.avatarEmoji,
-      correctAnswers: 0,
-      totalQuestions: 0,
-      score: 0,
-      totalTimeSeconds: 0,
-      currentStreak: u.currentAnswerStreak,
-      bestStreak: u.bestAnswerStreak,
-    }));
+    for (const row of history) {
+      if (row.userId !== currentUserId) {
+        // Save previous user's max streak
+        if (currentUserId) {
+          streakMap.set(currentUserId, Math.max(maxStreak, currentStreak));
+        }
+        currentUserId = row.userId;
+        currentStreak = 0;
+        maxStreak = 0;
+      }
 
-    let userPosition: number | null = null;
-    const userInTop = top100.findIndex((u) => u.id === userId);
-    if (userInTop !== -1) {
-      userPosition = userInTop + 1;
+      if (row.result === 'correct') {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else {
+        currentStreak = 0;
+      }
+    }
+    // Save last user
+    if (currentUserId) {
+      streakMap.set(currentUserId, Math.max(maxStreak, currentStreak));
     }
 
+    // Sort users by max streak descending, take top 100
+    const sorted = [...streakMap.entries()]
+      .filter(([, streak]) => streak > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, TOP_LIMIT);
+
+    const totalPlayers = [...streakMap.values()].filter((s) => s > 0).length;
+
+    // Fetch user profiles for top entries
+    const topUserIds = sorted.map(([id]) => id);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: topUserIds } },
+      select: { id: true, nickname: true, avatarEmoji: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const entries: LeaderboardEntryResult[] = sorted.map(([uid, streak], index) => {
+      const u = userMap.get(uid);
+      return {
+        rank: index + 1,
+        userId: uid,
+        nickname: u?.nickname ?? null,
+        avatarEmoji: u?.avatarEmoji ?? null,
+        correctAnswers: 0,
+        totalQuestions: 0,
+        score: 0,
+        totalTimeSeconds: 0,
+        bestStreak: streak,
+      };
+    });
+
+    // Find current user position
+    let userPosition: number | null = null;
+    const userInTop = sorted.findIndex(([id]) => id === userId);
+    if (userInTop !== -1) {
+      userPosition = userInTop + 1;
+    } else {
+      const userStreak = streakMap.get(userId);
+      if (userStreak && userStreak > 0) {
+        const higherCount = [...streakMap.values()].filter((s) => s > userStreak).length;
+        userPosition = higherCount + 1;
+      }
+    }
+
+    // Build user context if not in top list
     let userContext: LeaderboardEntryResult[] | undefined;
-    if (!userPosition) {
-      userContext = await this.buildUnrankedStreakContext(userId);
+    if (!userPosition || (userPosition > 5 && userInTop === -1)) {
+      const currentUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, nickname: true, avatarEmoji: true },
+      });
+      if (currentUser) {
+        const userStreak = streakMap.get(userId) ?? 0;
+        userContext = [{
+          rank: userPosition ?? 0,
+          userId: currentUser.id,
+          nickname: currentUser.nickname,
+          avatarEmoji: currentUser.avatarEmoji,
+          correctAnswers: 0,
+          totalQuestions: 0,
+          score: 0,
+          totalTimeSeconds: 0,
+          bestStreak: userStreak,
+        }];
+      }
     }
 
     return { entries, userPosition, totalPlayers, userContext, currentUserId: userId };

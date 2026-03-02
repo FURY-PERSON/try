@@ -90,7 +90,11 @@ export class UsersService {
             bestAnswerStreak: true,
           },
         }),
-        this.prisma.userQuestionHistory.count({ where: { userId } }),
+        this.prisma.$queryRaw<[{ count: bigint }]>`
+          SELECT COUNT(DISTINCT "questionId")::bigint AS count
+          FROM "UserQuestionHistory"
+          WHERE "userId" = ${userId}
+        `.then((rows) => Number(rows[0]?.count ?? 0)),
         this.prisma.leaderboardEntry.aggregate({
           where: { userId },
           _avg: { score: true },
@@ -143,6 +147,17 @@ export class UsersService {
       avgScore: Math.round(avgScore * 10) / 10,
       activityMap,
     };
+  }
+
+  async regenerateNickname(userId: string, language: string = 'ru'): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const { nickname, avatarEmoji } = await generateUniqueNickname(this.prisma, language);
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { nickname, avatarEmoji },
+    });
   }
 
   async findByDeviceId(deviceId: string): Promise<User | null> {

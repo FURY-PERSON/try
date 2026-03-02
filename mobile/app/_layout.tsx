@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -52,7 +52,7 @@ function AppShell() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen
         name="game"
-        options={{ animation: 'slide_from_bottom' }}
+        options={{ animation: 'slide_from_bottom', gestureEnabled: false }}
       />
       <Stack.Screen
         name="modal"
@@ -80,6 +80,7 @@ function AndroidNavigationBar() {
 }
 
 const FEATURE_FLAGS_CACHE_TTL_MS = 5 * 60 * 1000;
+const SPLASH_MAX_DURATION_MS = 2500;
 
 export default function RootLayout() {
   const initializeDevice = useAppStore((s) => s.initializeDevice);
@@ -98,6 +99,9 @@ export default function RootLayout() {
     Nunito_900Black,
   });
 
+  const [dataReady, setDataReady] = useState(false);
+  const splashHidden = useRef(false);
+
   const loadFeatureFlags = useCallback(async () => {
     if (lastFetchedAt && Date.now() - lastFetchedAt < FEATURE_FLAGS_CACHE_TTL_MS) {
       return;
@@ -114,39 +118,61 @@ export default function RootLayout() {
     }
   }, [lastFetchedAt, setFlags, setFlagsLoading]);
 
+  // Load app data + enforce max splash duration
   useEffect(() => {
-    initializeDevice();
-    incrementLaunchCount();
-    adManager.initialize();
-    initializeFirebase();
-    void loadFeatureFlags();
+    let cancelled = false;
 
-    // Sync i18n with persisted language after store hydration
-    const syncLanguage = () => {
+    const timeout = setTimeout(() => {
+      if (!cancelled) setDataReady(true);
+    }, SPLASH_MAX_DURATION_MS);
+
+    async function init() {
+      initializeDevice();
+      incrementLaunchCount();
+      adManager.initialize();
+      initializeFirebase();
+
+      // Wait for feature flags
+      await loadFeatureFlags().catch(() => {});
+
+      // Wait for settings store hydration, then sync i18n
+      if (!useSettingsStore.persist.hasHydrated()) {
+        await new Promise<void>((resolve) => {
+          const unsubscribe = useSettingsStore.persist.onFinishHydration(() => {
+            unsubscribe();
+            resolve();
+          });
+        });
+      }
+
       const { language } = useSettingsStore.getState();
       i18n.changeLanguage(language);
-    };
 
-    if (useSettingsStore.persist.hasHydrated()) {
-      syncLanguage();
-    } else {
-      const unsubscribe = useSettingsStore.persist.onFinishHydration(syncLanguage);
-      return unsubscribe;
+      if (!cancelled) setDataReady(true);
     }
+
+    init();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [initializeDevice, incrementLaunchCount, loadFeatureFlags]);
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fontsLoaded) {
-      await SplashScreen.hideAsync();
+  // Hide splash when fonts loaded AND (data ready OR timed out)
+  useEffect(() => {
+    if (fontsLoaded && dataReady && !splashHidden.current) {
+      splashHidden.current = true;
+      SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, dataReady]);
 
   if (!fontsLoaded) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>

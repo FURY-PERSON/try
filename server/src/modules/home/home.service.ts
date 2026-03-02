@@ -173,58 +173,31 @@ export class HomeService {
 
     if (categories.length === 0) return [];
 
-    // Use groupBy for primary category counts instead of loading all questions
-    const [primaryCounts, secondaryCounts] = await Promise.all([
-      this.prisma.question.groupBy({
-        by: ['categoryId'],
-        where: { status: 'approved' },
-        _count: { id: true },
+    const categoryIds = categories.map((c) => c.id);
+
+    // Fetch question IDs from BOTH sources:
+    // 1) Primary: Question.categoryId
+    // 2) Secondary: QuestionCategory (many-to-many)
+    const [primaryRows, secondaryRows] = await Promise.all([
+      this.prisma.question.findMany({
+        where: { status: 'approved', categoryId: { in: categoryIds } },
+        select: { id: true, categoryId: true },
       }),
-      // For secondary categories, aggregate on QuestionCategory table
-      this.prisma.$queryRaw<{ categoryId: string; count: number }[]>`
-        SELECT qc."categoryId", COUNT(DISTINCT qc."questionId")::int AS "count"
-        FROM "QuestionCategory" qc
-        JOIN "Question" q ON q."id" = qc."questionId"
-        WHERE q."status" = 'approved'
-        GROUP BY qc."categoryId"
-      `,
+      this.prisma.questionCategory.findMany({
+        where: { categoryId: { in: categoryIds }, question: { status: 'approved' } },
+        select: { questionId: true, categoryId: true },
+      }),
     ]);
 
-    const primaryMap = new Map(primaryCounts.map((r) => [r.categoryId, r._count.id]));
-    const secondaryMap = new Map(secondaryCounts.map((r) => [r.categoryId, r.count]));
-
-    // For available/answered counts, we still need question IDs per category
-    // but only if there are excluded or answered questions to check against
-    const needDetailedCounts = excludedIds.length > 0 || answeredSet.size > 0;
-
-    if (!needDetailedCounts) {
-      return categories.map((cat) => {
-        // Use the higher of primary or secondary count (secondary includes primary via QuestionCategory)
-        const totalCount = secondaryMap.get(cat.id) ?? primaryMap.get(cat.id) ?? 0;
-        return {
-          ...cat,
-          availableCount: totalCount,
-          totalCount,
-          answeredCount: 0,
-          isCompleted: false,
-        };
-      });
-    }
-
-    // Only load question IDs (not full objects) for categories that need detail
-    const categoryIds = categories.map((c) => c.id);
-    const questionIdRows = await this.prisma.$queryRaw<{ categoryId: string; questionId: string }[]>`
-      SELECT DISTINCT qc."categoryId", qc."questionId"
-      FROM "QuestionCategory" qc
-      JOIN "Question" q ON q."id" = qc."questionId"
-      WHERE q."status" = 'approved' AND qc."categoryId" = ANY(${categoryIds})
-    `;
-
+    // Build unified map: categoryId → Set<questionId>
     const catQuestionMap = new Map<string, Set<string>>();
     for (const cid of categoryIds) {
       catQuestionMap.set(cid, new Set());
     }
-    for (const row of questionIdRows) {
+    for (const row of primaryRows) {
+      catQuestionMap.get(row.categoryId)?.add(row.id);
+    }
+    for (const row of secondaryRows) {
       catQuestionMap.get(row.categoryId)?.add(row.questionId);
     }
 

@@ -47,7 +47,7 @@ const darkGradients: ThemeGradients = {
   danger: ['#DC2626', '#EF4444'],
   warm: ['#D97706', '#F59E0B'],
   hero: ['#1E293B', '#0F172A'],
-  card: ['rgba(99,102,241,0.12)', 'rgba(99,102,241,0.03)'],
+  card: ['#141B2E', '#0F172A'],
 };
 
 export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {

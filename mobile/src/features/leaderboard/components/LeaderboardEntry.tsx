@@ -24,7 +24,7 @@ const MEDAL_EMOJI: Record<number, string> = {
 function getDisplayValue(entry: LeaderboardEntryType, mode: LeaderboardMode): string {
   switch (mode) {
     case 'streak':
-      return `\u{1F3C6}${entry.bestStreak ?? 0} \u{1F525}${entry.currentStreak ?? 0}`;
+      return `\u{1F525}${entry.bestStreak ?? 0}`;
     default:
       return String(entry.score);
   }

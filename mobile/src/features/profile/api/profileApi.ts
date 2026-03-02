@@ -38,6 +38,11 @@ export const profileApi = {
     return response.data.data;
   },
 
+  async regenerateNickname(): Promise<User> {
+    const response = await apiClient.post<UserResponse>('/v1/users/me/nickname/regenerate');
+    return response.data.data;
+  },
+
   async getStats(): Promise<StatsResponse['data']> {
     const response = await apiClient.get<StatsResponse>('/v1/users/me/stats');
     return response.data.data;

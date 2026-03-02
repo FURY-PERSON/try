@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Input } from '@/components/ui/Input';
@@ -29,6 +30,7 @@ export default function NicknameModal() {
   const [emojiGroups, setEmojiGroups] = useState<Record<string, string[]>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const isValid = value.length >= 3 && value.length <= 16;
 
@@ -63,6 +65,20 @@ export default function NicknameModal() {
       router.back();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (regenerating) return;
+    setRegenerating(true);
+    try {
+      const user = await profileApi.regenerateNickname();
+      setValue(user.nickname ?? '');
+      if (user.avatarEmoji) setSelectedEmoji(user.avatarEmoji);
+    } catch {
+      // Silently fail
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -123,14 +139,31 @@ export default function NicknameModal() {
         </AnimatedEntrance>
 
         <AnimatedEntrance delay={200} direction="up" style={styles.inputFullWidth}>
-          <Input
-            variant="answer"
-            value={value}
-            onChangeText={setValue}
-            placeholder={t('nickname.placeholder')}
-            autoFocus
-            maxLength={16}
-          />
+          <View style={styles.inputRow}>
+            <View style={{ flex: 1 }}>
+              <Input
+                variant="answer"
+                value={value}
+                onChangeText={setValue}
+                placeholder={t('nickname.placeholder')}
+                autoFocus
+                maxLength={16}
+              />
+            </View>
+            <Pressable
+              onPress={handleRegenerate}
+              disabled={regenerating}
+              style={[styles.regenerateBtn, { backgroundColor: colors.primary + '15' }]}
+              accessibilityLabel={t('nickname.regenerate')}
+              accessibilityRole="button"
+            >
+              {regenerating ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Feather name="refresh-cw" size={20} color={colors.primary} />
+              )}
+            </Pressable>
+          </View>
         </AnimatedEntrance>
 
         <AnimatedEntrance delay={300} direction="up">
@@ -223,6 +256,18 @@ const styles = StyleSheet.create({
   },
   inputFullWidth: {
     alignSelf: 'stretch',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  regenerateBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   hint: {
     fontSize: 13,

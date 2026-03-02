@@ -48,4 +48,13 @@ export class UsersController {
   async getMyStats(@CurrentUser() user: User): Promise<UserStats> {
     return this.usersService.getUserStats(user.id);
   }
+
+  @Post('me/nickname/regenerate')
+  @UseGuards(DeviceAuthGuard)
+  @ApiOperation({ summary: 'Regenerate a random nickname' })
+  @ApiResponse({ status: 201, description: 'Nickname regenerated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async regenerateNickname(@CurrentUser() user: User): Promise<User> {
+    return this.usersService.regenerateNickname(user.id, user.language);
+  }
 }

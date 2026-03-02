@@ -23,7 +23,7 @@ import { analytics } from '@/services/analytics';
 
 export default function CategoryDetailScreen() {
   const insets = useSafeAreaInsets();
-  const { colors, gradients, spacing, borderRadius, elevation } = useThemeContext();
+  const { colors, gradients, spacing, borderRadius, elevation, isDark } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -141,11 +141,13 @@ export default function CategoryDetailScreen() {
   const categoryColor = category.color || colors.primary;
 
   return (
-    <Screen padded={false} backgroundColor={categoryColor + '25'}>
+    <Screen padded={false} backgroundColor={isDark ? colors.background : categoryColor + '25'}>
       {/* Gradient Hero Header */}
       <AnimatedEntrance delay={0}>
         <LinearGradient
-          colors={[categoryColor + '25', categoryColor + '08', 'transparent']}
+          colors={isDark
+            ? [categoryColor + '20', categoryColor + '08', 'transparent']
+            : [categoryColor + '25', categoryColor + '08', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
