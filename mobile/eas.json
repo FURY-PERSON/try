@@ -7,34 +7,52 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "development"
+        "ENVFILE": ".env.development"
       },
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "scheme": "Frontfaktov (Development)"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDevelopmentDebug"
       }
     },
     "stage": {
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "stage"
+        "ENVFILE": ".env.stage"
       },
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "scheme": "Frontfaktov (Stage)"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleStageRelease"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "production",
-        "EXPO_PUBLIC_API_URL": "https://api-staging.factfront.app",
-        "EXPO_PUBLIC_ENV": "production"
+        "ENVFILE": ".env.production"
+      },
+      "ios": {
+        "scheme": "Frontfaktov (Production)"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleProductionRelease"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "NODE_ENV": "production"
+        "ENVFILE": ".env.production"
+      },
+      "ios": {
+        "scheme": "Frontfaktov (Production)"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleProductionRelease"
       }
     }
   },

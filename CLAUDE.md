@@ -46,7 +46,7 @@ Playwright E2E tests live in `/web/e2e`.
 ### Mobile (`/mobile`)
 
 ```bash
-npm run start:development   # Expo dev server
+npm run start   # Expo dev server
 npm run lint                # ESLint check
 npm run lint:fix            # Auto-fix linting
 npm run test                # Jest tests

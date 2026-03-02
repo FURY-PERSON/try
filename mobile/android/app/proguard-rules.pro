@@ -11,4 +11,8 @@
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
+# react-native-config
+-keep class com.factfront.app.BuildConfig { *; }
+-keepresources string/build_config_package
+
 # Add any project specific keep options here:
