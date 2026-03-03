@@ -40,7 +40,7 @@
     "title": "Fact Front",
     "dailySet": "Daily Set",
     "dailyTheme": "Theme: {{theme}}",
-    "dailyDesc": "20 statements — swipe right (fact) or left (fake)",
+    "dailyDesc": "{{count}} statements — swipe right (fact) or left (fake)",
     "dailyContinueDesc": "You answered {{answered}} of {{total}}",
     "progress": "{{current}}/{{total}}",
     "completed": "Set completed!",

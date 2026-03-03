@@ -95,6 +95,8 @@ export class QuestionsService {
     bestStreak = Math.max(bestStreak, currentStreak);
     bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
+    const answerScore = isCorrect ? 1 : 0;
+
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.create({
         data: {
@@ -102,6 +104,7 @@ export class QuestionsService {
           questionId,
           result,
           timeSpentSeconds: dto.timeSpentSeconds,
+          score: answerScore,
         },
       });
 
@@ -125,6 +128,7 @@ export class QuestionsService {
           bestStreak,
           currentAnswerStreak,
           bestAnswerStreak,
+          totalScore: { increment: answerScore },
         },
       });
     });

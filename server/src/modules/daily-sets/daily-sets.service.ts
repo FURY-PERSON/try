@@ -282,21 +282,21 @@ export class DailySetsService {
       (r) => !alreadySavedIds.has(r.questionId),
     );
 
-    // Calculate streak and score only for NEW results (not already processed by submitAnswer)
-    // Streak for already-saved answers was updated in real-time by answerQuestion
+    // Calculate streak and score only for NEW results (not already processed by answerQuestion)
+    // Streak and totalScore for already-saved answers were updated in real-time by answerQuestion
     let currentStreak = user.currentStreak;
     let bestStreak = user.bestStreak;
     let currentAnswerStreak = user.currentAnswerStreak;
     let bestAnswerStreak = user.bestAnswerStreak;
-    let score = 0;
+    let newResultsScore = 0;
 
     const newHistoryData = newResults.map((r) => {
       let answerScore = 0;
       if (r.result === 'correct') {
         currentStreak++;
         currentAnswerStreak++;
-        answerScore = 1 + Math.floor(currentAnswerStreak / 5);
-        score += answerScore;
+        answerScore = 1;
+        newResultsScore += answerScore;
       } else {
         currentStreak = 0;
         currentAnswerStreak = 0;
@@ -313,15 +313,12 @@ export class DailySetsService {
       };
     });
 
-    // Calculate total score for already-saved answers (for leaderboard)
-    const alreadySavedResults = dto.results.filter((r) =>
-      alreadySavedIds.has(r.questionId),
-    );
-    for (const r of alreadySavedResults) {
-      if (r.result === 'correct') {
-        score += 1;
-      }
-    }
+    // LeaderboardEntry score = new results score + already-saved correct count
+    // (already-saved scores were added to User.totalScore by answerQuestion, so don't increment again)
+    const alreadySavedCorrectCount = dto.results.filter(
+      (r) => alreadySavedIds.has(r.questionId) && r.result === 'correct',
+    ).length;
+    const leaderboardScore = newResultsScore + alreadySavedCorrectCount;
 
     try {
       await this.prisma.$transaction(async (tx) => {
@@ -344,7 +341,7 @@ export class DailySetsService {
             ...(newResults.length > 0
               ? { totalCorrectAnswers: { increment: newResults.filter((r) => r.result === 'correct').length } }
               : {}),
-            totalScore: { increment: score },
+            totalScore: { increment: newResultsScore },
           },
         });
 
@@ -353,7 +350,7 @@ export class DailySetsService {
           data: {
             userId,
             dailySetId,
-            score,
+            score: leaderboardScore,
             correctAnswers,
             totalTimeSeconds,
           },
@@ -418,7 +415,7 @@ export class DailySetsService {
         : 100;
 
     return {
-      score,
+      score: leaderboardScore,
       correctAnswers,
       totalQuestions: totalQuestionsInSet,
       totalTimeSeconds,

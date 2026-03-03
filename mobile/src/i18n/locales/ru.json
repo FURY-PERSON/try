@@ -40,7 +40,7 @@
     "title": "Фронт фактов",
     "dailySet": "Ежедневный набор",
     "dailyTheme": "Тема: {{theme}}",
-    "dailyDesc": "20 утверждений — свайпай вправо (факт) или влево (фейк)",
+    "dailyDesc": "{{count}} утверждений — свайпай вправо (факт) или влево (фейк)",
     "dailyContinueDesc": "Вы ответили на {{answered}} из {{total}}",
     "progress": "{{current}}/{{total}}",
     "completed": "Набор пройден!",

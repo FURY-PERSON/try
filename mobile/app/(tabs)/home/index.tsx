@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -54,8 +54,14 @@ export default function HomeScreen() {
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
 
   const insets = useSafeAreaInsets();
-  const { data: feed, isLoading, isError, error, refetch, isRefetching } = useHomeFeed();
-  const { data: dailyData } = useDailySet();
+  const { data: feed, isLoading, isError, error, refetch: refetchFeed, isRefetching: isRefetchingFeed } = useHomeFeed();
+  const { data: dailyData, refetch: refetchDaily, isRefetching: isRefetchingDaily } = useDailySet();
+
+  const isRefetching = isRefetchingFeed || isRefetchingDaily;
+  const refetch = useCallback(() => {
+    refetchFeed();
+    refetchDaily();
+  }, [refetchFeed, refetchDaily]);
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
   const [loadingRandom, setLoadingRandom] = useState(false);
 
@@ -331,7 +337,7 @@ export default function HomeScreen() {
             ) : daily?.set ? (
               <>
                 <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
-                  {t('home.dailyDesc')}
+                  {t('home.dailyDesc', { count: dailyData?.questions?.length ?? CARDS_PER_DAILY_SET })}
                 </Text>
                 <Button
                   label={t('common.play')}
