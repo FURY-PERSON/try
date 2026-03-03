@@ -75,6 +75,26 @@ export class QuestionsService {
     const isCorrect = dto.userAnswer === question.isTrue;
     const result = isCorrect ? 'correct' : 'incorrect';
 
+    // Get user for streak calculation
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    let currentStreak = user?.currentStreak ?? 0;
+    let bestStreak = user?.bestStreak ?? 0;
+    let currentAnswerStreak = user?.currentAnswerStreak ?? 0;
+    let bestAnswerStreak = user?.bestAnswerStreak ?? 0;
+
+    if (isCorrect) {
+      currentStreak++;
+      currentAnswerStreak++;
+    } else {
+      currentStreak = 0;
+      currentAnswerStreak = 0;
+    }
+    bestStreak = Math.max(bestStreak, currentStreak);
+    bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.create({
         data: {
@@ -101,6 +121,10 @@ export class QuestionsService {
         data: {
           totalGamesPlayed: { increment: 1 },
           ...(isCorrect ? { totalCorrectAnswers: { increment: 1 } } : {}),
+          currentStreak,
+          bestStreak,
+          currentAnswerStreak,
+          bestAnswerStreak,
         },
       });
     });

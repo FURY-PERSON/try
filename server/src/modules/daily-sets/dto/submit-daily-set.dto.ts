@@ -45,7 +45,7 @@ export class SubmitDailySetDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => GameResultDto)
-  @ArrayMinSize(15)
-  @ArrayMaxSize(15)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(20)
   results: GameResultDto[];
 }

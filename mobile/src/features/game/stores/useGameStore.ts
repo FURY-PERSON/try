@@ -20,7 +20,7 @@ type GameStoreState = {
   collectionQuestions: CollectionSessionQuestion[];
   isReplay: boolean;
 
-  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number) => void;
+  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number, resumeFromIndex?: number, previousResults?: CardResult[]) => void;
   startCollectionSession: (
     sessionId: string,
     collectionType: CollectionType,
@@ -55,13 +55,13 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   collectionQuestions: [],
   isReplay: false,
 
-  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number) => {
+  startDailySet: (dailySetId: string | null, totalCards: number, streak?: number, resumeFromIndex?: number, previousResults?: CardResult[]) => {
     set({
       dailyProgress: {
         dailySetId,
-        currentCardIndex: 0,
+        currentCardIndex: resumeFromIndex ?? 0,
         totalCards,
-        results: [],
+        results: previousResults ?? [],
         completed: false,
       },
       isPlaying: true,

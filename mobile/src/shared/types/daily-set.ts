@@ -16,6 +16,12 @@ export type DailySetQuestion = {
   };
 };
 
+export type DailySetProgress = {
+  answeredQuestionIds: string[];
+  results: Array<{ questionId: string; correct: boolean }>;
+  currentIndex: number;
+};
+
 export type DailySetWithQuestions = {
   id: string | null;
   date: string;
@@ -31,4 +37,5 @@ export type DailySetWithQuestions = {
     correctAnswers: number;
     totalTimeSeconds: number;
   } | null;
+  progress?: DailySetProgress | null;
 };

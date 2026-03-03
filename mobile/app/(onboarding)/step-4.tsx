@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,15 +26,19 @@ export default function OnboardingStep4() {
   const [emojiGroups, setEmojiGroups] = useState<Record<string, string[]>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [generatingNickname, setGeneratingNickname] = useState(false);
   const [validationError, setValidationError] = useState('');
 
   const loadOptions = useCallback(async () => {
+    setGeneratingNickname(true);
     try {
       const options = await referenceApi.getNicknameOptions(language);
       setPlaceholder(options.placeholder);
       setSelectedEmoji(options.emoji);
     } catch {
       setPlaceholder(language === 'en' ? 'Swift Fox' : 'Быстрый Лис');
+    } finally {
+      setGeneratingNickname(false);
     }
   }, [language]);
 
@@ -171,8 +175,12 @@ export default function OnboardingStep4() {
                 autoCapitalize="words"
                 autoCorrect={false}
               />
-              <Pressable onPress={handleRefresh} style={styles.refreshButton}>
-                <MaterialCommunityIcons name="refresh" size={20} color={colors.textSecondary} />
+              <Pressable onPress={handleRefresh} style={styles.refreshButton} disabled={generatingNickname}>
+                {generatingNickname ? (
+                  <ActivityIndicator size="small" color={colors.textSecondary} />
+                ) : (
+                  <MaterialCommunityIcons name="refresh" size={20} color={colors.textSecondary} />
+                )}
               </Pressable>
             </View>
             {validationError ? (

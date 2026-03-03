@@ -1,1 +1,1 @@
-export const CARDS_PER_DAILY_SET = 15;
+export const CARDS_PER_DAILY_SET = 20;

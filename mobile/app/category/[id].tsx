@@ -66,7 +66,7 @@ export default function CategoryDetailScreen() {
       const session = await collectionsApi.start({
         type: 'category',
         categoryId: id,
-        count: 30,
+        count: 20,
         ...(replay ? { replay: true } : {}),
       });
       startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, replay);

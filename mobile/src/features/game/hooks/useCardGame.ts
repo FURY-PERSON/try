@@ -229,7 +229,7 @@ export const useCardGame = (
       setPendingResult(null);
       submitCardResult(pendingResult);
 
-      // Fire-and-forget: save individual answer progress for collection modes
+      // Save individual answer progress for collection modes
       if (
         collectionType !== 'daily' &&
         !isReplay &&
@@ -243,14 +243,13 @@ export const useCardGame = (
             : ('incorrect' as const),
           timeSpentSeconds: Math.round(pendingResult.timeSpentMs / 1000),
         };
-        collectionsApi
-          .saveProgress(sessionId, [progressResult])
-          .then(() => {
-            savedProgressIds.current.add(pendingResult.questionId);
-          })
-          .catch(() => {
-            // Silently ignore — answer will be included in final submit()
-          });
+        try {
+          await collectionsApi.saveProgress(sessionId, [progressResult]);
+          savedProgressIds.current.add(pendingResult.questionId);
+        } catch {
+          // Answer will be included in final submit()
+          console.warn('Failed to save progress for', pendingResult.questionId);
+        }
       }
 
       // Submit full set when all cards are done (skip for replays)

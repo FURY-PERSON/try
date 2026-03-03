@@ -104,6 +104,20 @@ export default function HomeScreen() {
     }
   }, [dailyData, daily?.isLocked, startDailySet, router, streak]);
 
+  const handleContinueDaily = useCallback(() => {
+    if (!dailyData || !dailyData.progress) return;
+    const totalCards = dailyData.questions?.length ?? CARDS_PER_DAILY_SET;
+    // Include previous results so final submit has all answers for correct streak calculation
+    const previousResults = dailyData.progress.results.map((r) => ({
+      questionId: r.questionId,
+      correct: r.correct,
+      score: 0,
+      timeSpentMs: 0,
+    }));
+    startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress.currentIndex, previousResults);
+    router.push('/game/card');
+  }, [dailyData, startDailySet, router, streak]);
+
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
   }, [router]);
@@ -152,7 +166,7 @@ export default function HomeScreen() {
       const session = await collectionsApi.start({
         type: 'difficulty',
         difficulty,
-        count: 50,
+        count: 25,
       });
       startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
@@ -173,7 +187,7 @@ export default function HomeScreen() {
     try {
       const session = await collectionsApi.start({
         type: 'random',
-        count: 100,
+        count: 30,
       });
       startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
@@ -297,6 +311,22 @@ export default function HomeScreen() {
                 <Text style={[styles.lockText, { color: colors.textTertiary }]}>
                   {getLockoutText()}
                 </Text>
+              </>
+            ) : dailyData?.progress ? (
+              <>
+                <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
+                  {t('home.dailyContinueDesc', {
+                    answered: dailyData.progress.currentIndex,
+                    total: dailyData.questions?.length ?? CARDS_PER_DAILY_SET,
+                  })}
+                </Text>
+                <Button
+                  label={t('common.continue')}
+                  variant="primary"
+                  size="lg"
+                  onPress={handleContinueDaily}
+                  iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
+                />
               </>
             ) : daily?.set ? (
               <>

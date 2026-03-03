@@ -4,6 +4,7 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
@@ -26,6 +27,7 @@ const GRADIENT_END_V = { x: 0, y: 1 } as const;
 
 export default function CardScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ mode?: string }>();
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
@@ -43,34 +45,44 @@ export default function CardScreen() {
   const [exitSaving, setExitSaving] = useState(false);
 
   const handleExitWithSave = useCallback(async () => {
-    if (!sessionId || exitSaving) return;
+    if (exitSaving) return;
     setExitSaving(true);
     try {
-      const gameResults = dailyProgress.results.map((r) => ({
-        questionId: r.questionId,
-        result: r.correct ? ('correct' as const) : ('incorrect' as const),
-        timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
-      }));
-      if (gameResults.length > 0) {
-        const result = await collectionsApi.submit(sessionId, gameResults);
-        setTotalCards(gameResults.length);
-        setSubmissionResult({
-          ...result,
-          correctPercent: Math.round((result.correctAnswers / result.totalQuestions) * 100),
-          leaderboardPosition: 0,
-          totalPlayers: 0,
-          percentile: 0,
-        });
+      if (isCollectionMode && sessionId) {
+        // For collections — submit partial results and show results screen
+        const gameResults = dailyProgress.results.map((r) => ({
+          questionId: r.questionId,
+          result: r.correct ? ('correct' as const) : ('incorrect' as const),
+          timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
+        }));
+        if (gameResults.length > 0) {
+          const result = await collectionsApi.submit(sessionId, gameResults);
+          setTotalCards(gameResults.length);
+          setSubmissionResult({
+            ...result,
+            correctPercent: Math.round((result.correctAnswers / result.totalQuestions) * 100),
+            leaderboardPosition: 0,
+            totalPlayers: 0,
+            percentile: 0,
+          });
+        }
+        setShowExitConfirm(false);
+        router.replace('/modal/results');
+      } else {
+        // For daily set — answers already saved via submitAnswer, invalidate caches and exit
+        queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
+        queryClient.invalidateQueries({ queryKey: ['dailySet', 'today'] });
+        queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
+        setShowExitConfirm(false);
+        router.dismissAll();
       }
-      setShowExitConfirm(false);
-      router.replace('/modal/results');
     } catch {
       setShowExitConfirm(false);
       router.dismissAll();
     } finally {
       setExitSaving(false);
     }
-  }, [sessionId, exitSaving, dailyProgress.results, setTotalCards, setSubmissionResult, router]);
+  }, [isCollectionMode, sessionId, exitSaving, dailyProgress.results, setTotalCards, setSubmissionResult, router]);
 
   const collectionQuestions: DailySetQuestion[] = useMemo(() => {
     if (!isCollectionMode || storedCollectionQuestions.length === 0) return [];
@@ -169,7 +181,7 @@ export default function CardScreen() {
           <GameHeader
             progress={progress}
             streak={liveStreak}
-            onClose={isCollectionMode ? () => setShowExitConfirm(true) : undefined}
+            onClose={() => setShowExitConfirm(true)}
           />
         </View>
 

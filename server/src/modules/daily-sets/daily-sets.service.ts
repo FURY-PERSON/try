@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
 
-const CARDS_PER_DAILY_SET = 15;
+const CARDS_PER_DAILY_SET = 20;
 
 @Injectable()
 export class DailySetsService {
@@ -63,6 +63,7 @@ export class DailySetsService {
 
       let completed = false;
       let userEntry = null;
+      let progress = null;
 
       if (existingEntry) {
         completed = true;
@@ -71,6 +72,34 @@ export class DailySetsService {
           correctAnswers: existingEntry.correctAnswers,
           totalTimeSeconds: existingEntry.totalTimeSeconds,
         };
+      } else {
+        // Check for partial progress: questions answered today via submitAnswer
+        const dailySetQuestionIds = dailySet.questions.map(
+          (dsq) => dsq.question.id,
+        );
+        const tomorrow = new Date(today);
+        tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+        const answeredToday =
+          await this.prisma.userQuestionHistory.findMany({
+            where: {
+              userId,
+              questionId: { in: dailySetQuestionIds },
+              answeredAt: { gte: today, lt: tomorrow },
+            },
+            select: { questionId: true, result: true },
+          });
+
+        if (answeredToday.length > 0) {
+          progress = {
+            answeredQuestionIds: answeredToday.map((a) => a.questionId),
+            results: answeredToday.map((a) => ({
+              questionId: a.questionId,
+              correct: a.result === 'correct',
+            })),
+            currentIndex: answeredToday.length,
+          };
+        }
       }
 
       return {
@@ -97,6 +126,7 @@ export class DailySetsService {
         isLocked: false,
         unlocksAt: null,
         userEntry,
+        progress,
       };
     }
 
@@ -160,6 +190,7 @@ export class DailySetsService {
       isLocked: false,
       unlocksAt: null,
       userEntry: null,
+      progress: null,
     };
   }
 
@@ -231,19 +262,39 @@ export class DailySetsService {
       throw new NotFoundException('User not found');
     }
 
-    // Calculate streaks and score in a single pass
+    // Check which questions were already saved via submitAnswer to avoid duplicates
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+
+    const alreadySaved = await this.prisma.userQuestionHistory.findMany({
+      where: {
+        userId,
+        questionId: { in: dto.results.map((r) => r.questionId) },
+        answeredAt: { gte: todayStart, lt: tomorrowStart },
+      },
+      select: { questionId: true },
+    });
+    const alreadySavedIds = new Set(alreadySaved.map((a) => a.questionId));
+
+    const newResults = dto.results.filter(
+      (r) => !alreadySavedIds.has(r.questionId),
+    );
+
+    // Calculate streak and score only for NEW results (not already processed by submitAnswer)
+    // Streak for already-saved answers was updated in real-time by answerQuestion
     let currentStreak = user.currentStreak;
     let bestStreak = user.bestStreak;
     let currentAnswerStreak = user.currentAnswerStreak;
     let bestAnswerStreak = user.bestAnswerStreak;
     let score = 0;
 
-    const historyData = dto.results.map((r) => {
+    const newHistoryData = newResults.map((r) => {
       let answerScore = 0;
       if (r.result === 'correct') {
         currentStreak++;
         currentAnswerStreak++;
-        // Score: 1 base + streak bonus (floor(streak / 5))
         answerScore = 1 + Math.floor(currentAnswerStreak / 5);
         score += answerScore;
       } else {
@@ -262,15 +313,25 @@ export class DailySetsService {
       };
     });
 
+    // Calculate total score for already-saved answers (for leaderboard)
+    const alreadySavedResults = dto.results.filter((r) =>
+      alreadySavedIds.has(r.questionId),
+    );
+    for (const r of alreadySavedResults) {
+      if (r.result === 'correct') {
+        score += 1;
+      }
+    }
+
     try {
       await this.prisma.$transaction(async (tx) => {
-        // Save question history
-        await tx.userQuestionHistory.createMany({ data: historyData });
+        // Save question history only for answers not already saved via submitAnswer
+        if (newHistoryData.length > 0) {
+          await tx.userQuestionHistory.createMany({ data: newHistoryData });
+          await updateQuestionStatsBatch(tx, newResults);
+        }
 
-        // Update question stats atomically (no N+1: uses raw SQL increment)
-        await updateQuestionStatsBatch(tx, dto.results);
-
-        // Update user streak and stats
+        // Update user stats (streak already current from answerQuestion, update only for new results)
         await tx.user.update({
           where: { id: userId },
           data: {
@@ -280,7 +341,9 @@ export class DailySetsService {
             bestAnswerStreak,
             lastPlayedDate: new Date(),
             totalGamesPlayed: { increment: 1 },
-            totalCorrectAnswers: { increment: correctAnswers },
+            ...(newResults.length > 0
+              ? { totalCorrectAnswers: { increment: newResults.filter((r) => r.result === 'correct').length } }
+              : {}),
             totalScore: { increment: score },
           },
         });
