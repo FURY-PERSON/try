@@ -59,10 +59,6 @@ export default function NicknameModal() {
       setAvatarEmoji(selectedEmoji);
       analytics.logEvent('profile_updated');
       router.back();
-    } catch {
-      setNickname(value);
-      setAvatarEmoji(selectedEmoji);
-      router.back();
     } finally {
       setLoading(false);
     }

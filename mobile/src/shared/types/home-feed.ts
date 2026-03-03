@@ -13,6 +13,7 @@ export type DailyStatus = {
   lastResult: {
     score: number;
     correctAnswers: number;
+    totalQuestions: number;
     totalTimeSeconds: number;
   } | null;
 };

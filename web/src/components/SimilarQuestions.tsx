@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Badge } from '@/components/ui/Badge';
+import { SimilarQuestionDialog } from '@/components/SimilarQuestionDialog';
 import type { SimilarQuestion } from '@/api-client/types';
 
 function useDebouncedValue<T>(value: T, delay: number): T {
@@ -19,8 +20,10 @@ type SimilarQuestionsProps = {
 };
 
 export function SimilarQuestions({ statement, excludeId }: SimilarQuestionsProps) {
+  const queryClient = useQueryClient();
   const trimmed = statement.trim();
   const debouncedStatement = useDebouncedValue(trimmed, 300);
+  const [selectedItem, setSelectedItem] = useState<SimilarQuestion | null>(null);
 
   const { data } = useQuery({
     queryKey: ['admin', 'questions', 'similar', debouncedStatement, excludeId],
@@ -47,7 +50,11 @@ export function SimilarQuestions({ statement, excludeId }: SimilarQuestionsProps
       </p>
       <div className="space-y-2">
         {results.map((item) => (
-          <div key={`${item.type}-${item.id}`} className="flex items-start gap-2">
+          <div
+            key={`${item.type}-${item.id}`}
+            className="flex items-start gap-2 cursor-pointer hover:bg-orange/10 rounded-lg transition-colors p-1 -m-1"
+            onClick={() => setSelectedItem(item)}
+          >
             <Badge
               variant={
                 item.similarity >= 60
@@ -81,6 +88,14 @@ export function SimilarQuestions({ statement, excludeId }: SimilarQuestionsProps
           </div>
         ))}
       </div>
+      <SimilarQuestionDialog
+        open={selectedItem !== null}
+        onClose={() => setSelectedItem(null)}
+        item={selectedItem}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ['admin', 'questions', 'similar'] });
+        }}
+      />
     </div>
   );
 }

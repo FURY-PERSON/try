@@ -51,6 +51,7 @@ export class HomeService {
         theme: true,
         themeEn: true,
         status: true,
+        _count: { select: { questions: true } },
       },
     });
 
@@ -88,6 +89,7 @@ export class HomeService {
         lastResult: {
           score: entry.score,
           correctAnswers: entry.correctAnswers,
+          totalQuestions: dailySet._count.questions,
           totalTimeSeconds: entry.totalTimeSeconds,
         },
       };

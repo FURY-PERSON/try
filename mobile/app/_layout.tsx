@@ -129,8 +129,13 @@ export default function RootLayout() {
     }, SPLASH_MAX_DURATION_MS);
 
     async function init() {
-      await initializeDevice();
+      const { isReturningUser } = await initializeDevice();
       incrementLaunchCount();
+
+      // If deviceId survived reinstall but onboarding flag was reset → skip onboarding
+      if (isReturningUser && !useAppStore.getState().hasCompletedOnboarding) {
+        useAppStore.getState().completeOnboarding();
+      }
       adManager.initialize();
       initializeFirebase();
 

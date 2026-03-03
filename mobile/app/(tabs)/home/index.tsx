@@ -311,7 +311,7 @@ export default function HomeScreen() {
               <>
                 {daily.lastResult && (
                   <Text style={[styles.heroDesc, { color: colors.emerald }]}>
-                    {t('home.completed')} {daily.lastResult.correctAnswers}/{CARDS_PER_DAILY_SET}
+                    {t('home.completed')} {daily.lastResult.correctAnswers}/{daily.lastResult.totalQuestions}
                   </Text>
                 )}
                 <Text style={[styles.lockText, { color: colors.textTertiary }]}>

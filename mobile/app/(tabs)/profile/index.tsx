@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { StatCard } from '@/features/profile/components/StatCard';
 import { HeatmapCalendar } from '@/features/profile/components/HeatmapCalendar';
 import { useStats } from '@/features/profile/hooks/useStats';
+import { profileApi } from '@/features/profile/api/profileApi';
 import { useUserStore } from '@/stores/useUserStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
@@ -26,7 +27,16 @@ export default function ProfileScreen() {
   const router = useRouter();
   const nickname = useUserStore((s) => s.nickname);
   const avatarEmoji = useUserStore((s) => s.avatarEmoji);
+  const setNickname = useUserStore((s) => s.setNickname);
+  const setAvatarEmoji = useUserStore((s) => s.setAvatarEmoji);
   const { data: stats, isLoading, isRefetching, refetch } = useStats();
+
+  useEffect(() => {
+    profileApi.getProfile().then((user) => {
+      if (user.nickname) setNickname(user.nickname);
+      if (user.avatarEmoji) setAvatarEmoji(user.avatarEmoji);
+    }).catch(() => {});
+  }, []);
 
   return (
     <Screen padded={false}>

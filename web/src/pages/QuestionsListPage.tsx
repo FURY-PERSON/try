@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTION_STATUS_LABELS, DIFFICULTY_LABELS, IS_TRUE_FILTER_OPTIONS, QUESTION_STATUS_OPTIONS, LANGUAGE_FILTER_OPTIONS, DIFFICULTY_FILTER_OPTIONS, STATUS_BADGE_VARIANT } from '@/shared';
-import type { QuestionStatus, Language } from '@/shared';
+import { QUESTION_STATUS_LABELS, DIFFICULTY_LABELS, IS_TRUE_FILTER_OPTIONS, QUESTION_STATUS_OPTIONS, DIFFICULTY_FILTER_OPTIONS, STATUS_BADGE_VARIANT } from '@/shared';
+import type { QuestionStatus } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -121,7 +121,6 @@ export function QuestionsListPage() {
   const debouncedSearch = useDebouncedValue(search, 300);
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [languageFilter, setLanguageFilter] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
@@ -140,7 +139,7 @@ export function QuestionsListPage() {
   );
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'questions', { page, limit, search: debouncedSearch, isTrue: isTrueFilter, status: statusFilter, language: languageFilter, difficulty: difficultyFilter, categoryId: categoryFilter }],
+    queryKey: ['admin', 'questions', { page, limit, search: debouncedSearch, isTrue: isTrueFilter, status: statusFilter, difficulty: difficultyFilter, categoryId: categoryFilter }],
     queryFn: () =>
       api.admin.questions.list({
         page,
@@ -148,7 +147,6 @@ export function QuestionsListPage() {
         search: debouncedSearch || undefined,
         isTrue: (isTrueFilter || undefined) as string | undefined,
         status: (statusFilter || undefined) as QuestionStatus | undefined,
-        language: (languageFilter || undefined) as Language | undefined,
         difficulty: difficultyFilter ? Number(difficultyFilter) : undefined,
         categoryId: categoryFilter || undefined,
       }),
@@ -290,12 +288,6 @@ export function QuestionsListPage() {
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="w-44"
-          />
-          <Select
-            options={LANGUAGE_FILTER_OPTIONS}
-            value={languageFilter}
-            onChange={(e) => { setLanguageFilter(e.target.value); setPage(1); }}
-            className="w-36"
           />
           <Select
             options={DIFFICULTY_FILTER_OPTIONS}

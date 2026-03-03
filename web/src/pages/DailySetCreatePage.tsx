@@ -14,6 +14,7 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { DailySetCreateQuestionDialog, DailySetEditQuestionDialog } from '@/components/DailySetQuestionDialogs';
 
 const createSchema = z.object({
   date: z.string().min(1, 'Выберите дату'),
@@ -34,6 +35,8 @@ export function DailySetCreatePage() {
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [usedFilter, setUsedFilter] = useState<'new' | 'all'>('new');
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
 
   // TODO: W-8 — Implement server-side search with pagination instead of loading 500 questions at once
   const { data: questionsData } = useQuery({
@@ -103,6 +106,10 @@ export function DailySetCreatePage() {
 
   const removeQuestion = (id: string) => {
     setSelectedQuestionIds((prev) => prev.filter((qId) => qId !== id));
+  };
+
+  const handleQuestionCreated = (id: string) => {
+    addQuestion(id);
   };
 
   return (
@@ -207,7 +214,12 @@ export function DailySetCreatePage() {
         </Card>
 
         <Card>
-          <CardTitle>Одобренные утверждения</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Одобренные утверждения</CardTitle>
+            <Button variant="secondary" size="sm" onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="w-4 h-4" /> Создать
+            </Button>
+          </div>
 
           {/* Used filter */}
           <div className="flex gap-2 mt-4">
@@ -297,7 +309,8 @@ export function DailySetCreatePage() {
               filteredQuestions.map((q: any) => (
                 <div
                   key={q.id}
-                  className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-secondary/80 transition-colors"
+                  className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg hover:bg-surface-secondary/80 transition-colors cursor-pointer"
+                  onClick={() => setEditingQuestionId(q.id)}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -308,8 +321,8 @@ export function DailySetCreatePage() {
                         {q.category?.name}
                       </span>
                     </div>
-                    <p className="text-xs text-text-secondary truncate max-w-[250px]">
-                      {q.statement?.slice(0, 80)}...
+                    <p className="text-xs text-text-secondary line-clamp-2">
+                      {q.statement}
                     </p>
                   </div>
                   <Button
@@ -317,7 +330,7 @@ export function DailySetCreatePage() {
                     variant="ghost"
                     size="sm"
                     disabled={selectedQuestionIds.length >= CARDS_PER_DAILY_SET}
-                    onClick={() => addQuestion(q.id)}
+                    onClick={(e) => { e.stopPropagation(); addQuestion(q.id); }}
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
@@ -327,6 +340,17 @@ export function DailySetCreatePage() {
           </div>
         </Card>
       </div>
+
+      <DailySetCreateQuestionDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onCreated={handleQuestionCreated}
+      />
+      <DailySetEditQuestionDialog
+        open={editingQuestionId !== null}
+        onClose={() => setEditingQuestionId(null)}
+        questionId={editingQuestionId}
+      />
     </div>
   );
 }

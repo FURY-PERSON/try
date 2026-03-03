@@ -12,7 +12,7 @@ type AppState = {
   appLaunchCount: number;
   lastActiveAt: string | null;
 
-  initializeDevice: () => Promise<void>;
+  initializeDevice: () => Promise<{ isReturningUser: boolean }>;
   completeOnboarding: () => void;
   incrementLaunchCount: () => void;
   setLastActiveAt: (date: string) => void;
@@ -34,20 +34,23 @@ export const useAppStore = create<AppState>()(
           if (get().deviceId !== keychainId) {
             set({ deviceId: keychainId });
           }
-          return;
+          // Returning user — deviceId survived reinstall
+          return { isReturningUser: true };
         }
 
         // 2. Migrate existing deviceId from AsyncStorage to Keychain
         const storeId = get().deviceId;
         if (storeId) {
           await secureStorage.set(DEVICE_ID_KEY, storeId);
-          return;
+          // Existing user migrating to Keychain — already completed onboarding
+          return { isReturningUser: true };
         }
 
         // 3. First install — generate new deviceId and save to Keychain
         const newId = randomUUID();
         await secureStorage.set(DEVICE_ID_KEY, newId);
         set({ deviceId: newId });
+        return { isReturningUser: false };
       },
 
       completeOnboarding: () => {
