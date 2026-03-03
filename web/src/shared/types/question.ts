@@ -4,10 +4,14 @@ import type { Language } from '../constants/languages';
 export type Question = {
   id: string;
   statement: string;
+  statementEn: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn: string;
   source: string;
+  sourceEn: string;
   sourceUrl: string | null;
+  sourceUrlEn: string | null;
   language: Language;
   categoryId: string;
   difficulty: number;

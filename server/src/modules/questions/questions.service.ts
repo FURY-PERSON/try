@@ -49,6 +49,7 @@ export class QuestionsService {
     return {
       id: question.id,
       statement: question.statement,
+      statementEn: question.statementEn,
       language: question.language,
       categoryId: question.categoryId,
       difficulty: question.difficulty,
@@ -144,8 +145,11 @@ export class QuestionsService {
       score,
       isTrue: question.isTrue,
       explanation: question.explanation,
+      explanationEn: question.explanationEn,
       source: question.source,
+      sourceEn: question.sourceEn,
       sourceUrl: question.sourceUrl,
+      sourceUrlEn: question.sourceUrlEn,
     };
   }
 

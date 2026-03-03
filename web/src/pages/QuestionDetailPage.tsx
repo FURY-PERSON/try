@@ -6,8 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ArrowLeft, CheckCircle, XCircle, Trash2, ExternalLink, Image, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUESTION_STATUS_LABELS, STATUS_BADGE_VARIANT, DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, LANGUAGE_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
-import type { Language } from '@/shared';
+import { QUESTION_STATUS_LABELS, STATUS_BADGE_VARIANT, DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -22,11 +21,14 @@ import { Textarea } from '@/components/ui/Textarea';
 
 const editFormSchema = z.object({
   statement: z.string().min(10, 'Минимум 10 символов'),
+  statementEn: z.string().optional(),
   isTrue: z.enum(['true', 'false']),
   explanation: z.string().min(10, 'Минимум 10 символов'),
+  explanationEn: z.string().optional(),
   source: z.string().min(1, 'Введите источник'),
+  sourceEn: z.string().optional(),
   sourceUrl: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
-  language: z.enum(['ru', 'en']),
+  sourceUrlEn: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
   categoryId: z.string().min(1, 'Выберите категорию'),
   difficulty: z.coerce.number().min(1).max(5),
 });
@@ -90,11 +92,15 @@ export function QuestionDetailPage() {
     mutationFn: (dto: EditFormData) =>
       api.admin.questions.update(id!, {
         statement: dto.statement,
+        statementEn: dto.statementEn || undefined,
         isTrue: dto.isTrue === 'true',
         explanation: dto.explanation,
+        explanationEn: dto.explanationEn || undefined,
         source: dto.source,
+        sourceEn: dto.sourceEn || undefined,
         sourceUrl: dto.sourceUrl || undefined,
-        language: dto.language as Language,
+        sourceUrlEn: dto.sourceUrlEn || undefined,
+        language: 'ru',
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
         categoryIds: additionalCategoryIds.length > 0 ? additionalCategoryIds : undefined,
@@ -126,11 +132,14 @@ export function QuestionDetailPage() {
     setAdditionalCategoryIds(existingAdditional);
     reset({
       statement: question.statement,
+      statementEn: question.statementEn ?? '',
       isTrue: question.isTrue ? 'true' : 'false',
       explanation: question.explanation,
+      explanationEn: question.explanationEn ?? '',
       source: question.source,
+      sourceEn: question.sourceEn ?? '',
       sourceUrl: question.sourceUrl ?? '',
-      language: question.language as 'ru' | 'en',
+      sourceUrlEn: question.sourceUrlEn ?? '',
       categoryId: question.categoryId,
       difficulty: question.difficulty,
     });
@@ -262,7 +271,6 @@ export function QuestionDetailPage() {
                 }
               />
             )}
-            <InfoRow label="Язык" value={question.language.toUpperCase()} />
             <InfoRow
               label="Сложность"
               value={`${question.difficulty} — ${DIFFICULTY_LABELS[question.difficulty as number] ?? '?'}`}
@@ -288,6 +296,11 @@ export function QuestionDetailPage() {
           <p className="mt-4 text-base text-text-primary leading-relaxed font-medium">
             {question.statement}
           </p>
+          {question.statementEn && (
+            <p className="mt-2 text-sm text-text-secondary leading-relaxed italic">
+              EN: {question.statementEn}
+            </p>
+          )}
           <div className="mt-4">
             <Badge variant={question.isTrue ? 'success' : 'danger'} className="text-sm">
               {question.isTrue ? 'Это ФАКТ' : 'Это ФЕЙК'}
@@ -300,10 +313,20 @@ export function QuestionDetailPage() {
           <p className="mt-4 text-sm text-text-primary leading-relaxed">
             {question.explanation}
           </p>
+          {question.explanationEn && (
+            <p className="mt-2 text-xs text-text-secondary leading-relaxed italic">
+              EN: {question.explanationEn}
+            </p>
+          )}
           <div className="mt-3 space-y-1">
             <p className="text-xs text-text-secondary">
               Источник: {question.source}
             </p>
+            {question.sourceEn && (
+              <p className="text-xs text-text-secondary italic">
+                Source (EN): {question.sourceEn}
+              </p>
+            )}
             {question.sourceUrl && (
               <a
                 href={question.sourceUrl}
@@ -312,7 +335,18 @@ export function QuestionDetailPage() {
                 className="inline-flex items-center gap-1 text-xs text-blue hover:underline"
               >
                 <ExternalLink className="w-3 h-3" />
-                Проверить источник
+                Проверить источник (RU)
+              </a>
+            )}
+            {question.sourceUrlEn && (
+              <a
+                href={question.sourceUrlEn}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-blue hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Source link (EN)
               </a>
             )}
           </div>
@@ -357,16 +391,25 @@ export function QuestionDetailPage() {
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         title="Редактировать утверждение"
-        className="max-w-2xl"
+        className="max-w-4xl"
       >
         <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <Textarea
-            id="edit-statement"
-            label="Текст утверждения"
-            rows={3}
-            error={errors.statement?.message}
-            {...register('statement')}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Textarea
+              id="edit-statement"
+              label="Текст утверждения (RU)"
+              rows={3}
+              error={errors.statement?.message}
+              {...register('statement')}
+            />
+            <Textarea
+              id="edit-statementEn"
+              label="Statement (EN)"
+              rows={3}
+              error={errors.statementEn?.message}
+              {...register('statementEn')}
+            />
+          </div>
           <Select
             id="edit-isTrue"
             label="Факт или Фейк?"
@@ -374,41 +417,55 @@ export function QuestionDetailPage() {
             error={errors.isTrue?.message}
             {...register('isTrue')}
           />
-          <Textarea
-            id="edit-explanation"
-            label="Объяснение"
-            rows={4}
-            error={errors.explanation?.message}
-            {...register('explanation')}
-          />
-          <Input
-            id="edit-source"
-            label="Источник"
-            error={errors.source?.message}
-            {...register('source')}
-          />
-          <Input
-            id="edit-sourceUrl"
-            label="URL источника"
-            error={errors.sourceUrl?.message}
-            {...register('sourceUrl')}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              id="edit-language"
-              label="Язык"
-              options={LANGUAGE_OPTIONS}
-              error={errors.language?.message}
-              {...register('language')}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Textarea
+              id="edit-explanation"
+              label="Объяснение (RU)"
+              rows={4}
+              error={errors.explanation?.message}
+              {...register('explanation')}
             />
-            <Select
-              id="edit-difficulty"
-              label="Сложность"
-              options={DIFFICULTY_OPTIONS}
-              error={errors.difficulty?.message}
-              {...register('difficulty')}
+            <Textarea
+              id="edit-explanationEn"
+              label="Explanation (EN)"
+              rows={4}
+              error={errors.explanationEn?.message}
+              {...register('explanationEn')}
             />
           </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Input
+              id="edit-source"
+              label="Источник (RU)"
+              error={errors.source?.message}
+              {...register('source')}
+            />
+            <Input
+              id="edit-sourceEn"
+              label="Source (EN)"
+              error={errors.sourceEn?.message}
+              {...register('sourceEn')}
+            />
+            <Input
+              id="edit-sourceUrl"
+              label="URL источника (RU)"
+              error={errors.sourceUrl?.message}
+              {...register('sourceUrl')}
+            />
+            <Input
+              id="edit-sourceUrlEn"
+              label="Source URL (EN)"
+              error={errors.sourceUrlEn?.message}
+              {...register('sourceUrlEn')}
+            />
+          </div>
+          <Select
+            id="edit-difficulty"
+            label="Сложность"
+            options={DIFFICULTY_OPTIONS}
+            error={errors.difficulty?.message}
+            {...register('difficulty')}
+          />
           <Select
             id="edit-categoryId"
             label="Основная категория"

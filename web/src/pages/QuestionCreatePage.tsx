@@ -7,8 +7,7 @@ import { z } from 'zod';
 import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import type { CreateQuestionDto } from '@/api-client/types';
-import { LANGUAGE_OPTIONS, IS_TRUE_OPTIONS, DIFFICULTY_OPTIONS } from '@/shared';
-import type { Language } from '@/shared';
+import { IS_TRUE_OPTIONS, DIFFICULTY_OPTIONS } from '@/shared';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -20,11 +19,14 @@ import { Textarea } from '@/components/ui/Textarea';
 
 const questionFormSchema = z.object({
   statement: z.string().min(10, 'Минимум 10 символов'),
+  statementEn: z.string().optional(),
   isTrue: z.enum(['true', 'false']),
   explanation: z.string().min(10, 'Минимум 10 символов'),
+  explanationEn: z.string().optional(),
   source: z.string().min(1, 'Введите источник'),
+  sourceEn: z.string().optional(),
   sourceUrl: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
-  language: z.enum(['ru', 'en']),
+  sourceUrlEn: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
   categoryId: z.string().min(1, 'Выберите категорию'),
   difficulty: z.coerce.number().min(1, 'Мин. 1').max(5, 'Макс. 5'),
 });
@@ -50,12 +52,15 @@ export function QuestionCreatePage() {
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
       isTrue: 'false',
-      language: 'ru',
       difficulty: 3,
       statement: '',
+      statementEn: '',
       explanation: '',
+      explanationEn: '',
       source: '',
+      sourceEn: '',
       sourceUrl: '',
+      sourceUrlEn: '',
     },
   });
 
@@ -72,11 +77,15 @@ export function QuestionCreatePage() {
   const onSubmit = (data: QuestionFormData) => {
     createMutation.mutate({
       statement: data.statement,
+      statementEn: data.statementEn || undefined,
       isTrue: data.isTrue === 'true',
       explanation: data.explanation,
+      explanationEn: data.explanationEn || undefined,
       source: data.source,
+      sourceEn: data.sourceEn || undefined,
       sourceUrl: data.sourceUrl || undefined,
-      language: data.language as Language,
+      sourceUrlEn: data.sourceUrlEn || undefined,
+      language: 'ru',
       categoryId: data.categoryId,
       difficulty: data.difficulty,
       categoryIds: additionalCategoryIds.length > 0 ? additionalCategoryIds : undefined,
@@ -101,19 +110,29 @@ export function QuestionCreatePage() {
 
       <PageHeader title="Создать утверждение" description="Ручное создание нового утверждения для игры «Фронт фактов»" />
 
-      <div className="max-w-2xl">
+      <div className="max-w-5xl">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardTitle>Утверждение</CardTitle>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Textarea
                 id="statement"
-                label="Текст утверждения"
+                label="Текст утверждения (RU)"
                 rows={3}
                 placeholder="Великая Китайская стена видна из космоса невооружённым глазом"
                 error={errors.statement?.message}
                 {...register('statement')}
               />
+              <Textarea
+                id="statementEn"
+                label="Statement (EN)"
+                rows={3}
+                placeholder="The Great Wall of China is visible from space with the naked eye"
+                error={errors.statementEn?.message}
+                {...register('statementEn')}
+              />
+            </div>
+            <div className="mt-4">
               <Select
                 id="isTrue"
                 label="Это факт или фейк?"
@@ -126,28 +145,52 @@ export function QuestionCreatePage() {
 
           <Card>
             <CardTitle>Объяснение</CardTitle>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Textarea
                 id="explanation"
-                label="Почему это факт / почему это фейк?"
+                label="Объяснение (RU)"
                 rows={4}
                 placeholder="Объясните, почему это утверждение верно или неверно..."
                 error={errors.explanation?.message}
                 {...register('explanation')}
               />
+              <Textarea
+                id="explanationEn"
+                label="Explanation (EN)"
+                rows={4}
+                placeholder="Explain why this statement is true or false..."
+                error={errors.explanationEn?.message}
+                {...register('explanationEn')}
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Input
                 id="source"
-                label="Источник"
+                label="Источник (RU)"
                 placeholder="NASA, Википедия, Nature Journal..."
                 error={errors.source?.message}
                 {...register('source')}
               />
               <Input
+                id="sourceEn"
+                label="Source (EN)"
+                placeholder="NASA, Wikipedia, Nature Journal..."
+                error={errors.sourceEn?.message}
+                {...register('sourceEn')}
+              />
+              <Input
                 id="sourceUrl"
-                label="URL источника (необязательно)"
+                label="URL источника (RU)"
                 placeholder="https://..."
                 error={errors.sourceUrl?.message}
                 {...register('sourceUrl')}
+              />
+              <Input
+                id="sourceUrlEn"
+                label="Source URL (EN)"
+                placeholder="https://..."
+                error={errors.sourceUrlEn?.message}
+                {...register('sourceUrlEn')}
               />
             </div>
           </Card>
@@ -155,22 +198,13 @@ export function QuestionCreatePage() {
           <Card>
             <CardTitle>Параметры</CardTitle>
             <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  id="language"
-                  label="Язык"
-                  options={LANGUAGE_OPTIONS}
-                  error={errors.language?.message}
-                  {...register('language')}
-                />
-                <Select
-                  id="difficulty"
-                  label="Сложность"
-                  options={DIFFICULTY_OPTIONS}
-                  error={errors.difficulty?.message}
-                  {...register('difficulty')}
-                />
-              </div>
+              <Select
+                id="difficulty"
+                label="Сложность"
+                options={DIFFICULTY_OPTIONS}
+                error={errors.difficulty?.message}
+                {...register('difficulty')}
+              />
               <Select
                 id="categoryId"
                 label="Основная категория"

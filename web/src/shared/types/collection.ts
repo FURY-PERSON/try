@@ -23,10 +23,14 @@ export type CollectionItem = {
   id: string;
   collectionId: string;
   statement: string;
+  statementEn: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn: string;
   source: string;
+  sourceEn: string;
   sourceUrl: string | null;
+  sourceUrlEn: string | null;
   difficulty: number;
   sortOrder: number;
   language: string;
@@ -41,10 +45,14 @@ export type CollectionWithQuestions = CollectionWithItems;
 
 export type CreateCollectionItemDto = {
   statement: string;
+  statementEn?: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn?: string;
   source?: string;
+  sourceEn?: string;
   sourceUrl?: string;
+  sourceUrlEn?: string;
   difficulty?: number;
   language?: string;
   sortOrder?: number;

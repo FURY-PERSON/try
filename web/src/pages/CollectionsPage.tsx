@@ -52,12 +52,15 @@ type CollectionFormData = z.infer<typeof collectionSchema>;
 
 const questionSchema = z.object({
   statement: z.string().min(5, 'Минимум 5 символов'),
+  statementEn: z.string().optional(),
   isTrue: z.enum(['true', 'false']),
   explanation: z.string().min(5, 'Минимум 5 символов'),
+  explanationEn: z.string().optional(),
   source: z.string().optional(),
+  sourceEn: z.string().optional(),
   sourceUrl: z.string().url('Введите корректный URL').optional().or(z.literal('')),
+  sourceUrlEn: z.string().url('Введите корректный URL').optional().or(z.literal('')),
   difficulty: z.coerce.number().min(1).max(5),
-  language: z.enum(['ru', 'en']),
 });
 
 type QuestionFormData = z.infer<typeof questionSchema>;
@@ -76,11 +79,6 @@ const DIFFICULTY_OPTIONS = [
   { value: '3', label: '3 — Средний' },
   { value: '4', label: '4 — Сложный' },
   { value: '5', label: '5 — Очень сложный' },
-];
-
-const LANGUAGE_OPTIONS = [
-  { value: 'ru', label: 'Русский' },
-  { value: 'en', label: 'English' },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -137,12 +135,15 @@ function QuestionEditor({
   const handleSave = (data: QuestionFormData) => {
     const item: CreateCollectionItemDto = {
       statement: data.statement,
+      statementEn: data.statementEn || undefined,
       isTrue: data.isTrue === 'true',
       explanation: data.explanation,
+      explanationEn: data.explanationEn || undefined,
       source: data.source || undefined,
+      sourceEn: data.sourceEn || undefined,
       sourceUrl: data.sourceUrl || undefined,
+      sourceUrlEn: data.sourceUrlEn || undefined,
       difficulty: data.difficulty,
-      language: data.language,
       sortOrder: editingIndex !== null ? (items[editingIndex]?.sortOrder ?? items.length + 1) : items.length + 1,
     };
 
@@ -196,7 +197,9 @@ function QuestionEditor({
                   )}
                   <div className="flex gap-2 mt-0.5">
                     <span className="text-xs text-text-secondary">Сложность: {item.difficulty}</span>
-                    <span className="text-xs text-text-secondary uppercase">{item.language}</span>
+                    {item.statementEn && (
+                      <span className="text-xs font-medium text-blue bg-blue/10 px-1.5 py-0.5 rounded">EN</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
@@ -253,7 +256,7 @@ function QuestionDialogControlled({
     formState: { errors },
   } = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
-    defaultValues: { difficulty: 3, language: 'ru', isTrue: 'false' },
+    defaultValues: { difficulty: 3, isTrue: 'false' },
   });
 
   useEffect(() => {
@@ -261,15 +264,18 @@ function QuestionDialogControlled({
     if (editingItem) {
       reset({
         statement: editingItem.statement,
+        statementEn: editingItem.statementEn ?? '',
         isTrue: editingItem.isTrue ? 'true' : 'false',
         explanation: editingItem.explanation,
+        explanationEn: editingItem.explanationEn ?? '',
         source: editingItem.source ?? '',
+        sourceEn: editingItem.sourceEn ?? '',
         sourceUrl: editingItem.sourceUrl ?? '',
+        sourceUrlEn: editingItem.sourceUrlEn ?? '',
         difficulty: editingItem.difficulty ?? 3,
-        language: (editingItem.language ?? 'ru') as 'ru' | 'en',
       });
     } else {
-      reset({ statement: '', isTrue: 'false', explanation: '', source: '', sourceUrl: '', difficulty: 3, language: 'ru' });
+      reset({ statement: '', statementEn: '', isTrue: 'false', explanation: '', explanationEn: '', source: '', sourceEn: '', sourceUrl: '', sourceUrlEn: '', difficulty: 3 });
     }
   }, [open, editingItem, reset]);
 
@@ -280,7 +286,7 @@ function QuestionDialogControlled({
       <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="bg-surface rounded-2xl p-6 w-full max-w-lg shadow-xl pointer-events-auto"
+          className="bg-surface rounded-2xl p-6 w-full max-w-4xl shadow-xl pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
@@ -300,16 +306,26 @@ function QuestionDialogControlled({
             onSubmit={(e) => { e.stopPropagation(); void handleSubmit(onSave)(e); }}
             className="space-y-3"
           >
-            <Textarea
-              id="q-statement"
-              label="Утверждение"
-              placeholder="Человек использует только 10% мозга"
-              error={errors.statement?.message}
-              rows={2}
-              {...register('statement')}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <Textarea
+                id="q-statement"
+                label="Утверждение (RU)"
+                placeholder="Человек использует только 10% мозга"
+                error={errors.statement?.message}
+                rows={2}
+                {...register('statement')}
+              />
+              <Textarea
+                id="q-statementEn"
+                label="Statement (EN)"
+                placeholder="Humans only use 10% of their brain"
+                error={errors.statementEn?.message}
+                rows={2}
+                {...register('statementEn')}
+              />
+            </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Select
                 id="q-isTrue"
                 label="Ответ"
@@ -327,37 +343,53 @@ function QuestionDialogControlled({
                 error={errors.difficulty?.message}
                 {...register('difficulty')}
               />
-              <Select
-                id="q-language"
-                label="Язык"
-                options={LANGUAGE_OPTIONS}
-                error={errors.language?.message}
-                {...register('language')}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <Textarea
+                id="q-explanation"
+                label="Объяснение (RU)"
+                placeholder="На самом деле мозг задействован полностью..."
+                error={errors.explanation?.message}
+                rows={2}
+                {...register('explanation')}
+              />
+              <Textarea
+                id="q-explanationEn"
+                label="Explanation (EN)"
+                placeholder="In fact, the brain is fully engaged..."
+                error={errors.explanationEn?.message}
+                rows={2}
+                {...register('explanationEn')}
               />
             </div>
 
-            <Textarea
-              id="q-explanation"
-              label="Объяснение"
-              placeholder="На самом деле мозг задействован полностью..."
-              error={errors.explanation?.message}
-              rows={2}
-              {...register('explanation')}
-            />
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               <Input
                 id="q-source"
-                label="Источник"
-                placeholder="Wikipedia"
+                label="Источник (RU)"
+                placeholder="Википедия"
                 {...register('source')}
               />
               <Input
+                id="q-sourceEn"
+                label="Source (EN)"
+                placeholder="Wikipedia"
+                {...register('sourceEn')}
+              />
+              <Input
                 id="q-sourceUrl"
-                label="URL источника"
+                label="URL источника (RU)"
                 placeholder="https://..."
                 error={errors.sourceUrl?.message}
                 {...register('sourceUrl')}
+              />
+              <Input
+                id="q-sourceUrlEn"
+                label="Source URL (EN)"
+                placeholder="https://..."
+                error={errors.sourceUrlEn?.message}
+                {...register('sourceUrlEn')}
               />
             </div>
 
@@ -496,10 +528,14 @@ export function CollectionsPage() {
       setCollectionItems(
         full.questions.map((item) => ({
           statement: item.statement,
+          statementEn: item.statementEn || undefined,
           isTrue: item.isTrue,
           explanation: item.explanation,
+          explanationEn: item.explanationEn || undefined,
           source: item.source || undefined,
+          sourceEn: item.sourceEn || undefined,
           sourceUrl: item.sourceUrl || undefined,
+          sourceUrlEn: item.sourceUrlEn || undefined,
           difficulty: item.difficulty,
           language: item.language,
           sortOrder: item.sortOrder,

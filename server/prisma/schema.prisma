@@ -54,10 +54,14 @@ model Category {
 model Question {
   id                 String   @id @default(cuid())
   statement          String
+  statementEn        String   @default("")
   isTrue             Boolean
   explanation        String
+  explanationEn      String   @default("")
   source             String
+  sourceEn           String   @default("")
   sourceUrl          String?
+  sourceUrlEn        String?
 
   language           String   @default("ru")
   categoryId         String
@@ -177,14 +181,18 @@ model Collection {
 }
 
 model CollectionItem {
-  id           String     @id @default(cuid())
-  collectionId String
-  statement    String
-  isTrue       Boolean
-  explanation  String
-  source       String     @default("")
-  sourceUrl    String?
-  difficulty   Int        @default(3)
+  id             String     @id @default(cuid())
+  collectionId   String
+  statement      String
+  statementEn    String     @default("")
+  isTrue         Boolean
+  explanation    String
+  explanationEn  String     @default("")
+  source         String     @default("")
+  sourceEn       String     @default("")
+  sourceUrl      String?
+  sourceUrlEn    String?
+  difficulty     Int        @default(3)
   sortOrder    Int        @default(0)
   language     String     @default("ru")
 

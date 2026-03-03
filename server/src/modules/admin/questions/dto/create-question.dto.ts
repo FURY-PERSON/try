@@ -20,6 +20,11 @@ export class CreateQuestionDto {
   @MinLength(10, { message: 'Statement must be at least 10 characters long' })
   statement: string;
 
+  @ApiPropertyOptional({ description: 'Statement text in English' })
+  @IsOptional()
+  @IsString()
+  statementEn?: string;
+
   @ApiProperty({
     example: false,
     description: 'Whether this statement is true (fact) or false (fake)',
@@ -34,12 +39,22 @@ export class CreateQuestionDto {
   @IsString()
   explanation: string;
 
+  @ApiPropertyOptional({ description: 'Explanation text in English' })
+  @IsOptional()
+  @IsString()
+  explanationEn?: string;
+
   @ApiProperty({
     example: 'NASA',
     description: 'Source of the information',
   })
   @IsString()
   source: string;
+
+  @ApiPropertyOptional({ description: 'Source name in English' })
+  @IsOptional()
+  @IsString()
+  sourceEn?: string;
 
   @ApiPropertyOptional({
     example: 'https://www.nasa.gov/...',
@@ -48,6 +63,11 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsUrl({}, { message: 'sourceUrl must be a valid URL' })
   sourceUrl?: string;
+
+  @ApiPropertyOptional({ description: 'URL to the English source' })
+  @IsOptional()
+  @IsUrl({}, { message: 'sourceUrlEn must be a valid URL' })
+  sourceUrlEn?: string;
 
   @ApiProperty({ example: 'ru', description: 'Language code' })
   @IsString()

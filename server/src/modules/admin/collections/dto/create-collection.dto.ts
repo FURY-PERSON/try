@@ -21,6 +21,11 @@ export class CreateCollectionItemDto {
   @MinLength(5)
   statement: string;
 
+  @ApiPropertyOptional({ description: 'Statement in English' })
+  @IsOptional()
+  @IsString()
+  statementEn?: string;
+
   @ApiProperty({ example: false, description: 'True if the statement is correct' })
   @IsBoolean()
   isTrue: boolean;
@@ -30,15 +35,30 @@ export class CreateCollectionItemDto {
   @MinLength(5)
   explanation: string;
 
+  @ApiPropertyOptional({ description: 'Explanation in English' })
+  @IsOptional()
+  @IsString()
+  explanationEn?: string;
+
   @ApiPropertyOptional({ example: 'Wikipedia', description: 'Source name' })
   @IsOptional()
   @IsString()
   source?: string;
 
+  @ApiPropertyOptional({ description: 'Source name in English' })
+  @IsOptional()
+  @IsString()
+  sourceEn?: string;
+
   @ApiPropertyOptional({ description: 'Source URL' })
   @IsOptional()
   @IsString()
   sourceUrl?: string;
+
+  @ApiPropertyOptional({ description: 'English source URL' })
+  @IsOptional()
+  @IsString()
+  sourceUrlEn?: string;
 
   @ApiPropertyOptional({ example: 3, minimum: 1, maximum: 5, default: 3 })
   @IsOptional()

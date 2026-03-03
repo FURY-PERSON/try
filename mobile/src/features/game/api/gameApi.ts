@@ -12,8 +12,11 @@ type SubmitAnswerResponse = {
     score: number;
     isTrue: boolean;
     explanation: string;
+    explanationEn: string;
     source: string;
+    sourceEn: string;
     sourceUrl?: string;
+    sourceUrlEn?: string;
   };
 };
 

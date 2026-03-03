@@ -71,10 +71,14 @@ export class AdminCollectionsService {
         questions: {
           create: dto.items.map((item, index) => ({
             statement: item.statement,
+            statementEn: item.statementEn ?? '',
             isTrue: item.isTrue,
             explanation: item.explanation,
+            explanationEn: item.explanationEn ?? '',
             source: item.source ?? '',
+            sourceEn: item.sourceEn ?? '',
             sourceUrl: item.sourceUrl,
+            sourceUrlEn: item.sourceUrlEn,
             difficulty: item.difficulty ?? 3,
             language: item.language ?? 'ru',
             sortOrder: item.sortOrder ?? index + 1,
@@ -108,8 +112,10 @@ export class AdminCollectionsService {
         data: dto.items.map((item, index) => ({
           collectionId: id,
           statement: item.statement,
+          statementEn: item.statementEn ?? '',
           isTrue: item.isTrue,
           explanation: item.explanation,
+          explanationEn: item.explanationEn ?? '',
           source: item.source ?? '',
           sourceUrl: item.sourceUrl,
           difficulty: item.difficulty ?? 3,

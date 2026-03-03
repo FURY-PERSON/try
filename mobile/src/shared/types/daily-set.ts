@@ -1,10 +1,14 @@
 export type DailySetQuestion = {
   id: string;
   statement: string;
+  statementEn: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn: string;
   source: string;
+  sourceEn: string;
   sourceUrl: string | null;
+  sourceUrlEn: string | null;
   language: string;
   categoryId: string;
   difficulty: number;

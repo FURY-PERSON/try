@@ -89,15 +89,19 @@ export default function CardScreen() {
     return storedCollectionQuestions.map((q, i) => ({
       id: q.id,
       statement: q.statement ?? '',
+      statementEn: q.statementEn ?? '',
       isTrue: q.isTrue ?? false,
       explanation: q.explanation ?? '',
+      explanationEn: q.explanationEn ?? '',
       source: q.source ?? '',
+      sourceEn: q.sourceEn ?? '',
       sourceUrl: q.sourceUrl ?? null,
+      sourceUrlEn: q.sourceUrlEn ?? null,
       language: q.language ?? 'ru',
       categoryId: q.categoryId ?? '',
       difficulty: q.difficulty ?? 3,
       illustrationUrl: q.illustrationUrl ?? null,
-      category: q.category,
+      category: q.category ?? undefined,
       sortOrder: i + 1,
     }));
   }, [isCollectionMode, storedCollectionQuestions]);
@@ -164,10 +168,17 @@ export default function CardScreen() {
           : currentQuestion.category.name)
       : '';
 
+  const statement = currentQuestion
+    ? (language === 'en' && currentQuestion.statementEn ? currentQuestion.statementEn : currentQuestion.statement)
+    : '';
+
   const nextQuestion = questions[currentIndex + 1] ?? null;
   const nextCategoryName = nextQuestion?.category
     ? (language === 'en' ? (nextQuestion.category.nameEn || nextQuestion.category.name) : nextQuestion.category.name)
     : '';
+  const nextStatement = nextQuestion
+    ? (language === 'en' && nextQuestion.statementEn ? nextQuestion.statementEn : nextQuestion.statement)
+    : undefined;
 
   return (
     <Screen padded={false} backgroundColor={gradients.card[0]}>
@@ -226,7 +237,7 @@ export default function CardScreen() {
             </View>
             <View style={styles.padded}>
               <FlipSwipeCard
-                statement={currentQuestion.statement}
+                statement={statement}
                 categoryName={categoryName}
                 cardIndex={currentIndex}
                 totalCards={totalCards}
@@ -235,7 +246,7 @@ export default function CardScreen() {
                 onDismiss={handleNextCard}
                 disabled={isSubmitting}
                 isSubmitting={isSubmitting}
-                nextStatement={nextQuestion?.statement}
+                nextStatement={nextStatement}
                 nextCategoryName={nextCategoryName}
               />
             </View>

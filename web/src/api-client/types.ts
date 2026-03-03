@@ -46,10 +46,14 @@ export type RefreshTokenDto = {
 
 export type CreateQuestionDto = {
   statement: string;
+  statementEn?: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn?: string;
   source: string;
+  sourceEn?: string;
   sourceUrl?: string;
+  sourceUrlEn?: string;
   language: Language;
   categoryId: string;
   difficulty: number;
@@ -105,10 +109,14 @@ export type UpdateCategoryDto = Partial<CreateCategoryDto>;
 
 export type CreateCollectionItemDto = {
   statement: string;
+  statementEn?: string;
   isTrue: boolean;
   explanation: string;
+  explanationEn?: string;
   source?: string;
+  sourceEn?: string;
   sourceUrl?: string;
+  sourceUrlEn?: string;
   difficulty?: number;
   language?: string;
   sortOrder?: number;
@@ -164,8 +172,11 @@ export type AnswerResult = {
   score: number;
   isTrue: boolean;
   explanation: string;
+  explanationEn: string;
   source: string;
+  sourceEn: string;
   sourceUrl?: string;
+  sourceUrlEn?: string;
 };
 
 export type CategoryQuestionCount = {

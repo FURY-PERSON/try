@@ -5,6 +5,7 @@ import { gameApi } from '../api/gameApi';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { calculateCardScore } from '../utils';
 import { analytics } from '@/services/analytics';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import type { DailySetQuestion } from '@/shared';
 import type { CardResult, SwipeDirection } from '../types';
 
@@ -22,6 +23,7 @@ export const useCardGame = (
   dailySetId: string | null,
 ) => {
   const queryClient = useQueryClient();
+  const language = useSettingsStore((s) => s.language);
   const dailyProgress = useGameStore((s) => s.dailyProgress);
   const startCard = useGameStore((s) => s.startCard);
   const submitCardResult = useGameStore((s) => s.submitCardResult);
@@ -80,13 +82,23 @@ export const useCardGame = (
           const score = calculateCardScore(result.correct, timeSpentMs);
           answeredCorrectly = result.correct;
 
+          const resolvedStatement = language === 'en' && currentQuestion.statementEn
+            ? currentQuestion.statementEn : currentQuestion.statement;
+          const resolvedExplanation = language === 'en' && result.explanationEn
+            ? result.explanationEn : result.explanation;
+
+          const resolvedSource = language === 'en' && result.sourceEn
+            ? result.sourceEn : result.source;
+          const resolvedSourceUrl = language === 'en' && result.sourceUrlEn
+            ? result.sourceUrlEn : result.sourceUrl;
+
           setFeedback({
-            statement: currentQuestion.statement,
+            statement: resolvedStatement,
             isTrue: result.isTrue,
             userAnsweredCorrectly: result.correct,
-            explanation: result.explanation,
-            source: result.source,
-            sourceUrl: result.sourceUrl,
+            explanation: resolvedExplanation,
+            source: resolvedSource,
+            sourceUrl: resolvedSourceUrl,
           });
 
           setPendingResult({
@@ -101,13 +113,23 @@ export const useCardGame = (
           const score = calculateCardScore(isCorrect, timeSpentMs);
           answeredCorrectly = isCorrect;
 
+          const colStatement = language === 'en' && currentQuestion.statementEn
+            ? currentQuestion.statementEn : currentQuestion.statement;
+          const colExplanation = language === 'en' && currentQuestion.explanationEn
+            ? currentQuestion.explanationEn : (currentQuestion.explanation ?? '');
+
+          const colSource = language === 'en' && currentQuestion.sourceEn
+            ? currentQuestion.sourceEn : (currentQuestion.source ?? '');
+          const colSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
+            ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
+
           setFeedback({
-            statement: currentQuestion.statement,
+            statement: colStatement,
             isTrue: currentQuestion.isTrue,
             userAnsweredCorrectly: isCorrect,
-            explanation: currentQuestion.explanation ?? '',
-            source: currentQuestion.source ?? '',
-            sourceUrl: currentQuestion.sourceUrl ?? undefined,
+            explanation: colExplanation,
+            source: colSource,
+            sourceUrl: colSourceUrl,
           });
 
           setPendingResult({
@@ -132,13 +154,23 @@ export const useCardGame = (
         const isCorrect = userAnswer === currentQuestion.isTrue;
         const score = calculateCardScore(isCorrect, timeSpentMs);
 
+        const fbStatement = language === 'en' && currentQuestion.statementEn
+          ? currentQuestion.statementEn : currentQuestion.statement;
+        const fbExplanation = language === 'en' && currentQuestion.explanationEn
+          ? currentQuestion.explanationEn : (currentQuestion.explanation ?? '');
+
+        const fbSource = language === 'en' && currentQuestion.sourceEn
+          ? currentQuestion.sourceEn : (currentQuestion.source ?? '');
+        const fbSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
+          ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
+
         setFeedback({
-          statement: currentQuestion.statement,
+          statement: fbStatement,
           isTrue: currentQuestion.isTrue,
           userAnsweredCorrectly: isCorrect,
-          explanation: currentQuestion.explanation ?? '',
-          source: currentQuestion.source ?? '',
-          sourceUrl: currentQuestion.sourceUrl ?? undefined,
+          explanation: fbExplanation,
+          source: fbSource,
+          sourceUrl: fbSourceUrl,
         });
 
         setPendingResult({
@@ -156,6 +188,7 @@ export const useCardGame = (
       isSubmitting,
       feedback,
       collectionType,
+      language,
     ],
   );
 
