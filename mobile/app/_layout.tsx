@@ -129,7 +129,7 @@ export default function RootLayout() {
     }, SPLASH_MAX_DURATION_MS);
 
     async function init() {
-      initializeDevice();
+      await initializeDevice();
       incrementLaunchCount();
       adManager.initialize();
       initializeFirebase();
