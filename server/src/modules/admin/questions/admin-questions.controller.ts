@@ -20,6 +20,7 @@ import { AdminQuestionsService } from './admin-questions.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionQueryDto } from './dto/question-query.dto';
+import { SimilarQueryDto } from './dto/similar-query.dto';
 
 @ApiTags('admin/questions')
 @ApiBearerAuth()
@@ -35,6 +36,13 @@ export class AdminQuestionsController {
   @ApiResponse({ status: 200, description: 'Paginated list of questions' })
   async findAll(@Query() query: QuestionQueryDto) {
     return this.adminQuestionsService.findAll(query);
+  }
+
+  @Get('similar')
+  @ApiOperation({ summary: 'Find similar questions by statement text' })
+  @ApiResponse({ status: 200, description: 'List of similar questions' })
+  async findSimilar(@Query() query: SimilarQueryDto) {
+    return this.adminQuestionsService.findSimilar(query);
   }
 
   @Get(':id')

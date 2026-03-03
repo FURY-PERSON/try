@@ -232,6 +232,16 @@ export type QuestionStats = {
   mostShown: { id: string; timesShown: number }[];
 };
 
+export type SimilarQuestion = {
+  id: string;
+  statement: string;
+  similarity: number;
+  type: 'question' | 'collection';
+  status: string | null;
+  categoryName: string | null;
+  categoryIcon: string | null;
+};
+
 export type GenerateQuestionsResult = {
   generated: number;
   saved: number;

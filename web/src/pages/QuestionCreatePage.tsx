@@ -15,6 +15,7 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { SimilarQuestions } from '@/components/SimilarQuestions';
 
 
 const questionFormSchema = z.object({
@@ -47,6 +48,7 @@ export function QuestionCreatePage() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<QuestionFormData>({
     resolver: zodResolver(questionFormSchema),
@@ -132,6 +134,7 @@ export function QuestionCreatePage() {
                 {...register('statementEn')}
               />
             </div>
+            <SimilarQuestions statement={watch('statement') ?? ''} />
             <div className="mt-4">
               <Select
                 id="isTrue"

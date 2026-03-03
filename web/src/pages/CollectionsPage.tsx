@@ -31,6 +31,7 @@ import {
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageSizeSelect } from '@/components/ui/PageSizeSelect';
+import { SimilarQuestions } from '@/components/SimilarQuestions';
 
 // ─── Collection form schema ───────────────────────────────────────────────────
 
@@ -253,6 +254,7 @@ function QuestionDialogControlled({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
@@ -324,6 +326,7 @@ function QuestionDialogControlled({
                 {...register('statementEn')}
               />
             </div>
+            <SimilarQuestions statement={watch('statement') ?? ''} />
 
             <div className="grid grid-cols-2 gap-3">
               <Select

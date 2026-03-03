@@ -8,6 +8,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { QuestionQueryDto } from './dto/question-query.dto';
+import { SimilarQueryDto } from './dto/similar-query.dto';
 import { createPaginatedResponse } from '@/common/dto/pagination.dto';
 import { Prisma } from '@prisma/client';
 
@@ -296,5 +297,66 @@ export class AdminQuestionsService {
       deletedCount: result.count,
       requestedCount: ids.length,
     };
+  }
+
+  async findSimilar(dto: SimilarQueryDto) {
+    const { q, limit = 10, excludeId } = dto;
+
+    const excludeQuestion = excludeId
+      ? Prisma.sql`AND q."id" != ${excludeId}`
+      : Prisma.empty;
+
+    const excludeCollectionItem = excludeId
+      ? Prisma.sql`AND ci."id" != ${excludeId}`
+      : Prisma.empty;
+
+    const results = await this.prisma.$queryRaw<
+      {
+        id: string;
+        statement: string;
+        similarity: number;
+        type: string;
+        status: string | null;
+        categoryName: string | null;
+        categoryIcon: string | null;
+      }[]
+    >(Prisma.sql`
+      SELECT * FROM (
+        SELECT
+          q."id",
+          q."statement",
+          similarity(q."statement", ${q}) AS similarity,
+          'question' AS type,
+          q."status",
+          c."name" AS "categoryName",
+          c."icon" AS "categoryIcon"
+        FROM "Question" q
+        LEFT JOIN "Category" c ON c."id" = q."categoryId"
+        WHERE q."statement" % ${q}
+        ${excludeQuestion}
+
+        UNION ALL
+
+        SELECT
+          ci."id",
+          ci."statement",
+          similarity(ci."statement", ${q}) AS similarity,
+          'collection' AS type,
+          NULL AS "status",
+          col."title" AS "categoryName",
+          col."icon" AS "categoryIcon"
+        FROM "CollectionItem" ci
+        LEFT JOIN "Collection" col ON col."id" = ci."collectionId"
+        WHERE ci."statement" % ${q}
+        ${excludeCollectionItem}
+      ) AS combined
+      ORDER BY similarity DESC
+      LIMIT ${limit}
+    `);
+
+    return results.map((r) => ({
+      ...r,
+      similarity: Math.round(Number(r.similarity) * 100),
+    }));
   }
 }

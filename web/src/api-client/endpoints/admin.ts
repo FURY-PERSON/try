@@ -29,6 +29,7 @@ import type {
   GenerateIllustrationDto,
   GenerateQuestionsResult,
   GenerateIllustrationResult,
+  SimilarQuestion,
   DashboardStats,
   UserAnalytics,
   QuestionStats,
@@ -99,6 +100,9 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<{ deleted: number }>>('/admin/questions/bulk-delete', {
           ids,
         });
+      },
+      similar(params: { q: string; limit?: number; excludeId?: string }) {
+        return http.get<ApiResponse<SimilarQuestion[]>>('/admin/questions/similar', { params });
       },
     },
 

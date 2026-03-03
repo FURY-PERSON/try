@@ -17,6 +17,7 @@ import { Dialog } from '@/components/ui/Dialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
+import { SimilarQuestions } from '@/components/SimilarQuestions';
 
 
 const editFormSchema = z.object({
@@ -117,6 +118,7 @@ export function QuestionDetailPage() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<EditFormData>({
     resolver: zodResolver(editFormSchema),
@@ -410,6 +412,7 @@ export function QuestionDetailPage() {
               {...register('statementEn')}
             />
           </div>
+          <SimilarQuestions statement={watch('statement') ?? ''} excludeId={id} />
           <Select
             id="edit-isTrue"
             label="Факт или Фейк?"
