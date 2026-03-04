@@ -45,6 +45,12 @@ services:
       THROTTLE_TTL: ${THROTTLE_TTL}
       THROTTLE_LIMIT: ${THROTTLE_LIMIT}
       CORS_ORIGIN: ${CORS_ORIGIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${PORT}/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -59,7 +65,8 @@ services:
     expose:
       - "80"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
