@@ -223,13 +223,14 @@ export class CollectionsService {
     let score = 0;
 
     const historyData = dto.results.map((r) => {
-      let answerScore = 0;
+      let historyScore = 0;
       if (r.result === 'correct') {
         currentStreak++;
         currentAnswerStreak++;
-        // Score: 1 base + streak bonus (floor(streak / 5))
-        answerScore = 1 + Math.floor(currentAnswerStreak / 5);
-        score += answerScore;
+        // Display score: 1 base + streak bonus (floor(streak / 5))
+        score += 1 + Math.floor(currentAnswerStreak / 5);
+        // History score: always 0 or 1 for consistent leaderboard ranking
+        historyScore = 1;
       } else {
         currentStreak = 0;
         currentAnswerStreak = 0;
@@ -242,7 +243,7 @@ export class CollectionsService {
         questionId: r.questionId,
         result: r.result,
         timeSpentSeconds: r.timeSpentSeconds,
-        score: answerScore,
+        score: historyScore,
       };
     });
 
@@ -347,7 +348,7 @@ export class CollectionsService {
       questionId: r.questionId,
       result: r.result,
       timeSpentSeconds: r.timeSpentSeconds,
-      score: 0,
+      score: r.result === 'correct' ? 1 : 0,
     }));
 
     // Capture pre-game streak on first call

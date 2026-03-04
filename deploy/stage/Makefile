@@ -61,6 +61,9 @@ renew-cert: ## Renew SSL certificate
 			certbot/certbot renew --standalone && \
 		$(COMPOSE) start nginx"
 
+seed-dump: sync ## Apply reference data SQL dump on stage
+	$(SSH) $(STAGE_HOST) "cd $(STAGE_DIR) && docker exec -i \$$($(COMPOSE) ps -q postgres) psql -U factfront factfront_stage < server/prisma/dump.sql"
+
 logs: ## Tail logs of all stage services
 	$(SSH) $(STAGE_HOST) "cd $(STAGE_DIR) && $(COMPOSE) logs -f"
 
@@ -75,4 +78,4 @@ help: ## Show available commands
 
 .DEFAULT_GOAL := help
 
-.PHONY: sync deploy init certbot renew-cert logs ps xcode help
+.PHONY: sync deploy init certbot renew-cert seed-dump logs ps xcode help
