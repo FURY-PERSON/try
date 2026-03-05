@@ -197,6 +197,8 @@
   "ads": {
     "disableTitle": "Disable ads?",
     "disableDesc": "Watch a sponsor video and ads will disappear for {{minutes}} minutes",
-    "watchVideo": "Watch video"
+    "watchVideo": "Watch video",
+    "disableHint": "Disable ads",
+    "adFreeCheer": "Enjoying {{minutes}} min ad-free!"
   }
 }

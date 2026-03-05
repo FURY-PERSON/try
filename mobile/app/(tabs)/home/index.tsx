@@ -71,6 +71,7 @@ export default function HomeScreen() {
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
   const [loadingRandom, setLoadingRandom] = useState(false);
   const [showDisableAds, setShowDisableAds] = useState(false);
+  const [userScrolled, setUserScrolled] = useState(false);
   const showDisableAdsOnReturn = useAdsStore((s) => s.showDisableAdsOnReturn);
 
   // Show disable-ads modal when returning from game after interstitial
@@ -289,6 +290,7 @@ export default function HomeScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={128} />
         }
         contentContainerStyle={{ paddingBottom: 100 }}
+        onTouchStart={() => setUserScrolled(true)}
       >
         {/* Header */}
         <AnimatedEntrance delay={0}>
@@ -297,7 +299,7 @@ export default function HomeScreen() {
               {t('home.title')}
             </Text>
             <View style={styles.headerRight}>
-              <AdFreeIcon onPress={() => setShowDisableAds(true)} />
+              <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
               <StreakBadge days={streak} />
             </View>
           </View>

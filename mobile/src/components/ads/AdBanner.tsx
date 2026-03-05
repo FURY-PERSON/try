@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions, Platform } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { BannerView, BannerAdSize as YandexBannerAdSize, AdRequest as YandexAdRequest } from 'yandex-mobile-ads';
-import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
@@ -16,8 +15,7 @@ type AdBannerProps = {
 };
 
 export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
-  const { colors, borderRadius } = useThemeContext();
-  const { t } = useTranslation();
+  const { colors, borderRadius, elevation } = useThemeContext();
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -56,21 +54,22 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
     setError(true);
   };
 
+  const containerStyle = [
+    styles.container,
+    {
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      borderColor: colors.border,
+    },
+    elevation.sm,
+    animatedStyle,
+  ];
+
   if (provider === 'yandex') {
     const adUnitId = adManager.getBannerUnitId();
 
     return (
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.adContainer,
-            borderRadius: borderRadius.md,
-          },
-          animatedStyle,
-        ]}
-      >
-        <Text style={[styles.label, { color: colors.textSecondary }]}>{t('common.ad')}</Text>
+      <Animated.View style={containerStyle}>
         <View style={styles.banner}>
           {yandexAdSize && (
             <BannerView
@@ -87,17 +86,7 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   }
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.adContainer,
-          borderRadius: borderRadius.md,
-        },
-        animatedStyle,
-      ]}
-    >
-      <Text style={[styles.label, { color: colors.textSecondary }]}>{t('common.ad')}</Text>
+    <Animated.View style={containerStyle}>
       <View style={styles.banner}>
         <BannerAd
           unitId={adManager.getBannerUnitId()}
@@ -113,14 +102,12 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 8,
     overflow: 'hidden',
-  },
-  label: {
-    fontSize: 9,
-    fontFamily: 'Nunito_600SemiBold',
-    textTransform: 'uppercase',
-    marginBottom: 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({
+      android: { elevation: 2 },
+    }),
   },
   banner: {
     alignItems: 'center',

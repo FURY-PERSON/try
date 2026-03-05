@@ -27,6 +27,7 @@ export default function LeaderboardScreen() {
   const [mode, setMode] = useState<LeaderboardMode>('score');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [showDisableAds, setShowDisableAds] = useState(false);
+  const [userScrolled, setUserScrolled] = useState(false);
   const { data, isLoading, isError, error, refetch, isRefetching } = useLeaderboard(period, mode);
   const { data: feed } = useHomeFeed();
   const streak = feed?.userProgress?.streak ?? 0;
@@ -45,7 +46,7 @@ export default function LeaderboardScreen() {
             {t('leaderboard.title')}
           </Text>
           <View style={styles.headerRight}>
-            <AdFreeIcon onPress={() => setShowDisableAds(true)} />
+            <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
             <StreakBadge days={streak} />
           </View>
         </View>
@@ -105,7 +106,7 @@ export default function LeaderboardScreen() {
         </View>
       </AnimatedEntrance>
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1 }} onTouchStart={() => setUserScrolled(true)}>
         {isLoading ? (
           <View style={styles.skeletons}>
             {Array.from({ length: 5 }).map((_, i) => (
