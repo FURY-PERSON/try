@@ -26,6 +26,8 @@
     "step1Desc": "15 statements every day — tell fact from fiction. After each answer, learn the explanation from verified sources",
     "step2Title": "Swipe\nleft and right",
     "step2Desc": "Think it's true — swipe right. Think it's fake — swipe left. Simple!",
+    "stepDailyTitle": "New facts\nevery day",
+    "stepDailyDesc": "We add fresh statements from various fields every day. Come back daily so you don't miss out!",
     "step3Title": "Choose content\nlanguage",
     "step3Desc": "Statements and explanations are available in Russian and English",
     "langRu": "Russian",
@@ -76,6 +78,10 @@
     "swipeLeft": "Swipe left — fake",
     "swipeHint": "swipe to answer",
     "swipeToContinue": "swipe to continue",
+    "swipeHintAnswer": "Swipe the card\nleft or right",
+    "swipeHintContinue": "Swipe the card\nto continue",
+    "gotIt": "Got it",
+    "continue": "Next",
     "exitTitle": "Exit game?",
     "exitDesc": "Your progress will be saved",
     "exitSave": "Exit & Save"
@@ -138,7 +144,8 @@
     "haptics": "Haptics",
     "notifications": "Notifications",
     "about": "About",
-    "version": "Version"
+    "version": "Version",
+    "privacyPolicy": "Privacy Policy"
   },
   "nickname": {
     "title": "Nickname",

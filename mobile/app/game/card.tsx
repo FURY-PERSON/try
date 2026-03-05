@@ -10,12 +10,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { GameHeader } from '@/features/game/components/GameHeader';
 import { FlipSwipeCard } from '@/features/game/components/FlipSwipeCard';
+import { SwipeHintOverlay } from '@/features/game/components/SwipeHintOverlay';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useCardGame } from '@/features/game/hooks/useCardGame';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
+import { useAppStore } from '@/stores/useAppStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useThemeContext } from '@/theme';
@@ -45,6 +47,12 @@ export default function CardScreen() {
   const setSubmissionResult = useGameStore((s) => s.setSubmissionResult);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [exitSaving, setExitSaving] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+  const [swipeHintVariant, setSwipeHintVariant] = useState<'answer' | 'continue'>('answer');
+  const hasSeenSwipeAnswerHint = useAppStore((s) => s.hasSeenSwipeAnswerHint);
+  const hasSeenSwipeContinueHint = useAppStore((s) => s.hasSeenSwipeContinueHint);
+  const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
+  const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
 
   const handleExitWithSave = useCallback(async () => {
     if (exitSaving) return;
@@ -131,6 +139,36 @@ export default function CardScreen() {
     handleNextCard,
   } = useCardGame(questions, dailySetId);
 
+  // Show swipe-to-answer hint on first ever game
+  useEffect(() => {
+    if (currentQuestion && currentIndex === 0 && !feedback && !hasSeenSwipeAnswerHint) {
+      setSwipeHintVariant('answer');
+      setShowSwipeHint(true);
+    }
+  }, [currentQuestion, currentIndex, feedback, hasSeenSwipeAnswerHint]);
+
+  // Show swipe-to-continue hint on first ever feedback
+  useEffect(() => {
+    if (feedback && !hasSeenSwipeContinueHint) {
+      setSwipeHintVariant('continue');
+      setShowSwipeHint(true);
+    }
+  }, [feedback, hasSeenSwipeContinueHint]);
+
+  const dismissSwipeHint = useCallback(() => {
+    setShowSwipeHint(false);
+    if (swipeHintVariant === 'answer') {
+      markSwipeAnswerHintSeen();
+    } else {
+      markSwipeContinueHintSeen();
+    }
+  }, [swipeHintVariant, markSwipeAnswerHintSeen, markSwipeContinueHintSeen]);
+
+  const showHintManually = useCallback((variant: 'answer' | 'continue') => {
+    setSwipeHintVariant(variant);
+    setShowSwipeHint(true);
+  }, []);
+
   useEffect(() => {
     if (isComplete && !feedback) {
       router.replace('/modal/results');
@@ -206,14 +244,32 @@ export default function CardScreen() {
           <View style={styles.cardArea}>
             <View style={styles.hintsRow}>
               {feedback ? (
-                <Animated.Text
+                <Animated.View
                   key="continue"
                   entering={FadeIn.duration(300)}
                   exiting={FadeOut.duration(150)}
-                  style={[styles.hintCenter, { color: colors.textTertiary }]}
+                  style={styles.hintsContent}
                 >
-                  ←  {t('game.swipeToContinue')}  →
-                </Animated.Text>
+                  <Pressable
+                    onPress={() => showHintManually('continue')}
+                    style={[styles.hintBadge, { backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }]}
+                  >
+                    <Text style={[styles.hintText, { color: colors.primary }]}>
+                      ← {t('game.continue')}
+                    </Text>
+                  </Pressable>
+                  <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
+                    {t('game.swipeToContinue')}
+                  </Text>
+                  <Pressable
+                    onPress={() => showHintManually('continue')}
+                    style={[styles.hintBadge, { backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }]}
+                  >
+                    <Text style={[styles.hintText, { color: colors.primary }]}>
+                      {t('game.continue')} →
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               ) : (
                 <Animated.View
                   key="answer"
@@ -221,19 +277,25 @@ export default function CardScreen() {
                   exiting={FadeOut.duration(150)}
                   style={styles.hintsContent}
                 >
-                  <View style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}>
+                  <Pressable
+                    onPress={() => showHintManually('answer')}
+                    style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}
+                  >
                     <Text style={[styles.hintText, { color: colors.red }]}>
                       ← {t('game.fake')}
                     </Text>
-                  </View>
+                  </Pressable>
                   <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
                     {t('game.swipeHint')}
                   </Text>
-                  <View style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}>
+                  <Pressable
+                    onPress={() => showHintManually('answer')}
+                    style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}
+                  >
                     <Text style={[styles.hintText, { color: colors.emerald }]}>
                       {t('game.fact')} →
                     </Text>
-                  </View>
+                  </Pressable>
                 </Animated.View>
               )}
             </View>
@@ -289,6 +351,12 @@ export default function CardScreen() {
           </View>
         </View>
       </OverlayModal>
+
+      <SwipeHintOverlay
+        variant={swipeHintVariant}
+        visible={showSwipeHint}
+        onDismiss={dismissSwipeHint}
+      />
     </Screen>
   );
 }

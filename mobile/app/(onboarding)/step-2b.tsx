@@ -12,7 +12,7 @@ import { useOnboarding } from '@/features/onboarding/hooks/useOnboarding';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
-export default function OnboardingStep2() {
+export default function OnboardingStepDaily() {
   const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -37,23 +37,23 @@ export default function OnboardingStep2() {
           <AnimatedEntrance delay={0} direction="up">
             <View style={styles.illustrationWrapper}>
               <LinearGradient
-                colors={[colors.blue + '25', colors.blue + '08']}
+                colors={[colors.orange + '25', colors.orange + '08']}
                 style={styles.illustration}
               >
-                <MaterialCommunityIcons name="gesture-swipe" size={80} color={colors.blue} />
+                <MaterialCommunityIcons name="calendar-clock" size={80} color={colors.orange} />
               </LinearGradient>
             </View>
           </AnimatedEntrance>
 
           <AnimatedEntrance delay={150} direction="up">
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              {t('onboarding.step2Title')}
+              {t('onboarding.stepDailyTitle')}
             </Text>
           </AnimatedEntrance>
 
           <AnimatedEntrance delay={300} direction="up">
             <Text style={[styles.description, { color: colors.textSecondary }]}>
-              {t('onboarding.step2Desc')}
+              {t('onboarding.stepDailyDesc')}
             </Text>
           </AnimatedEntrance>
         </View>
@@ -62,8 +62,8 @@ export default function OnboardingStep2() {
           <View style={styles.footer}>
             <View style={styles.dots}>
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
-              <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
+              <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
             </View>
@@ -72,7 +72,7 @@ export default function OnboardingStep2() {
                 label={t('common.continue')}
                 variant="primary"
                 size="lg"
-                onPress={() => router.push('/(onboarding)/step-2b')}
+                onPress={() => router.push('/(onboarding)/step-3')}
               />
             </View>
           </View>

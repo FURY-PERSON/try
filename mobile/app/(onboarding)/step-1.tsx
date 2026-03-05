@@ -70,6 +70,7 @@ export default function OnboardingStep1() {
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
+              <View style={[styles.dot, { backgroundColor: colors.border }]} />
             </View>
             <View style={styles.buttonPadded}>
               <Button

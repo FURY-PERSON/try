@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,9 +10,10 @@ import { Chip } from '@/components/ui/Chip';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { SettingsRow } from '@/features/settings/components/SettingsRow';
 import { useSettings } from '@/features/settings/hooks/useSettings';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
-import { APP_VERSION } from '@/constants/config';
+import { APP_VERSION, PRIVACY_POLICY_URL } from '@/constants/config';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -20,6 +21,14 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const settings = useSettings();
+  const language = useSettingsStore((s) => s.language);
+
+  const openPrivacyPolicy = () => {
+    const url = language === 'ru'
+      ? PRIVACY_POLICY_URL.replace(/\/?$/, '/ru.html')
+      : PRIVACY_POLICY_URL.replace(/\/?$/, '/en.html');
+    Linking.openURL(url);
+  };
 
   return (
     <Screen>
@@ -109,6 +118,12 @@ export default function SettingsScreen() {
 
         <AnimatedEntrance delay={200}>
           <Card variant="default" style={{ padding: 0, marginTop: spacing.lg }}>
+            <SettingsRow
+              icon={<Feather name="shield" size={18} color={colors.emerald} />}
+              iconBgColor={colors.emerald + '15'}
+              title={t('settings.privacyPolicy')}
+              onPress={openPrivacyPolicy}
+            />
             <SettingsRow
               icon={<Feather name="info" size={18} color={colors.textSecondary} />}
               iconBgColor={colors.textSecondary + '15'}

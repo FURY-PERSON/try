@@ -16,3 +16,4 @@ export const APP_VERSION = Config.VERSION_NAME ?? '1.0.0';
 export const APP_VERSION_CODE = Config.VERSION_CODE ?? '1';
 export const APP_NAME = Config.APP_NAME ?? 'Фронт фактов';
 export const IS_DEV = __DEV__;
+export const PRIVACY_POLICY_URL = Config.PRIVACY_POLICY_URL ?? 'https://factfront.app/privacy';

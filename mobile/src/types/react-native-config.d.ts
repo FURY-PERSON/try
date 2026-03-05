@@ -6,6 +6,7 @@ declare module 'react-native-config' {
     VERSION_NAME?: string;
     VERSION_CODE?: string;
     BUNDLE_ID?: string;
+    PRIVACY_POLICY_URL?: string;
   }
 
   export const Config: NativeConfig;
