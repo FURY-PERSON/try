@@ -32,6 +32,7 @@ export default function CardScreen() {
   const params = useLocalSearchParams<{ mode?: string }>();
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
+  const currentStreak = useGameStore((s) => s.currentStreak);
   const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);
   const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
@@ -192,7 +193,7 @@ export default function CardScreen() {
         <View style={[styles.padded, { paddingTop: insets.top }]}>
           <GameHeader
             progress={progress}
-            streak={liveStreak}
+            streak={currentStreak}
             onClose={() => setShowExitConfirm(true)}
           />
         </View>

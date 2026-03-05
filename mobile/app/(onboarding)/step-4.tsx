@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -82,6 +82,11 @@ export default function OnboardingStep4() {
 
   return (
     <Screen padded={false} backgroundColor={gradients.hero[0]}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
       <LinearGradient
         colors={gradients.hero}
         start={{ x: 0, y: 0 }}
@@ -209,6 +214,8 @@ export default function OnboardingStep4() {
           </View>
         </AnimatedEntrance>
       </LinearGradient>
+      </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Screen>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
@@ -82,6 +82,11 @@ export default function NicknameModal() {
 
   return (
     <Screen style={[styles.screen, { paddingTop: insets.top }]}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'space-between' }}
+      >
       <View style={styles.content}>
         {/* Avatar emoji */}
         <AnimatedEntrance delay={0} direction="up" style={styles.avatarSection}>
@@ -187,6 +192,8 @@ export default function NicknameModal() {
           />
         </View>
       </AnimatedEntrance>
+      </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </Screen>
   );
 }

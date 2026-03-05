@@ -8,8 +8,12 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
+import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
+import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { LeaderboardList } from '@/features/leaderboard/components/LeaderboardList';
 import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
+import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardMode, LeaderboardPeriod } from '@/shared';
@@ -23,7 +27,10 @@ export default function LeaderboardScreen() {
   const { t } = useTranslation();
   const [mode, setMode] = useState<LeaderboardMode>('score');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
+  const [showDisableAds, setShowDisableAds] = useState(false);
   const { data, isLoading, isError, error, refetch, isRefetching } = useLeaderboard(period, mode);
+  const { data: feed } = useHomeFeed();
+  const streak = feed?.userProgress?.streak ?? 0;
   const currentUserId = data?.currentUserId;
   const entries = data?.entries ?? [];
 
@@ -38,6 +45,10 @@ export default function LeaderboardScreen() {
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('leaderboard.title')}
           </Text>
+          <View style={styles.headerRight}>
+            <AdFreeIcon onPress={() => setShowDisableAds(true)} />
+            <StreakBadge days={streak} />
+          </View>
         </View>
       </AnimatedEntrance>
 
@@ -122,14 +133,22 @@ export default function LeaderboardScreen() {
       </View>
 
       <AdBanner placement="leaderboard" />
+
+      <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     minHeight: 44,
-    justifyContent: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   largeTitle: {
     fontSize: 32,

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Alert, Pressable, Switch } from 'react-native';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { HomeFeed } from '@/shared';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ export default function CollectionDetailScreen() {
   const language = useSettingsStore((s) => s.language);
   const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
+  const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
   const { showForGameStart } = useInterstitialAd();
   const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
@@ -72,7 +74,9 @@ export default function CollectionDetailScreen() {
         count: 30,
         ...(replay ? { replay: true } : {}),
       });
-      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, replay);
+      const cachedFeed = queryClient.getQueryData<HomeFeed>(['home', 'feed']);
+      const streak = cachedFeed?.userProgress?.streak ?? 0;
+      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, replay, streak);
       analytics.logEvent('collection_start', {
         type: 'collection',
         referenceId: id,

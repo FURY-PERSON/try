@@ -5,6 +5,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { profileApi } from '@/features/profile/api/profileApi';
 import { analytics } from '@/services/analytics';
+import i18n from '@/i18n';
 
 export const useOnboarding = () => {
   const router = useRouter();
@@ -16,6 +17,7 @@ export const useOnboarding = () => {
   const selectLanguage = useCallback(
     (language: 'ru' | 'en') => {
       setLanguage(language);
+      i18n.changeLanguage(language);
       router.push('/(onboarding)/step-4');
     },
     [setLanguage, router],

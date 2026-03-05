@@ -4,6 +4,7 @@ import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { HomeFeed } from '@/shared';
 import { useTranslation } from 'react-i18next';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,7 +75,9 @@ export default function CategoryDetailScreen() {
         count: 20,
         ...(replay ? { replay: true } : {}),
       });
-      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, replay);
+      const cachedFeed = queryClient.getQueryData<HomeFeed>(['home', 'feed']);
+      const streak = cachedFeed?.userProgress?.streak ?? 0;
+      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, replay, streak);
       analytics.logEvent('category_start', {
         type: 'category',
         referenceId: id,
