@@ -293,7 +293,7 @@ export default function HomeScreen() {
         onTouchStart={() => setUserScrolled(true)}
       >
         {/* Header */}
-        <AnimatedEntrance delay={0}>
+        <AnimatedEntrance delay={0} style={{ zIndex: 10 }}>
           <View style={[styles.header, { paddingHorizontal: spacing.screenPadding, paddingTop: insets.top }]}>
             <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
               {t('home.title')}
@@ -728,6 +728,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
+    zIndex: 10,
   },
   headerRight: {
     flexDirection: 'row',

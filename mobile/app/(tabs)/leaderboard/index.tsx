@@ -22,7 +22,7 @@ const PERIODS: LeaderboardPeriod[] = ['weekly', 'monthly', 'yearly', 'alltime'];
 
 export default function LeaderboardScreen() {
   const insets = useSafeAreaInsets();
-  const { colors, spacing, borderRadius } = useThemeContext();
+  const { colors, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const [mode, setMode] = useState<LeaderboardMode>('score');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
@@ -40,7 +40,7 @@ export default function LeaderboardScreen() {
 
   return (
     <Screen>
-      <AnimatedEntrance delay={0}>
+      <AnimatedEntrance delay={0} style={{ zIndex: 10 }}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
             {t('leaderboard.title')}
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
+    zIndex: 10,
   },
   headerRight: {
     flexDirection: 'row',
