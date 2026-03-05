@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { LeaderboardEntry } from './LeaderboardEntry';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
@@ -43,6 +44,9 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
           </Text>
         </View>
       )}
+      <View style={styles.adFooter}>
+        <AdBanner placement="leaderboard" />
+      </View>
     </View>
   );
 
@@ -91,5 +95,8 @@ const styles = StyleSheet.create({
   positionText: {
     fontSize: 15,
     fontFamily: fontFamily.semiBold,
+  },
+  adFooter: {
+    marginTop: 16,
   },
 });

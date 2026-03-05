@@ -231,7 +231,7 @@ export default function CardScreen() {
         <View style={[styles.padded, { paddingTop: insets.top }]}>
           <GameHeader
             progress={progress}
-            streak={currentStreak}
+            streak={liveStreak}
             onClose={() => setShowExitConfirm(true)}
           />
         </View>
@@ -318,7 +318,7 @@ export default function CardScreen() {
         ) : null}
       </LinearGradient>
 
-      <View style={styles.padded}>
+      <View style={[styles.adOverlay, { bottom: insets.bottom, paddingHorizontal: 20 }]}>
         <AdBanner placement="game" />
       </View>
 
@@ -439,5 +439,11 @@ const styles = StyleSheet.create({
   modalButtonText: {
     fontSize: 15,
     fontFamily: fontFamily.semiBold,
+  },
+  adOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
 });

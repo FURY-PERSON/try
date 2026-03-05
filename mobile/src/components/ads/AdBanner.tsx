@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { BannerView, BannerAdSize as YandexBannerAdSize, AdRequest as YandexAdRequest } from 'yandex-mobile-ads';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { adManager } from '@/services/ads';
@@ -27,6 +28,16 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   const bannerFlagKey = `ad_banner_${placement}`;
   const bannerEnabled = useFeatureFlag(bannerFlagKey, true);
 
+  const [yandexAdSize, setYandexAdSize] = useState<Awaited<ReturnType<typeof YandexBannerAdSize.stickySize>> | null>(null);
+
+  useEffect(() => {
+    if (provider === 'yandex') {
+      YandexBannerAdSize.stickySize(Dimensions.get('window').width)
+        .then(setYandexAdSize)
+        .catch(() => {});
+    }
+  }, [provider]);
+
   const animatedStyle = useAnimatedStyle(() => ({
     height: withTiming(error ? 0 : 66, { duration: 300 }),
     opacity: withTiming(loaded && !error ? 1 : 0, { duration: 300 }),
@@ -38,15 +49,16 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
 
   const handleAdLoaded = () => {
     setLoaded(true);
-    analytics.logEvent('ad_banner_shown', { placement, provider });
+    analytics.logEvent('ad_banner_shown', { placement, provider: provider ?? 'unknown' });
   };
 
   const handleAdFailed = () => {
     setError(true);
   };
 
-  // Yandex banner — placeholder until react-native-yandex-mobile-ads is configured
   if (provider === 'yandex') {
+    const adUnitId = adManager.getBannerUnitId();
+
     return (
       <Animated.View
         style={[
@@ -60,21 +72,15 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
       >
         <Text style={[styles.label, { color: colors.textSecondary }]}>{t('common.ad')}</Text>
         <View style={styles.banner}>
-          {/*
-            TODO: Replace with YandexBanner component when react-native-yandex-mobile-ads is installed:
-            <YandexBanner
-              adUnitId={adManager.getBannerUnitId()}
-              size="BANNER_320x50"
+          {yandexAdSize && (
+            <BannerView
+              size={yandexAdSize}
+              adUnitId={adUnitId}
+              adRequest={new YandexAdRequest({})}
               onAdLoaded={handleAdLoaded}
               onAdFailedToLoad={handleAdFailed}
             />
-          */}
-          <BannerAd
-            unitId={adManager.getBannerUnitId()}
-            size={BannerAdSize.BANNER}
-            onAdLoaded={handleAdLoaded}
-            onAdFailedToLoad={handleAdFailed}
-          />
+          )}
         </View>
       </Animated.View>
     );

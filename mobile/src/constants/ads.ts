@@ -43,15 +43,15 @@ export const GOOGLE_AD_UNIT_IDS = {
 // --- Yandex Ads ---
 // Demo block IDs for testing: https://yandex.ru/dev/mobile-ads/doc/intro/about.html
 const YANDEX_TEST_IDS = {
-  banner: 'demo-banner-yandex',
-  interstitial: 'demo-interstitial-yandex',
-  rewarded: 'demo-rewarded-yandex',
+  banner: 'R-M-18860036-1',       // <-- Insert your Yandex banner block ID
+  interstitial: 'R-M-18860036-2', // <-- Insert your Yandex interstitial block ID
+  rewarded: 'R-M-18860036-3',     // <-- Insert your Yandex rewarded block ID
 } as const;
 
 const YANDEX_PROD_IDS = {
-  banner: 'R-M-XXXXXXX-1',       // <-- Insert your Yandex banner block ID
-  interstitial: 'R-M-XXXXXXX-2', // <-- Insert your Yandex interstitial block ID
-  rewarded: 'R-M-XXXXXXX-3',     // <-- Insert your Yandex rewarded block ID
+  banner: 'R-M-18860036-1',       // <-- Insert your Yandex banner block ID
+  interstitial: 'R-M-18860036-2', // <-- Insert your Yandex interstitial block ID
+  rewarded: 'R-M-18860036-3',     // <-- Insert your Yandex rewarded block ID
 } as const;
 
 export const YANDEX_AD_UNIT_IDS = IS_DEV ? YANDEX_TEST_IDS : YANDEX_PROD_IDS;

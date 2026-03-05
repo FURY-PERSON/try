@@ -110,3 +110,4 @@ Open Xcode → **Product → Archive**.
 | `deploy/stage/stage.env` | Stage server environment |
 | `deploy/prod/prod.env` | Production environment (fill CHANGE_ME) |
 | `mobile/.env.*` | Expo per-environment API URLs |
+

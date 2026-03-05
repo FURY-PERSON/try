@@ -1,4 +1,5 @@
 import * as Localization from 'expo-localization';
+import { MobileAds } from 'yandex-mobile-ads';
 import { useAdsStore, type AdProvider } from '@/stores/useAdsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 
@@ -33,9 +34,17 @@ export function detectAdProvider(): AdProvider {
   return 'google';
 }
 
-export function initAdProvider(): void {
+export async function initAdProvider(): Promise<void> {
   const provider = detectAdProvider();
   useAdsStore.getState().setDetectedProvider(provider);
+
+  if (provider === 'yandex') {
+    try {
+      await MobileAds.initialize();
+    } catch {
+      // Yandex SDK init failed, silently continue
+    }
+  }
 }
 
 export function getAdProvider(): AdProvider {

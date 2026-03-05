@@ -7,7 +7,6 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { AdBanner } from '@/components/ads/AdBanner';
 import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
 import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
@@ -131,8 +130,6 @@ export default function LeaderboardScreen() {
           </AnimatedEntrance>
         )}
       </View>
-
-      <AdBanner placement="leaderboard" />
 
       <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
