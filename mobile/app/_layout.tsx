@@ -23,6 +23,7 @@ import { fetchFeatureFlags } from '@/features/feature-flags/api';
 import { useServerStatus } from '@/hooks/useServerStatus';
 import { ServiceUnavailableScreen } from '@/components/feedback/ServiceUnavailableScreen';
 import { adManager } from '@/services/ads';
+import { initAdProvider } from '@/services/adProvider';
 import { initializeFirebase } from '@/services/firebase';
 import i18n from '@/i18n';
 
@@ -137,6 +138,7 @@ export default function RootLayout() {
         useAppStore.getState().completeOnboarding();
       }
       adManager.initialize();
+      initAdProvider();
       initializeFirebase();
 
       // Wait for feature flags

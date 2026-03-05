@@ -17,6 +17,7 @@ import { HeatmapCalendar } from '@/features/profile/components/HeatmapCalendar';
 import { useStats } from '@/features/profile/hooks/useStats';
 import { profileApi } from '@/features/profile/api/profileApi';
 import { useUserStore } from '@/stores/useUserStore';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
@@ -145,6 +146,10 @@ export default function ProfileScreen() {
               />
             </Card>
           </AnimatedEntrance>
+
+          <View style={{ marginTop: spacing.sectionGap }}>
+            <AdBanner placement="profile" />
+          </View>
         </View>
       </ScrollView>
     </Screen>

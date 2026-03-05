@@ -29,6 +29,96 @@ async function main() {
     console.log(`Admin user: ${admin.email}`);
   }
 
+  // Seed feature flags for ads
+  const adsFeatureFlags = [
+    {
+      key: 'ads_enable',
+      name: 'Реклама (глобальный)',
+      description: 'Глобальное включение/отключение всей рекламы',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'yandex_ads',
+      name: 'Yandex Ads',
+      description: 'Включить рекламу Yandex для стран СНГ',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'google_ads',
+      name: 'Google Ads',
+      description: 'Включить рекламу Google для остальных стран',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_home',
+      name: 'Баннер: Главная',
+      description: 'Баннер внизу главного экрана',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_leaderboard',
+      name: 'Баннер: Рейтинг',
+      description: 'Баннер внизу экрана рейтинга',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_profile',
+      name: 'Баннер: Профиль',
+      description: 'Баннер внизу экрана профиля',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_category',
+      name: 'Баннер: Категория',
+      description: 'Баннер на экране информации о категории',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_game',
+      name: 'Баннер: Игра',
+      description: 'Баннер внизу экрана игры',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_banner_results',
+      name: 'Баннер: Результаты',
+      description: 'Баннер на экране завершения игры',
+      isEnabled: true,
+      payload: null,
+    },
+    {
+      key: 'ad_interstitial_game',
+      name: 'Полноэкранная реклама',
+      description: 'Полноэкранная реклама перед началом игры. Payload: { factsThreshold: number }',
+      isEnabled: true,
+      payload: { factsThreshold: 30 },
+    },
+    {
+      key: 'ad_rewarded_video',
+      name: 'Видео реклама (отключение рекламы)',
+      description: 'Видео для отключения рекламы. Payload: { adFreeMinutes: number }',
+      isEnabled: true,
+      payload: { adFreeMinutes: 30 },
+    },
+  ];
+
+  for (const flag of adsFeatureFlags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: {},
+      create: flag,
+    });
+    console.log(`Feature flag: ${flag.key}`);
+  }
+
   console.log('Seeding complete.');
 }
 

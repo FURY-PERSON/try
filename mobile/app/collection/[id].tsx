@@ -13,6 +13,9 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { IconFromName } from '@/components/ui/IconFromName';
+import { AdBanner } from '@/components/ads/AdBanner';
+import { useInterstitialAd } from '@/components/ads/InterstitialManager';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -30,6 +33,8 @@ export default function CollectionDetailScreen() {
   const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
+  const { showForGameStart } = useInterstitialAd();
+  const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
   const [starting, setStarting] = useState(false);
   const [showReplayWarning, setShowReplayWarning] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -74,10 +79,9 @@ export default function CollectionDetailScreen() {
         questionCount: session.questions.length,
         replay,
       });
-      router.push({
-        pathname: '/game/card',
-        params: { mode: 'collection' },
-      });
+      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
+      const adShown = await showForGameStart(nav);
+      if (!adShown) nav();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);
@@ -205,6 +209,11 @@ export default function CollectionDetailScreen() {
             </Card>
           </AnimatedEntrance>
         )}
+      </View>
+
+      {/* Ad Banner above buttons */}
+      <View style={{ paddingHorizontal: spacing.screenPadding, marginBottom: 8 }}>
+        <AdBanner placement="category" />
       </View>
 
       {/* Footer */}

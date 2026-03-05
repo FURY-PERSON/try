@@ -121,7 +121,7 @@ export default function LeaderboardScreen() {
         )}
       </View>
 
-      <AdBanner placement="leaderboard_bottom" />
+      <AdBanner placement="leaderboard" />
     </Screen>
   );
 }

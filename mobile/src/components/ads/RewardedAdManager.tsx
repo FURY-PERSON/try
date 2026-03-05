@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import {
   RewardedAd,
   RewardedAdEventType,
+  AdEventType,
 } from 'react-native-google-mobile-ads';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
@@ -25,6 +26,16 @@ export const useRewardedAd = () => {
       RewardedAdEventType.EARNED_REWARD,
       () => {
         analytics.logEvent('ad_rewarded_completed');
+        adManager.activateAdFree();
+      },
+    );
+
+    const unsubscribeClosed = rewarded.addAdEventListener(
+      AdEventType.CLOSED,
+      () => {
+        loadedRef.current = false;
+        setIsReady(false);
+        rewarded.load();
       },
     );
 
@@ -33,6 +44,7 @@ export const useRewardedAd = () => {
     return () => {
       unsubscribeLoaded();
       unsubscribeEarned();
+      unsubscribeClosed();
     };
   }, []);
 
@@ -44,7 +56,6 @@ export const useRewardedAd = () => {
       analytics.logEvent('ad_rewarded_shown');
       loadedRef.current = false;
       setIsReady(false);
-      rewarded.load();
       return true;
     } catch {
       return false;

@@ -29,6 +29,8 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
+import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
@@ -36,6 +38,8 @@ import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useUserStore } from '@/stores/useUserStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
+import { useInterstitialAd } from '@/components/ads/InterstitialManager';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
@@ -52,6 +56,8 @@ export default function HomeScreen() {
   const language = useSettingsStore((s) => s.language);
   const startDailySet = useGameStore((s) => s.startDailySet);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
+  const { showForGameStart } = useInterstitialAd();
+  const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
 
   const insets = useSafeAreaInsets();
   const { data: feed, isLoading, isError, error, refetch: refetchFeed, isRefetching: isRefetchingFeed } = useHomeFeed();
@@ -64,6 +70,16 @@ export default function HomeScreen() {
   }, [refetchFeed, refetchDaily]);
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
   const [loadingRandom, setLoadingRandom] = useState(false);
+  const [showDisableAds, setShowDisableAds] = useState(false);
+  const showDisableAdsOnReturn = useAdsStore((s) => s.showDisableAdsOnReturn);
+
+  // Show disable-ads modal when returning from game after interstitial
+  useEffect(() => {
+    if (showDisableAdsOnReturn && !useAdsStore.getState().isAdFree()) {
+      setShowDisableAds(true);
+      useAdsStore.getState().setShowDisableAdsOnReturn(false);
+    }
+  }, [showDisableAdsOnReturn]);
 
   const streak = feed?.userProgress?.streak ?? 0;
   const daily = feed?.daily;
@@ -103,26 +119,35 @@ export default function HomeScreen() {
     }
   }, [daily?.isLocked, daily?.unlocksAt]);
 
-  const handleStartDaily = useCallback(() => {
+  const handleStartDaily = useCallback(async () => {
     if (dailyData && !daily?.isLocked) {
-      startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
-      router.push('/game/card');
+      const startGame = () => {
+        startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
+        markFirstGameToday();
+        router.push('/game/card');
+      };
+      const shown = await showForGameStart(startGame);
+      if (!shown) startGame();
     }
-  }, [dailyData, daily?.isLocked, startDailySet, router, streak]);
+  }, [dailyData, daily?.isLocked, startDailySet, router, streak, showForGameStart, markFirstGameToday]);
 
-  const handleContinueDaily = useCallback(() => {
+  const handleContinueDaily = useCallback(async () => {
     if (!dailyData || !dailyData.progress) return;
     const totalCards = dailyData.questions?.length ?? CARDS_PER_DAILY_SET;
-    // Include previous results so final submit has all answers for correct streak calculation
     const previousResults = dailyData.progress.results.map((r) => ({
       questionId: r.questionId,
       correct: r.correct,
       score: 0,
       timeSpentMs: 0,
     }));
-    startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress.currentIndex, previousResults);
-    router.push('/game/card');
-  }, [dailyData, startDailySet, router, streak]);
+    const startGame = () => {
+      startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress!.currentIndex, previousResults);
+      markFirstGameToday();
+      router.push('/game/card');
+    };
+    const shown = await showForGameStart(startGame);
+    if (!shown) startGame();
+  }, [dailyData, startDailySet, router, streak, showForGameStart, markFirstGameToday]);
 
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
@@ -150,10 +175,9 @@ export default function HomeScreen() {
                 });
                 startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true, streak);
                 analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
-                router.push({
-                  pathname: '/game/card',
-                  params: { mode: 'collection' },
-                });
+                const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
+                const adShown = await showForGameStart(nav);
+                if (!adShown) nav();
               } catch (err) {
                 const message = err instanceof Error ? err.message : 'Error';
                 Alert.alert(t('common.error'), message);
@@ -176,10 +200,9 @@ export default function HomeScreen() {
       });
       startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
-      router.push({
-        pathname: '/game/card',
-        params: { mode: 'collection' },
-      });
+      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
+      const adShown = await showForGameStart(nav);
+      if (!adShown) nav();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);
@@ -197,10 +220,9 @@ export default function HomeScreen() {
       });
       startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
-      router.push({
-        pathname: '/game/card',
-        params: { mode: 'collection' },
-      });
+      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
+      const adShown = await showForGameStart(nav);
+      if (!adShown) nav();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);
@@ -274,7 +296,10 @@ export default function HomeScreen() {
             <Text style={[styles.largeTitle, { color: colors.textPrimary }]}>
               {t('home.title')}
             </Text>
-            <StreakBadge days={streak} />
+            <View style={styles.headerRight}>
+              <AdFreeIcon onPress={() => setShowDisableAds(true)} />
+              <StreakBadge days={streak} />
+            </View>
           </View>
         </AnimatedEntrance>
 
@@ -486,9 +511,11 @@ export default function HomeScreen() {
         </AnimatedEntrance>
 
         <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
-          <AdBanner placement="home_bottom" />
+          <AdBanner placement="home" />
         </View>
       </ScrollView>
+
+      <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
   );
 }
@@ -699,6 +726,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   largeTitle: {
     fontSize: 32,

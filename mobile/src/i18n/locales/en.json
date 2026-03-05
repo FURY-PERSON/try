@@ -186,5 +186,10 @@
   "serviceUnavailable": {
     "title": "Service temporarily unavailable",
     "subtitle": "We're loading new facts.\nPlease try again in a moment"
+  },
+  "ads": {
+    "disableTitle": "Disable ads?",
+    "disableDesc": "Watch a sponsor video and ads will disappear for {{minutes}} minutes",
+    "watchVideo": "Watch video"
   }
 }

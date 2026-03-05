@@ -1,6 +1,10 @@
-import { AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
+import { GOOGLE_AD_UNIT_IDS, YANDEX_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
 import { appStorage } from './storage';
 import { analytics } from './analytics';
+import { getAdProvider } from './adProvider';
+import { useAdsStore } from '@/stores/useAdsStore';
+import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
+import type { AdProvider } from '@/stores/useAdsStore';
 
 type AdState = {
   interstitialLastShown: number;
@@ -42,36 +46,94 @@ class AdManager {
     await appStorage.set(AD_STATE_KEY, this.state);
   }
 
+  getProvider(): AdProvider {
+    return getAdProvider();
+  }
+
   getBannerUnitId(): string {
-    return AD_UNIT_IDS.banner;
+    return this.getProvider() === 'yandex'
+      ? YANDEX_AD_UNIT_IDS.banner
+      : GOOGLE_AD_UNIT_IDS.banner;
   }
 
   getInterstitialUnitId(): string {
-    return AD_UNIT_IDS.interstitial;
+    return this.getProvider() === 'yandex'
+      ? YANDEX_AD_UNIT_IDS.interstitial
+      : GOOGLE_AD_UNIT_IDS.interstitial;
   }
 
   getRewardedUnitId(): string {
-    return AD_UNIT_IDS.rewarded;
+    return this.getProvider() === 'yandex'
+      ? YANDEX_AD_UNIT_IDS.rewarded
+      : GOOGLE_AD_UNIT_IDS.rewarded;
+  }
+
+  isAdsEnabled(): boolean {
+    const flagStore = useFeatureFlagsStore.getState();
+    if (!flagStore.isEnabled('ads_enable', true)) return false;
+    if (useAdsStore.getState().isAdFree()) return false;
+    return true;
+  }
+
+  isBannerEnabled(placement: string): boolean {
+    if (!this.isAdsEnabled()) return false;
+    const flagStore = useFeatureFlagsStore.getState();
+    const flagKey = `ad_banner_${placement}`;
+    return flagStore.isEnabled(flagKey, true);
   }
 
   canShowInterstitial(): boolean {
-    if (this.state.userTotalGames < AD_FREQUENCY.gracePeriodGames) return false;
+    if (!this.isAdsEnabled()) return false;
+
+    const flagStore = useFeatureFlagsStore.getState();
+    if (!flagStore.isEnabled('ad_interstitial_game', true)) return false;
+
     if (this.state.interstitialTodayCount >= AD_FREQUENCY.interstitialMaxPerDay) return false;
     if (Date.now() - this.state.interstitialLastShown < AD_FREQUENCY.interstitialCooldownMs)
       return false;
+
     return true;
+  }
+
+  shouldShowInterstitialForFacts(): boolean {
+    if (!this.canShowInterstitial()) return false;
+
+    const adsStore = useAdsStore.getState();
+
+    // Don't show for first game today
+    if (adsStore.isFirstGameToday()) return false;
+
+    const flagStore = useFeatureFlagsStore.getState();
+    const payload = flagStore.getPayload<{ factsThreshold?: number }>('ad_interstitial_game');
+    const threshold = payload?.factsThreshold ?? AD_FREQUENCY.defaultFactsPerInterstitial;
+
+    const factsSinceLastAd = adsStore.totalFactsAnswered - adsStore.lastInterstitialFactCount;
+    return factsSinceLastAd >= threshold;
   }
 
   async onInterstitialShown(): Promise<void> {
     this.state.interstitialLastShown = Date.now();
     this.state.interstitialTodayCount += 1;
     analytics.logEvent('ad_interstitial_shown');
+
+    const adsStore = useAdsStore.getState();
+    adsStore.setLastInterstitialFactCount(adsStore.totalFactsAnswered);
+
     await this.saveState();
   }
 
   async onGamePlayed(): Promise<void> {
     this.state.userTotalGames += 1;
     await this.saveState();
+  }
+
+  activateAdFree(): void {
+    const flagStore = useFeatureFlagsStore.getState();
+    const payload = flagStore.getPayload<{ adFreeMinutes?: number }>('ad_rewarded_video');
+    const minutes = payload?.adFreeMinutes ?? AD_FREQUENCY.defaultAdFreeMinutes;
+    const until = Date.now() + minutes * 60 * 1000;
+    useAdsStore.getState().setAdFreeUntil(until);
+    analytics.logEvent('ad_free_activated', { minutes });
   }
 }
 

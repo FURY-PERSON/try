@@ -17,6 +17,7 @@ import { useCardGame } from '@/features/game/hooks/useCardGame';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { DailySetQuestion } from '@/shared';
@@ -253,6 +254,10 @@ export default function CardScreen() {
           </View>
         ) : null}
       </LinearGradient>
+
+      <View style={styles.padded}>
+        <AdBanner placement="game" />
+      </View>
 
       <OverlayModal visible={showExitConfirm} onClose={() => setShowExitConfirm(false)}>
         <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: 20 }]}>

@@ -1,7 +1,8 @@
 import { Platform } from 'react-native';
 import { IS_DEV } from './config';
 
-const TEST_IDS = {
+// --- Google Ads ---
+const GOOGLE_TEST_IDS = {
   banner: {
     ios: 'ca-app-pub-3940256099942544/2934735716',
     android: 'ca-app-pub-3940256099942544/6300978111',
@@ -16,7 +17,7 @@ const TEST_IDS = {
   },
 } as const;
 
-const PROD_IDS = {
+const GOOGLE_PROD_IDS = {
   banner: {
     ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/BANNER_IOS',
     android: 'ca-app-pub-XXXXXXXXXXXXXXXX/BANNER_ANDROID',
@@ -31,16 +32,38 @@ const PROD_IDS = {
   },
 } as const;
 
-const adIds = IS_DEV ? TEST_IDS : PROD_IDS;
+const googleIds = IS_DEV ? GOOGLE_TEST_IDS : GOOGLE_PROD_IDS;
 
-export const AD_UNIT_IDS = {
-  banner: Platform.OS === 'ios' ? adIds.banner.ios : adIds.banner.android,
-  interstitial: Platform.OS === 'ios' ? adIds.interstitial.ios : adIds.interstitial.android,
-  rewarded: Platform.OS === 'ios' ? adIds.rewarded.ios : adIds.rewarded.android,
+export const GOOGLE_AD_UNIT_IDS = {
+  banner: Platform.OS === 'ios' ? googleIds.banner.ios : googleIds.banner.android,
+  interstitial: Platform.OS === 'ios' ? googleIds.interstitial.ios : googleIds.interstitial.android,
+  rewarded: Platform.OS === 'ios' ? googleIds.rewarded.ios : googleIds.rewarded.android,
 } as const;
 
+// --- Yandex Ads ---
+// Demo block IDs for testing: https://yandex.ru/dev/mobile-ads/doc/intro/about.html
+const YANDEX_TEST_IDS = {
+  banner: 'demo-banner-yandex',
+  interstitial: 'demo-interstitial-yandex',
+  rewarded: 'demo-rewarded-yandex',
+} as const;
+
+const YANDEX_PROD_IDS = {
+  banner: 'R-M-XXXXXXX-1',       // <-- Insert your Yandex banner block ID
+  interstitial: 'R-M-XXXXXXX-2', // <-- Insert your Yandex interstitial block ID
+  rewarded: 'R-M-XXXXXXX-3',     // <-- Insert your Yandex rewarded block ID
+} as const;
+
+export const YANDEX_AD_UNIT_IDS = IS_DEV ? YANDEX_TEST_IDS : YANDEX_PROD_IDS;
+
+// --- Legacy export for backward compat ---
+export const AD_UNIT_IDS = GOOGLE_AD_UNIT_IDS;
+
+// --- Frequency settings ---
 export const AD_FREQUENCY = {
   interstitialCooldownMs: 120_000,
   interstitialMaxPerDay: 10,
   gracePeriodGames: 3,
+  defaultFactsPerInterstitial: 30,
+  defaultAdFreeMinutes: 30,
 } as const;

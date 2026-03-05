@@ -21,7 +21,9 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { DailyResultCard } from '@/features/game/components/DailyResultCard';
 import { useGameStore } from '@/features/game/stores/useGameStore';
+import { AdBanner } from '@/components/ads/AdBanner';
 import { useInterstitialAd } from '@/components/ads/InterstitialManager';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { shareResult } from '@/utils/share';
@@ -40,6 +42,7 @@ export default function ResultsModal() {
   const isReplay = useGameStore((s) => s.isReplay);
   const submissionResult = useGameStore((s) => s.submissionResult);
   const { showIfReady } = useInterstitialAd();
+  const addFactsAnswered = useAdsStore((s) => s.addFactsAnswered);
 
   const results = dailyProgress.results;
   const correctCount = results.filter((r) => r.correct).length;
@@ -56,12 +59,13 @@ export default function ResultsModal() {
 
   useEffect(() => {
     showIfReady();
+    addFactsAnswered(totalCards);
     analytics.logEvent('collection_complete', {
       type: collectionType,
       correctCount,
       total: totalCards,
     });
-  }, [showIfReady, correctCount, totalCards, collectionType]);
+  }, [showIfReady, correctCount, totalCards, collectionType, addFactsAnswered]);
 
   useEffect(() => {
     scoreOpacity.value = withTiming(1, { duration: 300 });
@@ -196,6 +200,7 @@ export default function ResultsModal() {
 
       <AnimatedEntrance delay={600} direction="up">
         <View style={styles.footer}>
+          <AdBanner placement="results" />
           <Button
             label={t('results.goHome')}
             variant="primary"
