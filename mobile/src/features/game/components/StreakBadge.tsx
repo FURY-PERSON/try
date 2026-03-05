@@ -88,6 +88,27 @@ const BurstParticle: FC<{ color: string; dx: number; dy: number; delay: number }
   );
 };
 
+const PlusOneFloat: FC<{ color: string }> = ({ color }) => {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(0.5);
+
+  useEffect(() => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    translateY.value = withTiming(-32, { duration: 800 });
+    opacity.value = withDelay(400, withTiming(0, { duration: 400 }));
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Animated.Text style={[styles.plusOne, { color }, style]}>+1</Animated.Text>
+  );
+};
+
 export const StreakBadge: FC<StreakBadgeProps> = ({
   days,
   animated = true,
@@ -95,6 +116,7 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
 }) => {
   const prevDaysRef = useRef(days);
   const [tapBurstKey, setTapBurstKey] = useState(0);
+  const [plusOneKey, setPlusOneKey] = useState(0);
   const { tier, color, rotationAmplitude, scalePulse, glowRadius } = getStreakTier(days);
 
   const rotation = useSharedValue(0);
@@ -139,12 +161,13 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       true,
     );
 
-    // Burst effect on increment
+    // Burst effect + "+1" on increment
     if (days > prevDays && prevDays > 0) {
       burstScale.value = withSequence(
         withSpring(1.3, { damping: 8, stiffness: 400 }),
         withSpring(1, { damping: 12, stiffness: 200 }),
       );
+      setPlusOneKey((k) => k + 1);
     }
   }, [animated, days, rotation, glowScale, burstScale, badgeOpacity, rotationAmplitude, scalePulse]);
 
@@ -267,6 +290,13 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         </View>
       )}
 
+      {/* Floating +1 on streak increment */}
+      {plusOneKey > 0 && (
+        <View style={styles.plusOneContainer} pointerEvents="none" key={plusOneKey}>
+          <PlusOneFloat color={color} />
+        </View>
+      )}
+
       <Pressable onPress={handlePress} hitSlop={6}>
         <Animated.View style={tapAnimatedStyle}>
           <View
@@ -343,6 +373,16 @@ const styles = StyleSheet.create({
   starOverlay: {
     fontSize: 10,
     marginLeft: -2,
+  },
+  plusOneContainer: {
+    position: 'absolute',
+    top: -4,
+    right: -2,
+    zIndex: 20,
+  },
+  plusOne: {
+    fontSize: 14,
+    fontFamily: fontFamily.extraBold,
   },
   burstContainer: {
     ...StyleSheet.absoluteFillObject,

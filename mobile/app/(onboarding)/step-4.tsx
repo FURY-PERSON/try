@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
+import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useOnboarding } from '@/features/onboarding/hooks/useOnboarding';
@@ -159,32 +160,30 @@ export default function OnboardingStep4() {
 
           {/* Nickname input */}
           <AnimatedEntrance delay={300} direction="up" style={{ alignSelf: 'stretch' }}>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    color: colors.textPrimary,
-                    backgroundColor: colors.surface,
-                    borderColor: validationError ? colors.red : colors.border,
-                  },
-                ]}
-                placeholder={placeholder}
-                placeholderTextColor={colors.textTertiary}
-                value={nickname}
-                onChangeText={(text) => {
-                  setNickname(text);
-                  if (validationError) setValidationError('');
-                }}
-                maxLength={16}
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-              <Pressable onPress={handleRefresh} style={styles.refreshButton} disabled={generatingNickname}>
+            <View style={styles.inputRow}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  variant="answer"
+                  value={nickname}
+                  onChangeText={(text) => {
+                    setNickname(text);
+                    if (validationError) setValidationError('');
+                  }}
+                  placeholder={placeholder}
+                  maxLength={16}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+              </View>
+              <Pressable
+                onPress={handleRefresh}
+                disabled={generatingNickname}
+                style={[styles.regenerateBtn, { backgroundColor: colors.primary + '15' }]}
+              >
                 {generatingNickname ? (
-                  <ActivityIndicator size="small" color={colors.textSecondary} />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
-                  <MaterialCommunityIcons name="refresh" size={20} color={colors.textSecondary} />
+                  <Feather name="refresh-cw" size={20} color={colors.primary} />
                 )}
               </Pressable>
             </View>
@@ -286,24 +285,17 @@ const styles = StyleSheet.create({
   emojiText: {
     fontSize: 28,
   },
-  inputWrapper: {
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    gap: 8,
+    gap: 10,
   },
-  input: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: fontFamily.semiBold,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    textAlign: 'center',
-  },
-  refreshButton: {
-    padding: 12,
+  regenerateBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontSize: 13,
