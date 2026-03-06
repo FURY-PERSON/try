@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
@@ -11,6 +11,9 @@ import { adManager } from '@/services/ads';
 import type { FC } from 'react';
 import type { ViewStyle } from 'react-native';
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 5_000;
+
 type UnityBannerProps = {
   placement: string;
   containerStyle: ViewStyle[];
@@ -19,15 +22,30 @@ type UnityBannerProps = {
 };
 
 export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, onAdLoaded, onAdFailed }) => {
-  console.log('[UnityBanner] rendering, placement:', placement, 'adUnitId:', adManager.getBannerUnitId());
   const bannerAdViewRef = useRef<LevelPlayBannerAdViewMethods>(null);
+  const retriesRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleRetry = useCallback(() => {
+    if (retriesRef.current >= MAX_RETRIES) {
+      onAdFailed();
+      return;
+    }
+    retriesRef.current += 1;
+    retryTimerRef.current = setTimeout(() => {
+      bannerAdViewRef.current?.loadAd();
+    }, RETRY_DELAY_MS);
+  }, [onAdFailed]);
 
   const adSize = LevelPlayAdSize.BANNER;
   const listener: LevelPlayBannerAdViewListener = {
-    onAdLoaded: (adInfo) => { console.log('[UnityBanner] ad loaded', adInfo); onAdLoaded(); },
-    onAdLoadFailed: (error) => { console.error('[UnityBanner] ad load failed', error); onAdFailed(); },
+    onAdLoaded: () => {
+      retriesRef.current = 0;
+      onAdLoaded();
+    },
+    onAdLoadFailed: () => { scheduleRetry(); },
     onAdDisplayed: () => {},
-    onAdDisplayFailed: (error) => { console.error('[UnityBanner] ad display failed', error); onAdFailed(); },
+    onAdDisplayFailed: () => { onAdFailed(); },
     onAdClicked: () => {},
     onAdExpanded: () => {},
     onAdCollapsed: () => {},

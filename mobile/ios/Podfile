@@ -23,8 +23,9 @@ target 'Frontfaktov' do
   pod 'GoogleDataTransport', :modular_headers => true
   pod 'nanopb', :modular_headers => true
 
-  # Unity Ads adapter for LevelPlay mediation
+  # LevelPlay mediation adapters
   pod 'IronSourceUnityAdsAdapter', '~> 5.5.0'
+  pod 'IronSourceYandexAdapter', '~> 5.5.0'
 
   use_expo_modules!
 

@@ -515,6 +515,9 @@ PODS:
   - IronSourceUnityAdsAdapter (5.5.0.0):
     - IronSourceSDK/Ads (~> 9.0)
     - UnityAds (= 4.16.6)
+  - IronSourceYandexAdapter (5.5.0.0):
+    - IronSourceSDK/Ads (~> 9.0)
+    - YandexMobileAds (= 7.18.3)
   - libavif/core (1.0.0)
   - libavif/libdav1d (1.0.0):
     - libavif/core
@@ -2472,29 +2475,7 @@ PODS:
     - VGSLUI (= 7.19.2)
   - VGSLUI (7.19.2):
     - VGSLFundamentals (= 7.19.2)
-  - yandex-mobile-ads (7.18.0):
-    - DoubleConversion
-    - glog
-    - hermes-engine
-    - RCT-Folly (= 2024.01.01.00)
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - YandexMobileAds (= 7.18.0)
-    - Yoga
-  - YandexMobileAds (7.18.0):
+  - YandexMobileAds (7.18.3):
     - AppMetricaAdSupport (~> 5.14.0)
     - AppMetricaCore (~> 5.14.0)
     - AppMetricaIDSync (~> 5.14.0)
@@ -2545,6 +2526,7 @@ DEPENDENCIES:
   - GoogleUtilities
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - IronSourceUnityAdsAdapter (~> 5.5.0)
+  - IronSourceYandexAdapter (~> 5.5.0)
   - nanopb
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCT-Folly/Fabric (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
@@ -2617,7 +2599,6 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - unity-levelplay-mediation (from `../node_modules/unity-levelplay-mediation`)
-  - yandex-mobile-ads (from `../node_modules/yandex-mobile-ads`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2661,6 +2642,7 @@ SPEC REPOS:
     - IronSourceAdQualitySDK
     - IronSourceSDK
     - IronSourceUnityAdsAdapter
+    - IronSourceYandexAdapter
     - libavif
     - libdav1d
     - nanopb
@@ -2888,8 +2870,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-svg"
   unity-levelplay-mediation:
     :path: "../node_modules/unity-levelplay-mediation"
-  yandex-mobile-ads:
-    :path: "../node_modules/yandex-mobile-ads"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -2968,6 +2948,7 @@ SPEC CHECKSUMS:
   IronSourceAdQualitySDK: 56314ade811a5226f76dfd377bc09aca0d6610c0
   IronSourceSDK: 66e1483cd62fb63162a965651f6f41c6b91664db
   IronSourceUnityAdsAdapter: e86b8a98be25e3bbdacffb16f7d6caa0a980200b
+  IronSourceYandexAdapter: 07a70c0417569849a4912bd1d9e58bd5c2af8d4f
   libavif: 5f8e715bea24debec477006f21ef9e95432e254d
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
@@ -3052,10 +3033,9 @@ SPEC CHECKSUMS:
   VGSLFundamentals: c25982955e16c3fa8a30eb1829ac87507a1591b4
   VGSLNetworking: c6ae957df1aae2e2772d01ed51781d9bdbcfdc92
   VGSLUI: 65c9e2a1b025d4af65fe813819efa027819650df
-  yandex-mobile-ads: 632d9b1076f898b8046f6fcbc0ab0deb48fa8b36
-  YandexMobileAds: fdb8bcd562f25080b0d9ff99384026c868e0baea
+  YandexMobileAds: c3eed41828233daf812102d24d5aeb4bde35571a
   Yoga: 748f06daed00132bf0a051dbb2f4347660ac1a98
 
-PODFILE CHECKSUM: 6539b2cdf3da41633da6f4c5678906380058b23f
+PODFILE CHECKSUM: d0ce16f6ae2e323dc316c8d9527c372e9c9e90e2
 
 COCOAPODS: 1.16.2

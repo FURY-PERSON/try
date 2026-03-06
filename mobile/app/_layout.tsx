@@ -146,15 +146,13 @@ export default function RootLayout() {
 
     async function init() {
       // Run feature flags + app init in parallel
-      const [flagsResult] = await Promise.allSettled([
+      await Promise.allSettled([
         loadFeatureFlags(),
         initApp(),
       ]);
 
-      // Init ad provider after flags are loaded
-      const flags = useFeatureFlagsStore.getState().flags;
-      console.log('[Init] Flags loaded:', Object.keys(flags).length, 'yandex_ads:', flags['yandex_ads']?.isEnabled, 'unity_ads:', flags['unity_ads']?.isEnabled);
-      try { initAdProvider(); } catch {}
+      // Init ad provider after flags are loaded (awaits SDK ready or timeout)
+      try { await initAdProvider(); } catch {}
 
       // Ensure splash is shown for at least SPLASH_MIN_DURATION_MS
       const elapsed = Date.now() - startedAt;

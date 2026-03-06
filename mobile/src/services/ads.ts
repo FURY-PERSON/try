@@ -1,10 +1,9 @@
-import { UNITY_AD_UNIT_IDS, YANDEX_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
+import { UNITY_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
 import { appStorage } from './storage';
 import { analytics } from './analytics';
 import { getAdProvider } from './adProvider';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
-import type { AdProvider } from '@/stores/useAdsStore';
 
 type AdState = {
   interstitialLastShown: number;
@@ -51,21 +50,15 @@ class AdManager {
   }
 
   getBannerUnitId(): string {
-    return this.getProvider() === 'yandex'
-      ? YANDEX_AD_UNIT_IDS.banner
-      : UNITY_AD_UNIT_IDS.banner;
+    return UNITY_AD_UNIT_IDS.banner;
   }
 
   getInterstitialUnitId(): string {
-    return this.getProvider() === 'yandex'
-      ? YANDEX_AD_UNIT_IDS.interstitial
-      : UNITY_AD_UNIT_IDS.interstitial;
+    return UNITY_AD_UNIT_IDS.interstitial;
   }
 
   getRewardedUnitId(): string {
-    return this.getProvider() === 'yandex'
-      ? YANDEX_AD_UNIT_IDS.rewarded
-      : UNITY_AD_UNIT_IDS.rewarded;
+    return UNITY_AD_UNIT_IDS.rewarded;
   }
 
   isAdsEnabled(): boolean {

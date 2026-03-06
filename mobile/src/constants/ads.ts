@@ -24,25 +24,6 @@ export const UNITY_AD_UNIT_IDS = {
   rewarded: unityIds.rewarded,
 } as const;
 
-// --- Yandex Ads ---
-// Demo block IDs for testing: https://yandex.ru/dev/mobile-ads/doc/intro/about.html
-const YANDEX_TEST_IDS = {
-  banner: 'R-M-18860036-1',       // <-- Insert your Yandex banner block ID
-  interstitial: 'R-M-18860036-2', // <-- Insert your Yandex interstitial block ID
-  rewarded: 'R-M-18860036-3',     // <-- Insert your Yandex rewarded block ID
-} as const;
-
-const YANDEX_PROD_IDS = {
-  banner: 'R-M-18860036-1',       // <-- Insert your Yandex banner block ID
-  interstitial: 'R-M-18860036-2', // <-- Insert your Yandex interstitial block ID
-  rewarded: 'R-M-18860036-3',     // <-- Insert your Yandex rewarded block ID
-} as const;
-
-export const YANDEX_AD_UNIT_IDS = IS_DEV ? YANDEX_TEST_IDS : YANDEX_PROD_IDS;
-
-// --- Legacy export for backward compat ---
-export const AD_UNIT_IDS = UNITY_AD_UNIT_IDS;
-
 // --- Frequency settings ---
 export const AD_FREQUENCY = {
   interstitialCooldownMs: 120_000,

@@ -1,8 +1,4 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import {
-  RewardedAdLoader,
-  AdRequestConfiguration,
-} from 'yandex-mobile-ads';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
@@ -13,84 +9,62 @@ export const useRewardedAd = () => {
   const rewardEarnedRef = useRef(false);
   const resolveRef = useRef<((rewarded: boolean) => void) | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const yandexAdRef = useRef<Awaited<ReturnType<typeof RewardedAdLoader.prototype.loadAd>> | null>(null);
-  const yandexLoaderRef = useRef<RewardedAdLoader | null>(null);
   const unityAdRef = useRef<any>(null);
 
   const provider = getAdProvider();
   const sdkReady = useAdsStore((s) => s.sdkReady);
 
-  const loadYandexAd = useCallback(async () => {
-    try {
-      if (!yandexLoaderRef.current) {
-        yandexLoaderRef.current = await RewardedAdLoader.create();
-      }
-      const config = new AdRequestConfiguration({
-        adUnitId: adManager.getRewardedUnitId(),
-      });
-      const ad = await yandexLoaderRef.current.loadAd(config);
-      yandexAdRef.current = ad;
-      loadedRef.current = true;
-      setIsReady(true);
-    } catch {
-      loadedRef.current = false;
-      setIsReady(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (provider === 'yandex' && sdkReady) {
-      loadYandexAd();
-    } else if (provider === 'unity' && sdkReady) {
-      import('unity-levelplay-mediation').then(({ LevelPlayRewardedAd }) => {
-        try {
-          const ad = new LevelPlayRewardedAd(adManager.getRewardedUnitId());
-          unityAdRef.current = ad;
+    if (provider !== 'unity' || !sdkReady) return;
 
-          ad.setListener({
-            onAdLoaded: () => {
-              loadedRef.current = true;
-              setIsReady(true);
-            },
-            onAdLoadFailed: () => {
-              loadedRef.current = false;
-              setIsReady(false);
-            },
-            onAdInfoChanged: () => {},
-            onAdDisplayed: () => {},
-            onAdDisplayFailed: () => {
-              loadedRef.current = false;
-              setIsReady(false);
-              resolveRef.current?.(false);
-              resolveRef.current = null;
-            },
-            onAdClicked: () => {},
-            onAdClosed: () => {
-              const wasRewarded = rewardEarnedRef.current;
-              if (wasRewarded) {
-                adManager.activateAdFree();
-              }
-              rewardEarnedRef.current = false;
-              loadedRef.current = false;
-              setIsReady(false);
-              ad.loadAd();
-              resolveRef.current?.(wasRewarded);
-              resolveRef.current = null;
-            },
-            onAdRewarded: () => {
-              rewardEarnedRef.current = true;
-              analytics.logEvent('ad_rewarded_completed');
+    import('unity-levelplay-mediation').then(({ LevelPlayRewardedAd }) => {
+      try {
+        const ad = new LevelPlayRewardedAd(adManager.getRewardedUnitId());
+        unityAdRef.current = ad;
+
+        ad.setListener({
+          onAdLoaded: () => {
+            loadedRef.current = true;
+            setIsReady(true);
+          },
+          onAdLoadFailed: () => {
+            loadedRef.current = false;
+            setIsReady(false);
+          },
+          onAdInfoChanged: () => {},
+          onAdDisplayed: () => {},
+          onAdDisplayFailed: () => {
+            loadedRef.current = false;
+            setIsReady(false);
+            resolveRef.current?.(false);
+            resolveRef.current = null;
+          },
+          onAdClicked: () => {},
+          onAdClosed: () => {
+            const wasRewarded = rewardEarnedRef.current;
+            if (wasRewarded) {
               adManager.activateAdFree();
-            },
-          });
+            }
+            rewardEarnedRef.current = false;
+            loadedRef.current = false;
+            setIsReady(false);
+            ad.loadAd();
+            resolveRef.current?.(wasRewarded);
+            resolveRef.current = null;
+          },
+          onAdRewarded: () => {
+            rewardEarnedRef.current = true;
+            analytics.logEvent('ad_rewarded_completed');
+            adManager.activateAdFree();
+          },
+        });
 
-          ad.loadAd();
-        } catch {
-          // Unity ad creation failed
-        }
-      }).catch(() => {});
-    }
-  }, [provider, sdkReady, loadYandexAd]);
+        ad.loadAd();
+      } catch {
+        // Unity ad creation failed
+      }
+    }).catch(() => {});
+  }, [provider, sdkReady]);
 
   const showForReward = useCallback((): Promise<boolean> => {
     if (!loadedRef.current) return Promise.resolve(false);
@@ -99,33 +73,7 @@ export const useRewardedAd = () => {
 
     return new Promise((resolve) => {
       try {
-        if (provider === 'yandex' && yandexAdRef.current) {
-          const ad = yandexAdRef.current;
-          ad.onRewarded = () => {
-            rewardEarnedRef.current = true;
-            analytics.logEvent('ad_rewarded_completed');
-            adManager.activateAdFree();
-          };
-          ad.onAdDismissed = () => {
-            if (rewardEarnedRef.current) {
-              adManager.activateAdFree();
-            }
-            const wasRewarded = rewardEarnedRef.current;
-            rewardEarnedRef.current = false;
-            loadedRef.current = false;
-            yandexAdRef.current = null;
-            setIsReady(false);
-            loadYandexAd();
-            resolve(wasRewarded);
-          };
-          ad.onAdFailedToShow = () => {
-            loadedRef.current = false;
-            setIsReady(false);
-            resolve(false);
-          };
-          ad.show();
-          analytics.logEvent('ad_rewarded_shown');
-        } else if (unityAdRef.current) {
+        if (unityAdRef.current) {
           resolveRef.current = resolve;
           unityAdRef.current.showAd();
           analytics.logEvent('ad_rewarded_shown');
@@ -136,7 +84,7 @@ export const useRewardedAd = () => {
         resolve(false);
       }
     });
-  }, [provider, loadYandexAd]);
+  }, []);
 
   return { showForReward, isReady };
 };
