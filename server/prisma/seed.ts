@@ -92,14 +92,14 @@ async function main() {
       name: 'Полноэкранная реклама',
       description: 'Полноэкранная реклама перед началом игры. Payload: { factsThreshold: number }',
       isEnabled: true,
-      payload: { factsThreshold: 24 },
+      payload: { factsThreshold: 26 },
     },
     {
       key: 'ad_rewarded_video',
       name: 'Видео реклама (отключение рекламы)',
-      description: 'Видео для отключения рекламы. Payload: { adFreeMinutes: number }',
+      description: 'Видео для отключения рекламы. Payload: { adFreeMinutes: number, requiredViews: number }',
       isEnabled: true,
-      payload: { adFreeMinutes: 30 },
+      payload: { adFreeMinutes: 30, requiredViews: 2 },
     },
   ];
 

@@ -7,6 +7,7 @@ import { getAdProvider } from '@/services/adProvider';
 export const useRewardedAd = () => {
   const loadedRef = useRef(false);
   const rewardEarnedRef = useRef(false);
+  const adNetworkRef = useRef('unknown');
   const resolveRef = useRef<((rewarded: boolean) => void) | null>(null);
   const [isReady, setIsReady] = useState(false);
   const unityAdRef = useRef<any>(null);
@@ -23,13 +24,15 @@ export const useRewardedAd = () => {
         unityAdRef.current = ad;
 
         ad.setListener({
-          onAdLoaded: () => {
+          onAdLoaded: (adInfo) => {
             loadedRef.current = true;
+            adNetworkRef.current = adInfo?.adNetwork ?? 'unknown';
             setIsReady(true);
           },
           onAdLoadFailed: () => {
             loadedRef.current = false;
             setIsReady(false);
+            analytics.logEvent('ad_rewarded_failed', { provider: provider ?? 'unknown' });
           },
           onAdInfoChanged: () => {},
           onAdDisplayed: () => {},
@@ -51,7 +54,7 @@ export const useRewardedAd = () => {
           },
           onAdRewarded: () => {
             rewardEarnedRef.current = true;
-            analytics.logEvent('ad_rewarded_completed');
+            analytics.logEvent('ad_rewarded_completed', { provider: provider ?? 'unknown', adNetwork: adNetworkRef.current });
           },
         });
 
@@ -72,7 +75,7 @@ export const useRewardedAd = () => {
         if (unityAdRef.current) {
           resolveRef.current = resolve;
           unityAdRef.current.showAd();
-          analytics.logEvent('ad_rewarded_shown');
+          analytics.logEvent('ad_rewarded_shown', { provider: provider ?? 'unknown', adNetwork: adNetworkRef.current });
         } else {
           resolve(false);
         }

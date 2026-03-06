@@ -92,8 +92,14 @@ class AdManager {
   async onInterstitialShown(): Promise<void> {
     analytics.logEvent('ad_interstitial_shown');
 
+    const flagStore = useFeatureFlagsStore.getState();
+    const payload = flagStore.getPayload<{ factsThreshold?: number }>('ad_interstitial_game');
+    const threshold = payload?.factsThreshold ?? 30;
+
     const adsStore = useAdsStore.getState();
-    adsStore.setLastInterstitialFactCount(adsStore.totalFactsAnswered);
+    // Advance by threshold instead of resetting to current total,
+    // so leftover facts carry over: 20+20 answered, threshold 21 → leftover 19
+    adsStore.setLastInterstitialFactCount(adsStore.lastInterstitialFactCount + threshold);
 
     await this.saveState();
   }
@@ -105,8 +111,8 @@ class AdManager {
 
   activateAdFree(): void {
     const flagStore = useFeatureFlagsStore.getState();
-    const payload = flagStore.getPayload<{ minutes?: number }>('ad_rewarded_video');
-    const minutes = payload?.minutes ?? 30;
+    const payload = flagStore.getPayload<{ adFreeMinutes?: number }>('ad_rewarded_video');
+    const minutes = payload?.adFreeMinutes ?? 30;
     const until = Date.now() + minutes * 60 * 1000;
     useAdsStore.getState().setAdFreeUntil(until);
     analytics.logEvent('ad_free_activated', { minutes });

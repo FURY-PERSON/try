@@ -6,6 +6,7 @@ import { useAdsStore } from '@/stores/useAdsStore';
 // Singleton interstitial ad — persists across screen mounts
 let singletonAd: any = null;
 let adLoaded = false;
+let lastAdNetwork = 'unknown';
 let listenerSet = false;
 let onClosedCallback: (() => void) | null = null;
 
@@ -22,8 +23,17 @@ function ensureAdLoaded() {
       singletonAd = ad;
 
       ad.setListener({
-        onAdLoaded: () => { adLoaded = true; },
-        onAdLoadFailed: () => { adLoaded = false; },
+        onAdLoaded: (adInfo) => {
+          adLoaded = true;
+          lastAdNetwork = adInfo?.adNetwork ?? 'unknown';
+        },
+        onAdLoadFailed: (error) => {
+          adLoaded = false;
+          analytics.logEvent('ad_interstitial_failed', {
+            provider: useAdsStore.getState().detectedProvider ?? 'unknown',
+            errorCode: error?.errorCode ?? 0,
+          });
+        },
         onAdInfoChanged: () => {},
         onAdDisplayed: () => {},
         onAdDisplayFailed: () => {
@@ -95,7 +105,7 @@ export const useInterstitialAd = () => {
       }
 
       await adManager.onInterstitialShown();
-      analytics.logEvent('ad_interstitial_shown');
+      analytics.logEvent('ad_interstitial_shown', { context: 'manual', provider: useAdsStore.getState().detectedProvider ?? 'unknown', adNetwork: lastAdNetwork });
       return true;
     } catch {
       return false;
@@ -110,6 +120,7 @@ export const useInterstitialAd = () => {
     // Wait up to 3 seconds for the ad to load
     const loaded = await waitForAdLoaded(3000);
     if (!loaded) {
+      analytics.logEvent('ad_interstitial_failed', { provider: useAdsStore.getState().detectedProvider ?? 'unknown', reason: 'not_loaded' });
       return false;
     }
 
@@ -122,7 +133,7 @@ export const useInterstitialAd = () => {
 
       await adManager.onInterstitialShown();
       useAdsStore.getState().setShowDisableAdsOnReturn(true);
-      analytics.logEvent('ad_interstitial_shown');
+      analytics.logEvent('ad_interstitial_shown', { context: 'game_start', provider: useAdsStore.getState().detectedProvider ?? 'unknown', adNetwork: lastAdNetwork });
       return true;
     } catch {
       return false;

@@ -8,6 +8,8 @@ import {
   type LevelPlayBannerAdViewMethods,
 } from 'unity-levelplay-mediation';
 import { adManager } from '@/services/ads';
+import { analytics } from '@/services/analytics';
+import { useAdsStore } from '@/stores/useAdsStore';
 import type { FC } from 'react';
 import type { ViewStyle } from 'react-native';
 
@@ -17,7 +19,7 @@ const RETRY_DELAYS_S = [1, 2, 5, 13, 34];
 type UnityBannerProps = {
   placement: string;
   containerStyle: ViewStyle[];
-  onAdLoaded: () => void;
+  onAdLoaded: (adNetwork: string) => void;
   onAdFailed: () => void;
 };
 
@@ -28,6 +30,7 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
 
   const scheduleRetry = useCallback(() => {
     if (retriesRef.current >= RETRY_DELAYS_S.length) {
+      analytics.logEvent('ad_banner_failed', { placement, provider: useAdsStore.getState().detectedProvider ?? 'unknown' });
       onAdFailed();
       return;
     }
@@ -40,9 +43,9 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
 
   const adSize = LevelPlayAdSize.BANNER;
   const listener: LevelPlayBannerAdViewListener = {
-    onAdLoaded: () => {
+    onAdLoaded: (adInfo) => {
       retriesRef.current = 0;
-      onAdLoaded();
+      onAdLoaded(adInfo?.adNetwork ?? 'unknown');
     },
     onAdLoadFailed: () => { scheduleRetry(); },
     onAdDisplayed: () => {},

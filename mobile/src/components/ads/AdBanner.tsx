@@ -33,10 +33,10 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   const bannerFlagKey = `ad_banner_${placement}`;
   const bannerEnabled = useFeatureFlag(bannerFlagKey);
 
-  const handleAdLoaded = useCallback(() => {
+  const handleAdLoaded = useCallback((adNetwork: string) => {
     loaded.value = 1;
-    analytics.logEvent('ad_banner_shown', { placement, provider: 'unity' });
-  }, [loaded, placement]);
+    analytics.logEvent('ad_banner_shown', { placement, provider: provider ?? 'unknown', adNetwork });
+  }, [loaded, placement, provider]);
 
   const handleAdFailed = useCallback(() => {
     errored.value = 1;
