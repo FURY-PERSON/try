@@ -1,15 +1,12 @@
-import React, { useState, Suspense, Component, type ReactNode } from 'react';
+import React, { useState, Component, type ReactNode } from 'react';
 import { StyleSheet, Platform } from 'react-native';
 import { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
 import { analytics } from '@/services/analytics';
 import { useFeatureFlag } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { useAdsStore } from '@/stores/useAdsStore';
+import { UnityBanner } from './UnityBanner';
 import type { FC } from 'react';
-
-const LazyUnityBanner = React.lazy(() =>
-  import('./UnityBanner').then((m) => ({ default: m.UnityBanner })),
-);
 
 class AdErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -67,14 +64,12 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
 
   return (
     <AdErrorBoundary>
-      <Suspense fallback={null}>
-        <LazyUnityBanner
-          placement={placement}
-          containerStyle={containerStyle}
-          onAdLoaded={handleAdLoaded}
-          onAdFailed={handleAdFailed}
-        />
-      </Suspense>
+      <UnityBanner
+        placement={placement}
+        containerStyle={containerStyle}
+        onAdLoaded={handleAdLoaded}
+        onAdFailed={handleAdFailed}
+      />
     </AdErrorBoundary>
   );
 };

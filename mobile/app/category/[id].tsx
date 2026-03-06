@@ -17,7 +17,6 @@ import { IconFromName } from '@/components/ui/IconFromName';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { categoriesApi } from '@/features/home/api/categoriesApi';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
-import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -36,7 +35,6 @@ export default function CategoryDetailScreen() {
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const { showForGameStart } = useInterstitialAd();
   const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
   const [starting, setStarting] = useState(false);
   const [showReplayWarning, setShowReplayWarning] = useState(false);
@@ -84,9 +82,8 @@ export default function CategoryDetailScreen() {
         questionCount: session.questions.length,
         replay,
       });
-      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
-      const adShown = await showForGameStart(nav);
-      if (!adShown) nav();
+      markFirstGameToday();
+      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch {
       // Refetch category to get fresh availableCount
       queryClient.invalidateQueries({ queryKey: ['category', id] });

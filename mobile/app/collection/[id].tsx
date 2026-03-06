@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { AdBanner } from '@/components/ads/AdBanner';
-import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
@@ -35,7 +34,6 @@ export default function CollectionDetailScreen() {
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const { showForGameStart } = useInterstitialAd();
   const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
   const [starting, setStarting] = useState(false);
   const [showReplayWarning, setShowReplayWarning] = useState(false);
@@ -83,9 +81,8 @@ export default function CollectionDetailScreen() {
         questionCount: session.questions.length,
         replay,
       });
-      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
-      const adShown = await showForGameStart(nav);
-      if (!adShown) nav();
+      markFirstGameToday();
+      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);

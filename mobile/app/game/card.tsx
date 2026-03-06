@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
@@ -20,6 +20,7 @@ import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useAppStore } from '@/stores/useAppStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { DailySetQuestion } from '@/shared';
@@ -53,6 +54,21 @@ export default function CardScreen() {
   const hasSeenSwipeContinueHint = useAppStore((s) => s.hasSeenSwipeContinueHint);
   const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
   const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
+
+  // Task 5: Show interstitial 500ms after game screen opens
+  const { showForGameStart: showInterstitial } = useInterstitialAd();
+  const interstitialShownRef = useRef(false);
+
+  useEffect(() => {
+    if (interstitialShownRef.current) return;
+    const timer = setTimeout(() => {
+      if (!interstitialShownRef.current) {
+        interstitialShownRef.current = true;
+        showInterstitial();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [showInterstitial]);
 
   const handleExitWithSave = useCallback(async () => {
     if (exitSaving) return;

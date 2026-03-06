@@ -11,8 +11,8 @@ import { adManager } from '@/services/ads';
 import type { FC } from 'react';
 import type { ViewStyle } from 'react-native';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 5_000;
+// Fibonacci-based delays in seconds: 1, 2, 5, 13, 34
+const RETRY_DELAYS_S = [1, 2, 5, 13, 34];
 
 type UnityBannerProps = {
   placement: string;
@@ -27,14 +27,15 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scheduleRetry = useCallback(() => {
-    if (retriesRef.current >= MAX_RETRIES) {
+    if (retriesRef.current >= RETRY_DELAYS_S.length) {
       onAdFailed();
       return;
     }
+    const delaySec = RETRY_DELAYS_S[retriesRef.current]!;
     retriesRef.current += 1;
     retryTimerRef.current = setTimeout(() => {
       bannerAdViewRef.current?.loadAd();
-    }, RETRY_DELAY_MS);
+    }, delaySec * 1000);
   }, [onAdFailed]);
 
   const adSize = LevelPlayAdSize.BANNER;

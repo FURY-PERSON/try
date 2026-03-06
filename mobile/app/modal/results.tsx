@@ -199,8 +199,7 @@ export default function ResultsModal() {
       </View>
 
       <AnimatedEntrance delay={600} direction="up">
-        <View style={styles.footer}>
-          <AdBanner placement="results" />
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
           <Button
             label={t('results.goHome')}
             variant="primary"
@@ -209,6 +208,10 @@ export default function ResultsModal() {
           />
         </View>
       </AnimatedEntrance>
+
+      <View style={[styles.adOverlay, { bottom: insets.bottom + 80 }]} pointerEvents="box-none">
+        <AdBanner placement="results" />
+      </View>
     </Screen>
   );
 }
@@ -274,7 +277,11 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 20,
-    paddingBottom: 32,
     gap: 12,
+  },
+  adOverlay: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
   },
 });

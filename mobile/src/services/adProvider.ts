@@ -10,7 +10,9 @@ export function detectAdProvider(): AdProvider | null {
 
 /**
  * Initialize the ad provider SDK.
- * Resolves when SDK is ready or after timeout/failure.
+ * Resolves after max 1 second so the app is never blocked.
+ * SDK continues initializing in the background; when ready, sdkReady is set in the store
+ * and ad components will react to it.
  */
 export function initAdProvider(): Promise<void> {
   const provider = detectAdProvider();
@@ -19,8 +21,8 @@ export function initAdProvider(): Promise<void> {
   useAdsStore.getState().setDetectedProvider(provider);
 
   return new Promise<void>(async (resolve) => {
-    // Don't block forever — resolve after 5s regardless
-    const timeout = setTimeout(() => resolve(), 5000);
+    // Never block the app longer than 1 second
+    const timeout = setTimeout(() => resolve(), 1000);
 
     try {
       const { LevelPlay, LevelPlayInitRequest } = await import('unity-levelplay-mediation');
@@ -33,8 +35,7 @@ export function initAdProvider(): Promise<void> {
         onInitSuccess: () => {
           useAdsStore.getState().setSdkReady(true);
           clearTimeout(timeout);
-          // Give ad networks time to fetch waterfall/inventory before UI renders
-          setTimeout(() => resolve(), 1000);
+          resolve();
         },
       });
     } catch {

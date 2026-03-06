@@ -39,13 +39,6 @@ async function main() {
       payload: null,
     },
     {
-      key: 'yandex_ads',
-      name: 'Yandex Ads',
-      description: 'Включить рекламу Yandex для стран СНГ',
-      isEnabled: true,
-      payload: null,
-    },
-    {
       key: 'unity_ads',
       name: 'Unity Ads',
       description: 'Включить рекламу Unity для остальных стран',
@@ -99,7 +92,7 @@ async function main() {
       name: 'Полноэкранная реклама',
       description: 'Полноэкранная реклама перед началом игры. Payload: { factsThreshold: number }',
       isEnabled: true,
-      payload: { factsThreshold: 30 },
+      payload: { factsThreshold: 24 },
     },
     {
       key: 'ad_rewarded_video',

@@ -17,6 +17,10 @@ export const ServiceUnavailableScreen: FC<Props> = ({ status, onRetry }) => {
   const { colors, borderRadius } = useThemeContext();
   const { t } = useTranslation();
 
+  const isLoading = status === 'checking';
+  const titleKey = isLoading ? 'serviceLoading.title' : 'serviceUnavailable.title';
+  const subtitleKey = isLoading ? 'serviceLoading.subtitle' : 'serviceUnavailable.subtitle';
+
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
@@ -26,7 +30,7 @@ export const ServiceUnavailableScreen: FC<Props> = ({ status, onRetry }) => {
             { backgroundColor: `${colors.primary}15`, borderRadius: borderRadius.xxl },
           ]}
         >
-          {status === 'checking' ? (
+          {isLoading ? (
             <ActivityIndicator size="large" color={colors.primary} />
           ) : (
             <Feather name="cloud-off" size={36} color={colors.primary} />
@@ -34,10 +38,10 @@ export const ServiceUnavailableScreen: FC<Props> = ({ status, onRetry }) => {
         </View>
 
         <Text style={[styles.title, { color: colors.textPrimary }]}>
-          {t('serviceUnavailable.title')}
+          {t(titleKey)}
         </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          {t('serviceUnavailable.subtitle')}
+          {t(subtitleKey)}
         </Text>
 
         {status === 'unavailable' && (

@@ -59,8 +59,6 @@ All ads are controlled via feature flags from the server. Manage them in the adm
 | Flag Key | Description | Payload |
 |----------|-------------|---------|
 | `ads_enable` | Global ads on/off | - |
-| `yandex_ads` | Enable Yandex provider | - |
-| `google_ads` | Enable Unity LevelPlay provider | - |
 | `ad_banner_home` | Banner on Home screen | - |
 | `ad_banner_leaderboard` | Banner on Leaderboard screen | - |
 | `ad_banner_profile` | Banner on Profile screen | - |
@@ -72,7 +70,7 @@ All ads are controlled via feature flags from the server. Manage them in the adm
 
 ### Payload Configuration
 
-**ad_interstitial_game**: Change `factsThreshold` to control how many facts must be answered before showing interstitial. Default: 30.
+**ad_interstitial_game**: Change `factsThreshold` to control how many facts must be answered before showing interstitial. Default: 20.
 
 **ad_rewarded_video**: Change `adFreeMinutes` to control how long ads are disabled after watching video. Default: 30.
 

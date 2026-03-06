@@ -129,7 +129,6 @@ VALUES
   ('clref0001flag0showads0', 'show_ads',              'Показ рекламы',                    'Глобальное управление показом рекламы в приложении (legacy)',              true,  NULL, NOW(), NOW()),
   ('clref0002flag0maintena', 'maintenance_mode',       'Режим обслуживания',               'Показывает заглушку вместо контента во время технических работ',           false, NULL, NOW(), NOW()),
   ('clref0003flag0adsenable', 'ads_enable',            'Реклама (глобальный)',              'Глобальное включение/отключение всей рекламы',                            true,  NULL, NOW(), NOW()),
-  ('clref0004flag0yandexads', 'yandex_ads',            'Yandex Ads',                       'Включить рекламу Yandex для стран СНГ',                                   true,  NULL, NOW(), NOW()),
   ('clref0005flag0unityads',  'unity_ads',             'Unity Ads',                        'Включить рекламу Unity для остальных стран',                              true,  NULL, NOW(), NOW()),
   ('clref0006flag0banhome',   'ad_banner_home',        'Баннер: Главная',                  'Баннер внизу главного экрана',                                            true,  NULL, NOW(), NOW()),
   ('clref0007flag0banlead',   'ad_banner_leaderboard', 'Баннер: Рейтинг',                  'Баннер внизу экрана рейтинга',                                            true,  NULL, NOW(), NOW()),
@@ -137,7 +136,7 @@ VALUES
   ('clref0009flag0bancat',    'ad_banner_category',    'Баннер: Категория',                'Баннер на экране информации о категории',                                 true,  NULL, NOW(), NOW()),
   ('clref0010flag0bangame',   'ad_banner_game',        'Баннер: Игра',                     'Баннер внизу экрана игры',                                                true,  NULL, NOW(), NOW()),
   ('clref0011flag0banres',    'ad_banner_results',     'Баннер: Результаты',               'Баннер на экране завершения игры',                                        true,  NULL, NOW(), NOW()),
-  ('clref0012flag0intgame',   'ad_interstitial_game',  'Полноэкранная реклама',            'Полноэкранная реклама перед началом игры',                                true,  '{"factsThreshold": 30}', NOW(), NOW()),
+  ('clref0012flag0intgame',   'ad_interstitial_game',  'Полноэкранная реклама',            'Полноэкранная реклама перед началом игры',                                true,  '{"factsThreshold": 24}', NOW(), NOW()),
   ('clref0013flag0rewvideo',  'ad_rewarded_video',     'Видео реклама (отключение рекламы)','Видео для отключения рекламы. Payload: adFreeMinutes',                    true,  '{"adFreeMinutes": 30}', NOW(), NOW())
 ON CONFLICT (key) DO NOTHING;
 

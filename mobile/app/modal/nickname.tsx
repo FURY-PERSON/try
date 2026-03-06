@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
@@ -20,6 +21,7 @@ export default function NicknameModal() {
   const { colors } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const currentNickname = useUserStore((s) => s.nickname);
   const currentEmoji = useUserStore((s) => s.avatarEmoji);
   const setNickname = useUserStore((s) => s.setNickname);
@@ -57,6 +59,7 @@ export default function NicknameModal() {
       await profileApi.updateProfile({ nickname: value, avatarEmoji: selectedEmoji });
       setNickname(value);
       setAvatarEmoji(selectedEmoji);
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       analytics.logEvent('profile_updated');
       router.back();
     } finally {

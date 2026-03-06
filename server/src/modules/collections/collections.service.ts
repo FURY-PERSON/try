@@ -25,6 +25,7 @@ interface SessionData {
   questionIds: string[];
   createdAt: number;
   replay: boolean;
+  hasNewQuestions: boolean;
   savedQuestionIds: Set<string>;
   preGameStreak: StreakState | null;
   currentStreakState: StreakState | null;
@@ -138,15 +139,16 @@ export class CollectionsService {
 
   async start(userId: string, dto: StartCollectionDto) {
     const count = dto.count;
+    const replay = dto.replay ?? false;
 
     if (dto.type === 'random') {
-      return this.startRandom(userId, count ?? 10);
+      return this.startRandom(userId, count ?? 10, replay);
     }
     if (dto.type === 'category') {
-      return this.startByCategory(userId, dto.categoryId!, count, dto.replay ?? false);
+      return this.startByCategory(userId, dto.categoryId!, count, replay);
     }
     if (dto.type === 'difficulty') {
-      return this.startByDifficulty(userId, dto.difficulty!, count ?? 10);
+      return this.startByDifficulty(userId, dto.difficulty!, count ?? 10, replay);
     }
     if (dto.type === 'collection') {
       return this.startByCollection(userId, dto.collectionId!, count ?? 10);
@@ -215,6 +217,9 @@ export class CollectionsService {
       bestAnswerStreak: user.bestAnswerStreak,
     };
 
+    // If all questions in the session were previously answered, skip streak updates
+    const shouldUpdateStreak = session.hasNewQuestions;
+
     // Calculate streaks and score in a single pass
     let currentStreak = streakStart.currentStreak;
     let bestStreak = streakStart.bestStreak;
@@ -225,18 +230,24 @@ export class CollectionsService {
     const historyData = dto.results.map((r) => {
       let historyScore = 0;
       if (r.result === 'correct') {
-        currentStreak++;
-        currentAnswerStreak++;
+        if (shouldUpdateStreak) {
+          currentStreak++;
+          currentAnswerStreak++;
+        }
         // Display score: 1 base + streak bonus (floor(streak / 5))
         score += 1 + Math.floor(currentAnswerStreak / 5);
         // History score: always 0 or 1 for consistent leaderboard ranking
         historyScore = 1;
       } else {
-        currentStreak = 0;
-        currentAnswerStreak = 0;
+        if (shouldUpdateStreak) {
+          currentStreak = 0;
+          currentAnswerStreak = 0;
+        }
       }
-      bestStreak = Math.max(bestStreak, currentStreak);
-      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+      if (shouldUpdateStreak) {
+        bestStreak = Math.max(bestStreak, currentStreak);
+        bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+      }
 
       return {
         userId,
@@ -262,19 +273,22 @@ export class CollectionsService {
         }
       }
 
-      // Update user stats and streak
+      // Update user stats; only update streak fields if session has new questions
+      const userData: Record<string, unknown> = {
+        totalCorrectAnswers: { increment: correctAnswers },
+        totalScore: { increment: score },
+        totalGamesPlayed: { increment: 1 },
+        lastPlayedDate: new Date(),
+      };
+      if (shouldUpdateStreak) {
+        userData.currentStreak = currentStreak;
+        userData.bestStreak = bestStreak;
+        userData.currentAnswerStreak = currentAnswerStreak;
+        userData.bestAnswerStreak = bestAnswerStreak;
+      }
       await tx.user.update({
         where: { id: userId },
-        data: {
-          totalCorrectAnswers: { increment: correctAnswers },
-          totalScore: { increment: score },
-          totalGamesPlayed: { increment: 1 },
-          lastPlayedDate: new Date(),
-          currentStreak,
-          bestStreak,
-          currentAnswerStreak,
-          bestAnswerStreak,
-        },
+        data: userData,
       });
 
       // Record collection progress
@@ -298,8 +312,8 @@ export class CollectionsService {
       totalQuestions: session.questionIds.length,
       totalTimeSeconds,
       score,
-      streak: currentStreak,
-      bestStreak,
+      streak: shouldUpdateStreak ? currentStreak : streakStart.currentStreak,
+      bestStreak: shouldUpdateStreak ? bestStreak : streakStart.bestStreak,
     };
   }
 
@@ -368,38 +382,48 @@ export class CollectionsService {
       session.currentStreakState = { ...session.preGameStreak };
     }
 
-    // Calculate updated streak from new results
-    let { currentStreak, bestStreak, currentAnswerStreak, bestAnswerStreak } =
-      session.currentStreakState!;
-    for (const r of newResults) {
-      if (r.result === 'correct') {
-        currentStreak++;
-        currentAnswerStreak++;
-      } else {
-        currentStreak = 0;
-        currentAnswerStreak = 0;
+    // Only update streak if the session contains at least one new question
+    const shouldUpdateStreak = session.hasNewQuestions;
+
+    let newStreakState = session.currentStreakState!;
+    if (shouldUpdateStreak) {
+      // Calculate updated streak from new results
+      let { currentStreak, bestStreak, currentAnswerStreak, bestAnswerStreak } =
+        session.currentStreakState!;
+      for (const r of newResults) {
+        if (r.result === 'correct') {
+          currentStreak++;
+          currentAnswerStreak++;
+        } else {
+          currentStreak = 0;
+          currentAnswerStreak = 0;
+        }
+        bestStreak = Math.max(bestStreak, currentStreak);
+        bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
       }
-      bestStreak = Math.max(bestStreak, currentStreak);
-      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+      newStreakState = {
+        currentStreak,
+        bestStreak,
+        currentAnswerStreak,
+        bestAnswerStreak,
+      };
     }
-    const newStreakState = {
-      currentStreak,
-      bestStreak,
-      currentAnswerStreak,
-      bestAnswerStreak,
-    };
 
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.createMany({ data: historyData });
       await updateQuestionStatsBatch(tx, newResults);
-      await tx.user.update({
-        where: { id: userId },
-        data: newStreakState,
-      });
+      if (shouldUpdateStreak) {
+        await tx.user.update({
+          where: { id: userId },
+          data: newStreakState,
+        });
+      }
     });
 
     // Update session state after successful transaction
-    session.currentStreakState = newStreakState;
+    if (shouldUpdateStreak) {
+      session.currentStreakState = newStreakState;
+    }
 
     // Track saved question IDs to avoid duplicates
     for (const r of newResults) {
@@ -409,10 +433,44 @@ export class CollectionsService {
     return { saved: newResults.length };
   }
 
-  private async startRandom(userId: string, count: number) {
-    const questions = await this.getQuestionsWithAntiRepeat(userId, count, {});
+  private async startRandom(userId: string, count: number, replay = false) {
+    let questions;
+    if (replay) {
+      // Skip anti-repeat for replay -- fetch random approved questions
+      const allQuestions = await this.prisma.question.findMany({
+        where: { status: 'approved' },
+        select: {
+          id: true,
+          statement: true,
+          statementEn: true,
+          isTrue: true,
+          explanation: true,
+          explanationEn: true,
+          source: true,
+          sourceEn: true,
+          sourceUrl: true,
+          sourceUrlEn: true,
+          language: true,
+          categoryId: true,
+          difficulty: true,
+          illustrationUrl: true,
+          category: { select: { name: true, nameEn: true } },
+        },
+      });
+      // Shuffle
+      for (let i = allQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+      }
+      questions = allQuestions.slice(0, count);
+    } else {
+      questions = await this.getQuestionsWithAntiRepeat(userId, count, {});
+    }
 
-    const sessionId = this.createSession(userId, 'random', null, null, questions);
+    const hasNewQuestions = replay
+      ? false
+      : await this.checkHasNewQuestions(userId, questions.map((q) => q.id));
+    const sessionId = this.createSession(userId, 'random', null, null, questions, replay, hasNewQuestions);
 
     return {
       sessionId,
@@ -492,7 +550,10 @@ export class CollectionsService {
       });
     }
 
-    const sessionId = this.createSession(userId, 'category', categoryId, null, questions, replay);
+    const hasNewQuestions = replay
+      ? false
+      : await this.checkHasNewQuestions(userId, questions.map((q) => q.id));
+    const sessionId = this.createSession(userId, 'category', categoryId, null, questions, replay, hasNewQuestions);
 
     return {
       sessionId,
@@ -520,6 +581,7 @@ export class CollectionsService {
     userId: string,
     difficulty: string,
     count: number,
+    replay = false,
   ) {
     if (!difficulty) {
       throw new BadRequestException(
@@ -532,11 +594,48 @@ export class CollectionsService {
       throw new BadRequestException('Invalid difficulty level');
     }
 
-    const questions = await this.getQuestionsWithAntiRepeat(userId, count, {
-      difficulty: { in: levels },
-    });
+    let questions;
+    if (replay) {
+      // Skip anti-repeat for replay -- fetch all approved questions of this difficulty
+      const allQuestions = await this.prisma.question.findMany({
+        where: {
+          status: 'approved',
+          difficulty: { in: levels },
+        },
+        select: {
+          id: true,
+          statement: true,
+          statementEn: true,
+          isTrue: true,
+          explanation: true,
+          explanationEn: true,
+          source: true,
+          sourceEn: true,
+          sourceUrl: true,
+          sourceUrlEn: true,
+          language: true,
+          categoryId: true,
+          difficulty: true,
+          illustrationUrl: true,
+          category: { select: { name: true, nameEn: true } },
+        },
+      });
+      // Shuffle
+      for (let i = allQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allQuestions[i], allQuestions[j]] = [allQuestions[j], allQuestions[i]];
+      }
+      questions = allQuestions.slice(0, count);
+    } else {
+      questions = await this.getQuestionsWithAntiRepeat(userId, count, {
+        difficulty: { in: levels },
+      });
+    }
 
-    const sessionId = this.createSession(userId, 'difficulty', null, difficulty, questions);
+    const hasNewQuestions = replay
+      ? false
+      : await this.checkHasNewQuestions(userId, questions.map((q) => q.id));
+    const sessionId = this.createSession(userId, 'difficulty', null, difficulty, questions, replay, hasNewQuestions);
 
     return {
       sessionId,
@@ -725,6 +824,7 @@ export class CollectionsService {
     difficulty: string | null,
     questions: { id: string }[],
     replay = false,
+    hasNewQuestions = true,
   ): string {
     // Clean expired sessions
     this.cleanExpiredSessions();
@@ -738,12 +838,36 @@ export class CollectionsService {
       questionIds: questions.map((q) => q.id),
       createdAt: Date.now(),
       replay,
+      hasNewQuestions,
       savedQuestionIds: new Set(),
       preGameStreak: null,
       currentStreakState: null,
     });
 
     return sessionId;
+  }
+
+  /**
+   * Check if the user has at least one question they've never answered before.
+   * Returns true if there is at least one new (never-answered) question.
+   */
+  private async checkHasNewQuestions(
+    userId: string,
+    questionIds: string[],
+  ): Promise<boolean> {
+    if (questionIds.length === 0) return false;
+
+    const previouslyAnswered = await this.prisma.userQuestionHistory.findMany({
+      where: {
+        userId,
+        questionId: { in: questionIds },
+      },
+      select: { questionId: true },
+      distinct: ['questionId'],
+    });
+
+    const answeredSet = new Set(previouslyAnswered.map((a) => a.questionId));
+    return questionIds.some((id) => !answeredSet.has(id));
   }
 
   private cleanExpiredSessions() {

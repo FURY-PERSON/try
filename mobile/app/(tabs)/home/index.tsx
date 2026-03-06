@@ -31,6 +31,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
 import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
+import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
@@ -38,7 +39,6 @@ import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useUserStore } from '@/stores/useUserStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
-import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
@@ -56,7 +56,6 @@ export default function HomeScreen() {
   const language = useSettingsStore((s) => s.language);
   const startDailySet = useGameStore((s) => s.startDailySet);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const { showForGameStart } = useInterstitialAd();
   const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
 
   const insets = useSafeAreaInsets();
@@ -72,6 +71,11 @@ export default function HomeScreen() {
   const [loadingRandom, setLoadingRandom] = useState(false);
   const [showDisableAds, setShowDisableAds] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
+  const [replayWarning, setReplayWarning] = useState<{
+    visible: boolean;
+    type: 'difficulty' | 'random';
+    difficulty?: 'easy' | 'medium' | 'hard';
+  }>({ visible: false, type: 'difficulty' });
   const showDisableAdsOnReturn = useAdsStore((s) => s.showDisableAdsOnReturn);
 
   // Show disable-ads modal when returning from game after interstitial
@@ -122,15 +126,11 @@ export default function HomeScreen() {
 
   const handleStartDaily = useCallback(async () => {
     if (dailyData && !daily?.isLocked) {
-      const startGame = () => {
-        startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
-        markFirstGameToday();
-        router.push('/game/card');
-      };
-      const shown = await showForGameStart(startGame);
-      if (!shown) startGame();
+      startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
+      markFirstGameToday();
+      router.push('/game/card');
     }
-  }, [dailyData, daily?.isLocked, startDailySet, router, streak, showForGameStart, markFirstGameToday]);
+  }, [dailyData, daily?.isLocked, startDailySet, router, streak, markFirstGameToday]);
 
   const handleContinueDaily = useCallback(async () => {
     if (!dailyData || !dailyData.progress) return;
@@ -141,14 +141,10 @@ export default function HomeScreen() {
       score: 0,
       timeSpentMs: 0,
     }));
-    const startGame = () => {
-      startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress!.currentIndex, previousResults);
-      markFirstGameToday();
-      router.push('/game/card');
-    };
-    const shown = await showForGameStart(startGame);
-    if (!shown) startGame();
-  }, [dailyData, startDailySet, router, streak, showForGameStart, markFirstGameToday]);
+    startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress!.currentIndex, previousResults);
+    markFirstGameToday();
+    router.push('/game/card');
+  }, [dailyData, startDailySet, router, streak, markFirstGameToday]);
 
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
@@ -159,36 +155,7 @@ export default function HomeScreen() {
     const isCompleted = progress && progress.totalCount > 0 && progress.answeredCount >= progress.totalCount;
 
     if (isCompleted) {
-      Alert.alert(
-        t('category.allDone'),
-        t('category.replayDesc'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('category.playAgain'),
-            onPress: async () => {
-              setLoadingCollection(difficulty);
-              try {
-                const session = await collectionsApi.start({
-                  type: 'difficulty',
-                  difficulty,
-                  replay: true,
-                });
-                startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true, streak);
-                analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
-                const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
-                const adShown = await showForGameStart(nav);
-                if (!adShown) nav();
-              } catch (err) {
-                const message = err instanceof Error ? err.message : 'Error';
-                Alert.alert(t('common.error'), message);
-              } finally {
-                setLoadingCollection(null);
-              }
-            },
-          },
-        ],
-      );
+      setReplayWarning({ visible: true, type: 'difficulty', difficulty });
       return;
     }
 
@@ -201,9 +168,8 @@ export default function HomeScreen() {
       });
       startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
-      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
-      const adShown = await showForGameStart(nav);
-      if (!adShown) nav();
+      markFirstGameToday();
+      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);
@@ -212,7 +178,23 @@ export default function HomeScreen() {
     }
   }, [startCollectionSession, router, difficultyProgress]);
 
+  const isAllFactsCompleted = useMemo(() => {
+    if (!difficultyProgress) return false;
+    let totalAll = 0;
+    let answeredAll = 0;
+    for (const key of Object.keys(difficultyProgress)) {
+      totalAll += difficultyProgress[key].totalCount;
+      answeredAll += difficultyProgress[key].answeredCount;
+    }
+    return totalAll > 0 && answeredAll >= totalAll;
+  }, [difficultyProgress]);
+
   const handleStartRandom = useCallback(async () => {
+    if (isAllFactsCompleted) {
+      setReplayWarning({ visible: true, type: 'random' });
+      return;
+    }
+
     setLoadingRandom(true);
     try {
       const session = await collectionsApi.start({
@@ -221,16 +203,58 @@ export default function HomeScreen() {
       });
       startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, false, streak);
       analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
-      const nav = () => { markFirstGameToday(); router.push({ pathname: '/game/card', params: { mode: 'collection' } }); };
-      const adShown = await showForGameStart(nav);
-      if (!adShown) nav();
+      markFirstGameToday();
+      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';
       Alert.alert(t('common.error'), message);
     } finally {
       setLoadingRandom(false);
     }
-  }, [startCollectionSession, router]);
+  }, [startCollectionSession, router, isAllFactsCompleted]);
+
+  const handleConfirmReplay = useCallback(async () => {
+    setReplayWarning((prev) => ({ ...prev, visible: false }));
+
+    if (replayWarning.type === 'difficulty' && replayWarning.difficulty) {
+      const difficulty = replayWarning.difficulty;
+      setLoadingCollection(difficulty);
+      try {
+        const session = await collectionsApi.start({
+          type: 'difficulty',
+          difficulty,
+          replay: true,
+        });
+        startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true, streak);
+        analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
+        markFirstGameToday();
+        router.push({ pathname: '/game/card', params: { mode: 'collection' } });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error';
+        Alert.alert(t('common.error'), message);
+      } finally {
+        setLoadingCollection(null);
+      }
+    } else if (replayWarning.type === 'random') {
+      setLoadingRandom(true);
+      try {
+        const session = await collectionsApi.start({
+          type: 'random',
+          count: 30,
+          replay: true,
+        });
+        startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, true, streak);
+        analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length, replay: true });
+        markFirstGameToday();
+        router.push({ pathname: '/game/card', params: { mode: 'collection' } });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error';
+        Alert.alert(t('common.error'), message);
+      } finally {
+        setLoadingRandom(false);
+      }
+    }
+  }, [replayWarning, startCollectionSession, router, streak, markFirstGameToday, t]);
 
   const handleOpenCollection = useCallback((collectionId: string) => {
     router.push({ pathname: '/collection/[id]', params: { id: collectionId } });
@@ -516,6 +540,42 @@ export default function HomeScreen() {
           <AdBanner placement="home" />
         </View>
       </ScrollView>
+
+      <OverlayModal
+        visible={replayWarning.visible}
+        onClose={() => setReplayWarning((prev) => ({ ...prev, visible: false }))}
+      >
+        <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+          <Text style={[styles.replayModalTitle, { color: colors.textPrimary }]}>
+            {replayWarning.type === 'difficulty'
+              ? t('home.difficultyAllDone')
+              : t('home.allFactsDone')}
+          </Text>
+          <Text style={[styles.replayModalDesc, { color: colors.textSecondary }]}>
+            {replayWarning.type === 'difficulty'
+              ? t('home.difficultyAllDoneDesc')
+              : t('home.allFactsDoneDesc')}
+          </Text>
+          <View style={styles.replayModalButtons}>
+            <Pressable
+              onPress={() => setReplayWarning((prev) => ({ ...prev, visible: false }))}
+              style={[styles.replayModalBtn, { backgroundColor: colors.surfaceVariant }]}
+            >
+              <Text style={[styles.replayModalBtnText, { color: colors.textPrimary }]}>
+                {t('common.back')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleConfirmReplay}
+              style={[styles.replayModalBtn, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.replayModalBtnText, { color: '#FFFFFF' }]}>
+                {t('home.playAnyway')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </OverlayModal>
 
       <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
@@ -893,5 +953,40 @@ const styles = StyleSheet.create({
   collectionCount: {
     fontSize: 11,
     fontFamily: fontFamily.regular,
+  },
+  // Replay warning modal
+  replayModal: {
+    width: '100%',
+    padding: 24,
+    alignItems: 'center',
+    gap: 12,
+  },
+  replayModalTitle: {
+    fontSize: 20,
+    fontFamily: fontFamily.bold,
+    textAlign: 'center',
+  },
+  replayModalDesc: {
+    fontSize: 15,
+    fontFamily: fontFamily.regular,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  replayModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    width: '100%',
+  },
+  replayModalBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  replayModalBtnText: {
+    fontSize: 15,
+    fontFamily: fontFamily.semiBold,
   },
 });

@@ -69,7 +69,12 @@ export const useInterstitialAd = () => {
     }
   }, []);
 
-  const showForGameStart = useCallback(async (onClosed?: () => void): Promise<boolean> => {
+  /**
+   * Show interstitial for game start context.
+   * Checks frequency capping rules. Does NOT navigate -- caller is responsible for navigation.
+   * Returns true if ad was shown.
+   */
+  const showForGameStart = useCallback(async (): Promise<boolean> => {
     if (!adManager.shouldShowInterstitialForFacts()) {
       return false;
     }
@@ -79,10 +84,6 @@ export const useInterstitialAd = () => {
     }
 
     try {
-      if (onClosed) {
-        onClosedCallbackRef.current = onClosed;
-      }
-
       if (unityAdRef.current) {
         unityAdRef.current.showAd();
       } else {
