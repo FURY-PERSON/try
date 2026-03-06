@@ -1,8 +1,4 @@
 {
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
-    "ios_app_id": "ca-app-pub-3940256099942544~1458002511"
-  },
   "expo": {
     "name": "Фронт фактов",
     "slug": "fact-front",
@@ -26,15 +22,12 @@
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
         "SKAdNetworkItems": [
-          { "SKAdNetworkIdentifier": "cstr6suwn9.skadnetwork" }
+          { "SKAdNetworkIdentifier": "su67r6k2v3.skadnetwork" }
         ],
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         }
       },
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~1458002511"
-      }
     },
     "android": {
       "adaptiveIcon": {
@@ -46,9 +39,6 @@
       "navigationBarColor": "#00000000",
       "googleServicesFile": "./google-services.json",
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-3940256099942544~3347511713"
-      }
     },
     "plugins": [
       "@react-native-firebase/app",
@@ -71,13 +61,6 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#58CC02"
-        }
-      ],
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
       "./plugins/withFirebaseDebug",

@@ -14,3 +14,26 @@ if (fs.existsSync(file)) {
     console.log('Patched expo-localization Swift switch');
   }
 }
+
+// Patch unity-levelplay-mediation: add extern "C" to Fabric component functions
+// to prevent C++ name mangling (bug in SDK 9.0.0 with New Architecture + static frameworks)
+const levelplayFiles = [
+  'LevelPlayBannerAdView.mm',
+  'LevelPlayNativeAdView.mm',
+];
+for (const fileName of levelplayFiles) {
+  const filePath = path.join(__dirname, '..', 'node_modules', 'unity-levelplay-mediation', 'ios', fileName);
+  if (fs.existsSync(filePath)) {
+    let content = fs.readFileSync(filePath, 'utf8');
+    // Match the pattern: #ifdef RCT_NEW_ARCH_ENABLED\nClass<...> SomeNameCls(void)
+    const pattern = /#ifdef RCT_NEW_ARCH_ENABLED\nClass<RCTComponentViewProtocol>\s+(\w+Cls)\(void\)/;
+    if (pattern.test(content) && !content.includes('extern "C"')) {
+      content = content.replace(
+        pattern,
+        '#ifdef RCT_NEW_ARCH_ENABLED\nextern "C" Class<RCTComponentViewProtocol> $1(void)'
+      );
+      fs.writeFileSync(filePath, content);
+      console.log(`Patched ${fileName}: added extern "C" for Fabric component`);
+    }
+  }
+}

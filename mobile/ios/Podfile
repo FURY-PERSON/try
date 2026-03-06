@@ -61,6 +61,20 @@ target 'Frontfaktov' do
       :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
     )
 
+    # Ensure RCT_NEW_ARCH_ENABLED is set in GCC_PREPROCESSOR_DEFINITIONS for unity-levelplay-mediation
+    # and force-load its framework to resolve Fabric component symbols with static linkage
+    installer.pods_project.targets.each do |target|
+      if target.name == 'unity-levelplay-mediation'
+        target.build_configurations.each do |build_config|
+          defs = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)', 'COCOAPODS=1']
+          unless defs.any? { |d| d.include?('RCT_NEW_ARCH_ENABLED') }
+            defs << 'RCT_NEW_ARCH_ENABLED=1'
+            build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
+          end
+        end
+      end
+    end
+
     # This is necessary for Xcode 14, because it signs resource bundles by default
     # when building for devices.
     installer.target_installation_results.pod_target_installation_results

@@ -1,43 +1,27 @@
-import { Platform } from 'react-native';
 import { IS_DEV } from './config';
 
-// --- Google Ads ---
-const GOOGLE_TEST_IDS = {
-  banner: {
-    ios: 'ca-app-pub-3940256099942544/2934735716',
-    android: 'ca-app-pub-3940256099942544/6300978111',
-  },
-  interstitial: {
-    ios: 'ca-app-pub-3940256099942544/4411468910',
-    android: 'ca-app-pub-3940256099942544/1033173712',
-  },
-  rewarded: {
-    ios: 'ca-app-pub-3940256099942544/1712485313',
-    android: 'ca-app-pub-3940256099942544/5224354917',
-  },
+// --- Unity LevelPlay ---
+// App Key from Unity LevelPlay dashboard
+export const UNITY_APP_KEY = IS_DEV ? '8545d445' : '257423975';
+
+const UNITY_TEST_IDS = {
+  banner: 'iq297okfs9s042o8',
+  interstitial: 'gdrgnjvgm8lz9qwn',
+  rewarded: 'trtyxfqi2bgtjz8q',
 } as const;
 
-const GOOGLE_PROD_IDS = {
-  banner: {
-    ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/BANNER_IOS',
-    android: 'ca-app-pub-XXXXXXXXXXXXXXXX/BANNER_ANDROID',
-  },
-  interstitial: {
-    ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/INTERSTITIAL_IOS',
-    android: 'ca-app-pub-XXXXXXXXXXXXXXXX/INTERSTITIAL_ANDROID',
-  },
-  rewarded: {
-    ios: 'ca-app-pub-XXXXXXXXXXXXXXXX/REWARDED_IOS',
-    android: 'ca-app-pub-XXXXXXXXXXXXXXXX/REWARDED_ANDROID',
-  },
+const UNITY_PROD_IDS = {
+  banner: 'iq297okfs9s042o8',
+  interstitial: 'gdrgnjvgm8lz9qwn',
+  rewarded: 'trtyxfqi2bgtjz8q',
 } as const;
 
-const googleIds = IS_DEV ? GOOGLE_TEST_IDS : GOOGLE_PROD_IDS;
+const unityIds = IS_DEV ? UNITY_TEST_IDS : UNITY_PROD_IDS;
 
-export const GOOGLE_AD_UNIT_IDS = {
-  banner: Platform.OS === 'ios' ? googleIds.banner.ios : googleIds.banner.android,
-  interstitial: Platform.OS === 'ios' ? googleIds.interstitial.ios : googleIds.interstitial.android,
-  rewarded: Platform.OS === 'ios' ? googleIds.rewarded.ios : googleIds.rewarded.android,
+export const UNITY_AD_UNIT_IDS = {
+  banner: unityIds.banner,
+  interstitial: unityIds.interstitial,
+  rewarded: unityIds.rewarded,
 } as const;
 
 // --- Yandex Ads ---
@@ -57,7 +41,7 @@ const YANDEX_PROD_IDS = {
 export const YANDEX_AD_UNIT_IDS = IS_DEV ? YANDEX_TEST_IDS : YANDEX_PROD_IDS;
 
 // --- Legacy export for backward compat ---
-export const AD_UNIT_IDS = GOOGLE_AD_UNIT_IDS;
+export const AD_UNIT_IDS = UNITY_AD_UNIT_IDS;
 
 // --- Frequency settings ---
 export const AD_FREQUENCY = {

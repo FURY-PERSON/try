@@ -1,4 +1,4 @@
-import { GOOGLE_AD_UNIT_IDS, YANDEX_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
+import { UNITY_AD_UNIT_IDS, YANDEX_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
 import { appStorage } from './storage';
 import { analytics } from './analytics';
 import { getAdProvider } from './adProvider';
@@ -46,31 +46,31 @@ class AdManager {
     await appStorage.set(AD_STATE_KEY, this.state);
   }
 
-  getProvider(): AdProvider {
+  getProvider(): AdProvider | null {
     return getAdProvider();
   }
 
   getBannerUnitId(): string {
     return this.getProvider() === 'yandex'
       ? YANDEX_AD_UNIT_IDS.banner
-      : GOOGLE_AD_UNIT_IDS.banner;
+      : UNITY_AD_UNIT_IDS.banner;
   }
 
   getInterstitialUnitId(): string {
     return this.getProvider() === 'yandex'
       ? YANDEX_AD_UNIT_IDS.interstitial
-      : GOOGLE_AD_UNIT_IDS.interstitial;
+      : UNITY_AD_UNIT_IDS.interstitial;
   }
 
   getRewardedUnitId(): string {
     return this.getProvider() === 'yandex'
       ? YANDEX_AD_UNIT_IDS.rewarded
-      : GOOGLE_AD_UNIT_IDS.rewarded;
+      : UNITY_AD_UNIT_IDS.rewarded;
   }
 
   isAdsEnabled(): boolean {
     const flagStore = useFeatureFlagsStore.getState();
-    if (!flagStore.isEnabled('ads_enable', true)) return false;
+    if (!flagStore.isEnabled('ads_enable')) return false;
     if (useAdsStore.getState().isAdFree()) return false;
     return true;
   }
@@ -79,14 +79,14 @@ class AdManager {
     if (!this.isAdsEnabled()) return false;
     const flagStore = useFeatureFlagsStore.getState();
     const flagKey = `ad_banner_${placement}`;
-    return flagStore.isEnabled(flagKey, true);
+    return flagStore.isEnabled(flagKey);
   }
 
   canShowInterstitial(): boolean {
     if (!this.isAdsEnabled()) return false;
 
     const flagStore = useFeatureFlagsStore.getState();
-    if (!flagStore.isEnabled('ad_interstitial_game', true)) return false;
+    if (!flagStore.isEnabled('ad_interstitial_game')) return false;
 
     if (this.state.interstitialTodayCount >= AD_FREQUENCY.interstitialMaxPerDay) return false;
     if (Date.now() - this.state.interstitialLastShown < AD_FREQUENCY.interstitialCooldownMs)

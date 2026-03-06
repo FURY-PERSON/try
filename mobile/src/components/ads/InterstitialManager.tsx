@@ -1,8 +1,8 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import {
-  InterstitialAd,
-  AdEventType,
-} from 'react-native-google-mobile-ads';
+  LevelPlayInterstitialAd,
+  type LevelPlayInterstitialAdListener,
+} from 'unity-levelplay-mediation';
 import {
   InterstitialAdLoader,
   AdRequestConfiguration,
@@ -12,9 +12,6 @@ import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { getAdProvider } from '@/services/adProvider';
 
-// --- Google interstitial (singleton) ---
-const googleInterstitial = InterstitialAd.createForAdRequest(adManager.getInterstitialUnitId());
-
 export const useInterstitialAd = () => {
   const loadedRef = useRef(false);
   const onClosedCallbackRef = useRef<(() => void) | null>(null);
@@ -22,6 +19,13 @@ export const useInterstitialAd = () => {
   const yandexLoaderRef = useRef<InterstitialAdLoader | null>(null);
 
   const provider = getAdProvider();
+
+  const [interstitialAd] = useState(() => {
+    if (provider === 'unity') {
+      return new LevelPlayInterstitialAd(adManager.getInterstitialUnitId());
+    }
+    return null;
+  });
 
   // --- Load Yandex interstitial ---
   const loadYandexAd = useCallback(async () => {
@@ -43,26 +47,33 @@ export const useInterstitialAd = () => {
   useEffect(() => {
     if (provider === 'yandex') {
       loadYandexAd();
-    } else {
-      const unsubscribeLoaded = googleInterstitial.addAdEventListener(AdEventType.LOADED, () => {
-        loadedRef.current = true;
-      });
-
-      const unsubscribeClosed = googleInterstitial.addAdEventListener(AdEventType.CLOSED, () => {
-        loadedRef.current = false;
-        googleInterstitial.load();
-        onClosedCallbackRef.current?.();
-        onClosedCallbackRef.current = null;
-      });
-
-      googleInterstitial.load();
-
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeClosed();
+    } else if (provider === 'unity' && interstitialAd) {
+      const listener: LevelPlayInterstitialAdListener = {
+        onAdLoaded: () => {
+          loadedRef.current = true;
+        },
+        onAdLoadFailed: () => {
+          loadedRef.current = false;
+        },
+        onAdInfoChanged: () => {},
+        onAdDisplayed: () => {},
+        onAdDisplayFailed: () => {
+          onClosedCallbackRef.current?.();
+          onClosedCallbackRef.current = null;
+        },
+        onAdClicked: () => {},
+        onAdClosed: () => {
+          loadedRef.current = false;
+          interstitialAd.loadAd();
+          onClosedCallbackRef.current?.();
+          onClosedCallbackRef.current = null;
+        },
       };
+
+      interstitialAd.setListener(listener);
+      interstitialAd.loadAd();
     }
-  }, [provider, loadYandexAd]);
+  }, [provider, loadYandexAd, interstitialAd]);
 
   const showIfReady = useCallback(async (onClosed?: () => void): Promise<boolean> => {
     if (!loadedRef.current || !adManager.isAdsEnabled()) {
@@ -88,8 +99,10 @@ export const useInterstitialAd = () => {
           onClosedCallbackRef.current = null;
         };
         ad.show();
+      } else if (interstitialAd) {
+        interstitialAd.showAd();
       } else {
-        await googleInterstitial.show();
+        return false;
       }
 
       await adManager.onInterstitialShown();
@@ -98,7 +111,7 @@ export const useInterstitialAd = () => {
     } catch {
       return false;
     }
-  }, [provider, loadYandexAd]);
+  }, [provider, loadYandexAd, interstitialAd]);
 
   const showForGameStart = useCallback(async (onClosed?: () => void): Promise<boolean> => {
     if (!adManager.shouldShowInterstitialForFacts()) {
@@ -128,8 +141,10 @@ export const useInterstitialAd = () => {
           onClosedCallbackRef.current = null;
         };
         ad.show();
+      } else if (interstitialAd) {
+        interstitialAd.showAd();
       } else {
-        await googleInterstitial.show();
+        return false;
       }
 
       await adManager.onInterstitialShown();
@@ -139,7 +154,7 @@ export const useInterstitialAd = () => {
     } catch {
       return false;
     }
-  }, [provider, loadYandexAd]);
+  }, [provider, loadYandexAd, interstitialAd]);
 
   return { showIfReady, showForGameStart };
 };

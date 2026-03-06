@@ -27,8 +27,8 @@ type AdFreeIconProps = {
 export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
   const { colors } = useThemeContext();
   const { t } = useTranslation();
-  const rewardedEnabled = useFeatureFlag('ad_rewarded_video', true);
-  const adsEnabled = useFeatureFlag('ads_enable', true);
+  const rewardedEnabled = useFeatureFlag('ad_rewarded_video');
+  const adsEnabled = useFeatureFlag('ads_enable');
   const adFreeUntil = useAdsStore((s) => s.adFreeUntil);
   const isAdFree = adFreeUntil > Date.now();
   const [remaining, setRemaining] = useState('');

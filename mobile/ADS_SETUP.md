@@ -1,29 +1,35 @@
 # Ads Setup Guide
 
-## Google AdMob
+## Unity LevelPlay (ironSource)
 
-### 1. Create AdMob Account
-- Go to https://admob.google.com/
-- Create an account and register your app (iOS + Android)
+### 1. Create LevelPlay Account
+- Go to https://app.unity.com/
+- Create an account, add your app (iOS + Android)
+- Go to LevelPlay → Ad Units → create Banner, Interstitial, Rewarded ad units
 
-### 2. Get Ad Unit IDs
-Create the following ad units in AdMob console:
+### 2. Get App Key & Ad Unit IDs
+From the LevelPlay dashboard, copy:
 
-| Ad Type | Platform | Where to insert |
-|---------|----------|----------------|
-| Banner | iOS | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.banner.ios` |
-| Banner | Android | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.banner.android` |
-| Interstitial | iOS | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.interstitial.ios` |
-| Interstitial | Android | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.interstitial.android` |
-| Rewarded | iOS | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.rewarded.ios` |
-| Rewarded | Android | `mobile/src/constants/ads.ts` -> `GOOGLE_PROD_IDS.rewarded.android` |
+| Value | Where to insert |
+|-------|----------------|
+| App Key | `mobile/src/constants/ads.ts` → `UNITY_APP_KEY` |
+| Banner Ad Unit ID | `mobile/src/constants/ads.ts` → `UNITY_PROD_IDS.banner` |
+| Interstitial Ad Unit ID | `mobile/src/constants/ads.ts` → `UNITY_PROD_IDS.interstitial` |
+| Rewarded Ad Unit ID | `mobile/src/constants/ads.ts` → `UNITY_PROD_IDS.rewarded` |
 
-### 3. Configure App ID
-Add your AdMob App ID to:
-- **iOS**: `mobile/ios/Frontfaktov/Info.plist` -> `GADApplicationIdentifier`
-- **Android**: `mobile/android/app/src/main/AndroidManifest.xml` -> `com.google.android.gms.ads.APPLICATION_ID`
+### 3. Install SDK
+```bash
+cd mobile
+npm install unity-levelplay-mediation
+cd ios && pod install
+```
 
-The `react-native-google-mobile-ads` package is already installed.
+### 4. SKAdNetwork (iOS)
+The `su67r6k2v3.skadnetwork` identifier is already configured in `app.json`.
+For additional ad networks in mediation, add their SKAdNetwork IDs to `app.json` → `ios.infoPlist.SKAdNetworkItems`.
+
+### 5. app-ads.txt
+Add LevelPlay's app-ads.txt entries to your website. Get them from LevelPlay dashboard → Setup → app-ads.txt.
 
 ---
 
@@ -33,35 +39,16 @@ The `react-native-google-mobile-ads` package is already installed.
 - Go to https://partner.yandex.ru/
 - Register your app and create ad blocks
 
-### 2. Install SDK
-```bash
-cd mobile
-npm install react-native-yandex-mobile-ads
-cd ios && pod install
-```
-
-### 3. Get Block IDs
+### 2. Get Block IDs
 Create the following ad blocks in Yandex Partner interface:
 
 | Ad Type | Format | Where to insert |
 |---------|--------|----------------|
-| Banner | Banner 320x50 | `mobile/src/constants/ads.ts` -> `YANDEX_PROD_IDS.banner` |
-| Interstitial | Fullscreen | `mobile/src/constants/ads.ts` -> `YANDEX_PROD_IDS.interstitial` |
-| Rewarded | Rewarded video | `mobile/src/constants/ads.ts` -> `YANDEX_PROD_IDS.rewarded` |
+| Banner | Banner 320x50 | `mobile/src/constants/ads.ts` → `YANDEX_PROD_IDS.banner` |
+| Interstitial | Fullscreen | `mobile/src/constants/ads.ts` → `YANDEX_PROD_IDS.interstitial` |
+| Rewarded | Rewarded video | `mobile/src/constants/ads.ts` → `YANDEX_PROD_IDS.rewarded` |
 
 Block ID format: `R-M-XXXXXXX-N` (e.g., `R-M-1234567-1`)
-
-### 4. Configure Native SDK
-
-**iOS** (`mobile/ios/Podfile`):
-The pod `YandexMobileAds` will be added automatically via `react-native-yandex-mobile-ads`.
-
-**Android** (`mobile/android/build.gradle`):
-The Yandex Ads Maven repository will be added automatically.
-
-### 5. Update AdBanner Component
-Once `react-native-yandex-mobile-ads` is installed, uncomment the Yandex banner code in:
-`mobile/src/components/ads/AdBanner.tsx`
 
 ---
 
@@ -73,7 +60,7 @@ All ads are controlled via feature flags from the server. Manage them in the adm
 |----------|-------------|---------|
 | `ads_enable` | Global ads on/off | - |
 | `yandex_ads` | Enable Yandex provider | - |
-| `google_ads` | Enable Google provider | - |
+| `google_ads` | Enable Unity LevelPlay provider | - |
 | `ad_banner_home` | Banner on Home screen | - |
 | `ad_banner_leaderboard` | Banner on Leaderboard screen | - |
 | `ad_banner_profile` | Banner on Profile screen | - |
@@ -95,8 +82,8 @@ All ads are controlled via feature flags from the server. Manage them in the adm
 
 The app automatically selects the ad provider based on user's device region:
 
-- **CIS countries** (RU, BY, KZ, UZ, TJ, KG, AM, AZ, MD, UA, GE, TM) -> **Yandex Ads**
-- **All other countries** -> **Google Ads**
+- **CIS countries** (RU, BY, KZ, UZ, TJ, KG, AM, AZ, MD, UA, GE, TM) → **Yandex Ads**
+- **All other countries** → **Unity LevelPlay**
 
 If one provider's feature flag is disabled, the other will be used as fallback.
 

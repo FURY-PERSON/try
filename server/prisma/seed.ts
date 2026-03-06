@@ -46,9 +46,9 @@ async function main() {
       payload: null,
     },
     {
-      key: 'google_ads',
-      name: 'Google Ads',
-      description: 'Включить рекламу Google для остальных стран',
+      key: 'unity_ads',
+      name: 'Unity Ads',
+      description: 'Включить рекламу Unity для остальных стран',
       isEnabled: true,
       payload: null,
     },

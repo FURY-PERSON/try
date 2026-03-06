@@ -130,7 +130,7 @@ VALUES
   ('clref0002flag0maintena', 'maintenance_mode',       'Режим обслуживания',               'Показывает заглушку вместо контента во время технических работ',           false, NULL, NOW(), NOW()),
   ('clref0003flag0adsenable', 'ads_enable',            'Реклама (глобальный)',              'Глобальное включение/отключение всей рекламы',                            true,  NULL, NOW(), NOW()),
   ('clref0004flag0yandexads', 'yandex_ads',            'Yandex Ads',                       'Включить рекламу Yandex для стран СНГ',                                   true,  NULL, NOW(), NOW()),
-  ('clref0005flag0googleads', 'google_ads',            'Google Ads',                       'Включить рекламу Google для остальных стран',                             true,  NULL, NOW(), NOW()),
+  ('clref0005flag0unityads',  'unity_ads',             'Unity Ads',                        'Включить рекламу Unity для остальных стран',                              true,  NULL, NOW(), NOW()),
   ('clref0006flag0banhome',   'ad_banner_home',        'Баннер: Главная',                  'Баннер внизу главного экрана',                                            true,  NULL, NOW(), NOW()),
   ('clref0007flag0banlead',   'ad_banner_leaderboard', 'Баннер: Рейтинг',                  'Баннер внизу экрана рейтинга',                                            true,  NULL, NOW(), NOW()),
   ('clref0008flag0banprof',   'ad_banner_profile',     'Баннер: Профиль',                  'Баннер внизу экрана профиля',                                             true,  NULL, NOW(), NOW()),

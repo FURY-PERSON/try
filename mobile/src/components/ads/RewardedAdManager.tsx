@@ -1,9 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import {
-  RewardedAd,
-  RewardedAdEventType,
-  AdEventType,
-} from 'react-native-google-mobile-ads';
+  LevelPlayRewardedAd,
+  type LevelPlayRewardedAdListener,
+} from 'unity-levelplay-mediation';
 import {
   RewardedAdLoader,
   AdRequestConfiguration,
@@ -11,8 +10,6 @@ import {
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { getAdProvider } from '@/services/adProvider';
-
-const googleRewarded = RewardedAd.createForAdRequest(adManager.getRewardedUnitId());
 
 export const useRewardedAd = () => {
   const loadedRef = useRef(false);
@@ -23,6 +20,13 @@ export const useRewardedAd = () => {
   const yandexLoaderRef = useRef<RewardedAdLoader | null>(null);
 
   const provider = getAdProvider();
+
+  const [rewardedAd] = useState(() => {
+    if (provider === 'unity') {
+      return new LevelPlayRewardedAd(adManager.getRewardedUnitId());
+    }
+    return null;
+  });
 
   const loadYandexAd = useCallback(async () => {
     try {
@@ -45,49 +49,48 @@ export const useRewardedAd = () => {
   useEffect(() => {
     if (provider === 'yandex') {
       loadYandexAd();
-    } else {
-      const unsubscribeLoaded = googleRewarded.addAdEventListener(
-        RewardedAdEventType.LOADED,
-        () => {
+    } else if (provider === 'unity' && rewardedAd) {
+      const listener: LevelPlayRewardedAdListener = {
+        onAdLoaded: () => {
           loadedRef.current = true;
           setIsReady(true);
         },
-      );
-
-      const unsubscribeEarned = googleRewarded.addAdEventListener(
-        RewardedAdEventType.EARNED_REWARD,
-        () => {
+        onAdLoadFailed: () => {
+          loadedRef.current = false;
+          setIsReady(false);
+        },
+        onAdInfoChanged: () => {},
+        onAdDisplayed: () => {},
+        onAdDisplayFailed: () => {
+          loadedRef.current = false;
+          setIsReady(false);
+          resolveRef.current?.(false);
+          resolveRef.current = null;
+        },
+        onAdClicked: () => {},
+        onAdClosed: () => {
+          const wasRewarded = rewardEarnedRef.current;
+          if (wasRewarded) {
+            adManager.activateAdFree();
+          }
+          rewardEarnedRef.current = false;
+          loadedRef.current = false;
+          setIsReady(false);
+          rewardedAd.loadAd();
+          resolveRef.current?.(wasRewarded);
+          resolveRef.current = null;
+        },
+        onAdRewarded: () => {
           rewardEarnedRef.current = true;
           analytics.logEvent('ad_rewarded_completed');
           adManager.activateAdFree();
         },
-      );
-
-      const unsubscribeClosed = googleRewarded.addAdEventListener(
-        AdEventType.CLOSED,
-        () => {
-          if (rewardEarnedRef.current) {
-            adManager.activateAdFree();
-          }
-          const wasRewarded = rewardEarnedRef.current;
-          rewardEarnedRef.current = false;
-          loadedRef.current = false;
-          setIsReady(false);
-          googleRewarded.load();
-          resolveRef.current?.(wasRewarded);
-          resolveRef.current = null;
-        },
-      );
-
-      googleRewarded.load();
-
-      return () => {
-        unsubscribeLoaded();
-        unsubscribeEarned();
-        unsubscribeClosed();
       };
+
+      rewardedAd.setListener(listener);
+      rewardedAd.loadAd();
     }
-  }, [provider, loadYandexAd]);
+  }, [provider, loadYandexAd, rewardedAd]);
 
   const showForReward = useCallback((): Promise<boolean> => {
     if (!loadedRef.current) return Promise.resolve(false);
@@ -122,19 +125,16 @@ export const useRewardedAd = () => {
           };
           ad.show();
           analytics.logEvent('ad_rewarded_shown');
-        } else {
+        } else if (rewardedAd) {
           resolveRef.current = resolve;
-          googleRewarded.show().catch(() => {
-            resolveRef.current = null;
-            resolve(false);
-          });
+          rewardedAd.showAd();
           analytics.logEvent('ad_rewarded_shown');
         }
       } catch {
         resolve(false);
       }
     });
-  }, [provider, loadYandexAd]);
+  }, [provider, loadYandexAd, rewardedAd]);
 
   return { showForReward, isReady };
 };

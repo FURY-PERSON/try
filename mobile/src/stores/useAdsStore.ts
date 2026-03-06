@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type AdProvider = 'google' | 'yandex';
+export type AdProvider = 'unity' | 'yandex';
 
 type AdsState = {
   adFreeUntil: number;
@@ -11,6 +11,7 @@ type AdsState = {
   firstGameTodayDate: string | null;
   firstGameTodayPlayed: boolean;
   detectedProvider: AdProvider | null;
+  sdkReady: boolean;
   showDisableAdsOnReturn: boolean;
 
   setAdFreeUntil: (until: number) => void;
@@ -21,6 +22,7 @@ type AdsState = {
   isAdFree: () => boolean;
   getAdFreeRemainingMs: () => number;
   setDetectedProvider: (provider: AdProvider) => void;
+  setSdkReady: (ready: boolean) => void;
   setShowDisableAdsOnReturn: (show: boolean) => void;
   resetDailyState: () => void;
 };
@@ -36,6 +38,7 @@ export const useAdsStore = create<AdsState>()(
       firstGameTodayDate: null,
       firstGameTodayPlayed: false,
       detectedProvider: null,
+      sdkReady: false,
       showDisableAdsOnReturn: false,
 
       setAdFreeUntil: (until) => set({ adFreeUntil: until }),
@@ -71,6 +74,8 @@ export const useAdsStore = create<AdsState>()(
 
       setDetectedProvider: (provider) => set({ detectedProvider: provider }),
 
+      setSdkReady: (ready) => set({ sdkReady: ready }),
+
       setShowDisableAdsOnReturn: (show) => set({ showDisableAdsOnReturn: show }),
 
       resetDailyState: () => {
@@ -90,7 +95,6 @@ export const useAdsStore = create<AdsState>()(
         lastInterstitialFactCount: state.lastInterstitialFactCount,
         firstGameTodayDate: state.firstGameTodayDate,
         firstGameTodayPlayed: state.firstGameTodayPlayed,
-        detectedProvider: state.detectedProvider,
       }),
     },
   ),

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -80,17 +80,12 @@ function AndroidNavigationBar() {
   return null;
 }
 
-const FEATURE_FLAGS_CACHE_TTL_MS = 5 * 60 * 1000;
 const SPLASH_MIN_DURATION_MS = 800;
 const SPLASH_MAX_DURATION_MS = 2500;
 
 export default function RootLayout() {
   const initializeDevice = useAppStore((s) => s.initializeDevice);
   const incrementLaunchCount = useAppStore((s) => s.incrementLaunchCount);
-
-  const setFlags = useFeatureFlagsStore((s) => s.setFlags);
-  const setFlagsLoading = useFeatureFlagsStore((s) => s.setLoading);
-  const lastFetchedAt = useFeatureFlagsStore((s) => s.lastFetchedAt);
 
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
@@ -104,45 +99,37 @@ export default function RootLayout() {
   const [dataReady, setDataReady] = useState(false);
   const splashHidden = useRef(false);
 
-  const loadFeatureFlags = useCallback(async () => {
-    if (lastFetchedAt && Date.now() - lastFetchedAt < FEATURE_FLAGS_CACHE_TTL_MS) {
-      return;
-    }
-    setFlagsLoading(true);
-    try {
-      const flags = await fetchFeatureFlags();
-      const flagsMap = Object.fromEntries(flags.map((f) => [f.key, f]));
-      setFlags(flagsMap);
-    } catch {
-      // Graceful degradation: работаем с закэшированными или дефолтными флагами
-    } finally {
-      setFlagsLoading(false);
-    }
-  }, [lastFetchedAt, setFlags, setFlagsLoading]);
-
-  // Load app data + enforce min/max splash duration
   useEffect(() => {
     let cancelled = false;
     const startedAt = Date.now();
 
-    const timeout = setTimeout(() => {
-      if (!cancelled) setDataReady(true);
-    }, SPLASH_MAX_DURATION_MS);
-
-    async function init() {
-      const { isReturningUser } = await initializeDevice();
-      incrementLaunchCount();
-
-      // If deviceId survived reinstall but onboarding flag was reset → skip onboarding
-      if (isReturningUser && !useAppStore.getState().hasCompletedOnboarding) {
-        useAppStore.getState().completeOnboarding();
+    async function loadFeatureFlags() {
+      const { setLoading, setFlags } = useFeatureFlagsStore.getState();
+      setLoading(true);
+      try {
+        const flags = await fetchFeatureFlags();
+        const flagsMap = Object.fromEntries(flags.map((f) => [f.key, f]));
+        setFlags(flagsMap);
+      } catch {
+        // Graceful degradation: флаги не загрузились, всё выключено по дефолту
+      } finally {
+        setLoading(false);
       }
-      adManager.initialize();
-      initAdProvider();
-      initializeFirebase();
+    }
 
-      // Wait for feature flags
-      await loadFeatureFlags().catch(() => {});
+    async function initApp() {
+      try {
+        const { isReturningUser } = await initializeDevice();
+        incrementLaunchCount();
+
+        if (isReturningUser && !useAppStore.getState().hasCompletedOnboarding) {
+          useAppStore.getState().completeOnboarding();
+        }
+        adManager.initialize();
+        initializeFirebase();
+      } catch {
+        // Device init failed, continue
+      }
 
       // Wait for settings store hydration, then sync i18n
       if (!useSettingsStore.persist.hasHydrated()) {
@@ -153,9 +140,19 @@ export default function RootLayout() {
           });
         });
       }
-
       const { language } = useSettingsStore.getState();
       i18n.changeLanguage(language);
+    }
+
+    async function init() {
+      // Run feature flags + app init in parallel
+      const [flagsResult] = await Promise.allSettled([
+        loadFeatureFlags(),
+        initApp(),
+      ]);
+
+      // Init ad provider after flags are loaded
+      try { initAdProvider(); } catch {}
 
       // Ensure splash is shown for at least SPLASH_MIN_DURATION_MS
       const elapsed = Date.now() - startedAt;
@@ -166,13 +163,17 @@ export default function RootLayout() {
       if (!cancelled) setDataReady(true);
     }
 
+    // Start init, but cap total wait time
     init();
+    const timeout = setTimeout(() => {
+      if (!cancelled) setDataReady(true);
+    }, SPLASH_MAX_DURATION_MS);
 
     return () => {
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [initializeDevice, incrementLaunchCount, loadFeatureFlags]);
+  }, [initializeDevice, incrementLaunchCount]);
 
   // Hide splash when fonts loaded AND (data ready OR timed out)
   useEffect(() => {
