@@ -152,6 +152,8 @@ export default function RootLayout() {
       ]);
 
       // Init ad provider after flags are loaded
+      const flags = useFeatureFlagsStore.getState().flags;
+      console.log('[Init] Flags loaded:', Object.keys(flags).length, 'yandex_ads:', flags['yandex_ads']?.isEnabled, 'unity_ads:', flags['unity_ads']?.isEnabled);
       try { initAdProvider(); } catch {}
 
       // Ensure splash is shown for at least SPLASH_MIN_DURATION_MS

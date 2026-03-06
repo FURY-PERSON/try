@@ -1,14 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import {
-  LevelPlayRewardedAd,
-  type LevelPlayRewardedAdListener,
-} from 'unity-levelplay-mediation';
-import {
   RewardedAdLoader,
   AdRequestConfiguration,
 } from 'yandex-mobile-ads';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { getAdProvider } from '@/services/adProvider';
 
 export const useRewardedAd = () => {
@@ -18,15 +15,10 @@ export const useRewardedAd = () => {
   const [isReady, setIsReady] = useState(false);
   const yandexAdRef = useRef<Awaited<ReturnType<typeof RewardedAdLoader.prototype.loadAd>> | null>(null);
   const yandexLoaderRef = useRef<RewardedAdLoader | null>(null);
+  const unityAdRef = useRef<any>(null);
 
   const provider = getAdProvider();
-
-  const [rewardedAd] = useState(() => {
-    if (provider === 'unity') {
-      return new LevelPlayRewardedAd(adManager.getRewardedUnitId());
-    }
-    return null;
-  });
+  const sdkReady = useAdsStore((s) => s.sdkReady);
 
   const loadYandexAd = useCallback(async () => {
     try {
@@ -47,50 +39,58 @@ export const useRewardedAd = () => {
   }, []);
 
   useEffect(() => {
-    if (provider === 'yandex') {
+    if (provider === 'yandex' && sdkReady) {
       loadYandexAd();
-    } else if (provider === 'unity' && rewardedAd) {
-      const listener: LevelPlayRewardedAdListener = {
-        onAdLoaded: () => {
-          loadedRef.current = true;
-          setIsReady(true);
-        },
-        onAdLoadFailed: () => {
-          loadedRef.current = false;
-          setIsReady(false);
-        },
-        onAdInfoChanged: () => {},
-        onAdDisplayed: () => {},
-        onAdDisplayFailed: () => {
-          loadedRef.current = false;
-          setIsReady(false);
-          resolveRef.current?.(false);
-          resolveRef.current = null;
-        },
-        onAdClicked: () => {},
-        onAdClosed: () => {
-          const wasRewarded = rewardEarnedRef.current;
-          if (wasRewarded) {
-            adManager.activateAdFree();
-          }
-          rewardEarnedRef.current = false;
-          loadedRef.current = false;
-          setIsReady(false);
-          rewardedAd.loadAd();
-          resolveRef.current?.(wasRewarded);
-          resolveRef.current = null;
-        },
-        onAdRewarded: () => {
-          rewardEarnedRef.current = true;
-          analytics.logEvent('ad_rewarded_completed');
-          adManager.activateAdFree();
-        },
-      };
+    } else if (provider === 'unity' && sdkReady) {
+      import('unity-levelplay-mediation').then(({ LevelPlayRewardedAd }) => {
+        try {
+          const ad = new LevelPlayRewardedAd(adManager.getRewardedUnitId());
+          unityAdRef.current = ad;
 
-      rewardedAd.setListener(listener);
-      rewardedAd.loadAd();
+          ad.setListener({
+            onAdLoaded: () => {
+              loadedRef.current = true;
+              setIsReady(true);
+            },
+            onAdLoadFailed: () => {
+              loadedRef.current = false;
+              setIsReady(false);
+            },
+            onAdInfoChanged: () => {},
+            onAdDisplayed: () => {},
+            onAdDisplayFailed: () => {
+              loadedRef.current = false;
+              setIsReady(false);
+              resolveRef.current?.(false);
+              resolveRef.current = null;
+            },
+            onAdClicked: () => {},
+            onAdClosed: () => {
+              const wasRewarded = rewardEarnedRef.current;
+              if (wasRewarded) {
+                adManager.activateAdFree();
+              }
+              rewardEarnedRef.current = false;
+              loadedRef.current = false;
+              setIsReady(false);
+              ad.loadAd();
+              resolveRef.current?.(wasRewarded);
+              resolveRef.current = null;
+            },
+            onAdRewarded: () => {
+              rewardEarnedRef.current = true;
+              analytics.logEvent('ad_rewarded_completed');
+              adManager.activateAdFree();
+            },
+          });
+
+          ad.loadAd();
+        } catch {
+          // Unity ad creation failed
+        }
+      }).catch(() => {});
     }
-  }, [provider, loadYandexAd, rewardedAd]);
+  }, [provider, sdkReady, loadYandexAd]);
 
   const showForReward = useCallback((): Promise<boolean> => {
     if (!loadedRef.current) return Promise.resolve(false);
@@ -125,16 +125,18 @@ export const useRewardedAd = () => {
           };
           ad.show();
           analytics.logEvent('ad_rewarded_shown');
-        } else if (rewardedAd) {
+        } else if (unityAdRef.current) {
           resolveRef.current = resolve;
-          rewardedAd.showAd();
+          unityAdRef.current.showAd();
           analytics.logEvent('ad_rewarded_shown');
+        } else {
+          resolve(false);
         }
       } catch {
         resolve(false);
       }
     });
-  }, [provider, loadYandexAd, rewardedAd]);
+  }, [provider, loadYandexAd]);
 
   return { showForReward, isReady };
 };

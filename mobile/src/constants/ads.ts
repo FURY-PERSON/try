@@ -2,7 +2,7 @@ import { IS_DEV } from './config';
 
 // --- Unity LevelPlay ---
 // App Key from Unity LevelPlay dashboard
-export const UNITY_APP_KEY = IS_DEV ? '8545d445' : '257423975';
+export const UNITY_APP_KEY = IS_DEV ? '257423975' : '257423975';
 
 const UNITY_TEST_IDS = {
   banner: 'iq297okfs9s042o8',

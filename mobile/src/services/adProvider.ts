@@ -1,10 +1,4 @@
 import * as Localization from 'expo-localization';
-import { MobileAds } from 'yandex-mobile-ads';
-import {
-  LevelPlay,
-  LevelPlayInitRequest,
-  type LevelPlayInitListener,
-} from 'unity-levelplay-mediation';
 import { useAdsStore, type AdProvider } from '@/stores/useAdsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 import { UNITY_APP_KEY } from '@/constants/ads';
@@ -42,33 +36,54 @@ export function detectAdProvider(): AdProvider | null {
 
 export async function initAdProvider(): Promise<void> {
   const provider = detectAdProvider();
+  console.log('[AdProvider] detectAdProvider:', provider, 'region:', detectRegion());
   if (!provider) return;
 
   useAdsStore.getState().setDetectedProvider(provider);
 
   if (provider === 'yandex') {
     try {
-      await MobileAds.initialize();
+      const { MobileAds } = await import('yandex-mobile-ads');
+      // Fire-and-forget: MobileAds.initialize() may never resolve its JS promise,
+      // but the native SDK initializes fine. BannerView handles queuing internally.
+      MobileAds.initialize().catch(() => {});
       useAdsStore.getState().setSdkReady(true);
-    } catch {
-      // Yandex SDK init failed
+      console.log('[AdProvider] Yandex SDK ready');
+    } catch (e) {
+      console.error('[AdProvider] Yandex SDK init failed:', e);
     }
   } else {
     try {
+      const { LevelPlay, LevelPlayInitRequest } = await import('unity-levelplay-mediation');
       const initRequest = LevelPlayInitRequest.builder(UNITY_APP_KEY).build();
-      const initListener: LevelPlayInitListener = {
-        onInitFailed: () => {},
+      LevelPlay.init(initRequest, {
+        onInitFailed: (error) => {
+          console.error('[AdProvider] LevelPlay init failed:', error);
+        },
         onInitSuccess: () => {
           useAdsStore.getState().setSdkReady(true);
+          console.log('[AdProvider] LevelPlay SDK initialized');
         },
-      };
-      LevelPlay.init(initRequest, initListener);
-    } catch {
-      // LevelPlay init failed
+      });
+    } catch (e) {
+      console.error('[AdProvider] LevelPlay import/init failed:', e);
     }
   }
 }
 
 export function getAdProvider(): AdProvider | null {
   return useAdsStore.getState().detectedProvider ?? detectAdProvider();
+}
+
+// Temporary: call from dev menu or debug button
+export async function openTestSuite(): Promise<void> {
+  console.log('[AdProvider] Launching test suite...');
+  try {
+    const mod = await import('unity-levelplay-mediation');
+    console.log('[AdProvider] Module loaded, calling launchTestSuite');
+    await mod.LevelPlay.launchTestSuite();
+    console.log('[AdProvider] Test suite launched');
+  } catch (e) {
+    console.error('[AdProvider] Test suite error:', e);
+  }
 }

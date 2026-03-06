@@ -1,12 +1,6 @@
-import React, { useState, useEffect, useRef, Component, type ReactNode } from 'react';
+import React, { useState, useEffect, Suspense, Component, type ReactNode } from 'react';
 import { View, StyleSheet, Dimensions, Platform } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import {
-  LevelPlayBannerAdView,
-  LevelPlayAdSize,
-  type LevelPlayBannerAdViewListener,
-  type LevelPlayBannerAdViewMethods,
-} from 'unity-levelplay-mediation';
 import { BannerView, BannerAdSize as YandexBannerAdSize, AdRequest as YandexAdRequest } from 'yandex-mobile-ads';
 import { useThemeContext } from '@/theme';
 import { adManager } from '@/services/ads';
@@ -15,9 +9,14 @@ import { useFeatureFlag } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { useAdsStore } from '@/stores/useAdsStore';
 import type { FC } from 'react';
 
+const LazyUnityBanner = React.lazy(() =>
+  import('./UnityBanner').then((m) => ({ default: m.UnityBanner })),
+);
+
 class AdErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error: Error) { console.error('[AdErrorBoundary]', error.message); }
   render() { return this.state.hasError ? null : this.props.children; }
 }
 
@@ -38,17 +37,15 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   const bannerFlagKey = `ad_banner_${placement}`;
   const bannerEnabled = useFeatureFlag(bannerFlagKey);
 
-  const bannerAdViewRef = useRef<LevelPlayBannerAdViewMethods>(null);
-
   const [yandexAdSize, setYandexAdSize] = useState<Awaited<ReturnType<typeof YandexBannerAdSize.stickySize>> | null>(null);
 
   useEffect(() => {
-    if (provider === 'yandex') {
+    if (provider === 'yandex' && sdkReady) {
       YandexBannerAdSize.stickySize(Dimensions.get('window').width)
         .then(setYandexAdSize)
         .catch(() => {});
     }
-  }, [provider]);
+  }, [provider, sdkReady]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     height: withTiming(error ? 0 : 66, { duration: 300 }),
@@ -103,33 +100,16 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
 
   if (provider !== 'unity') return null;
 
-  const adSize = LevelPlayAdSize.BANNER;
-  const listener: LevelPlayBannerAdViewListener = {
-    onAdLoaded: () => handleAdLoaded(),
-    onAdLoadFailed: () => handleAdFailed(),
-    onAdDisplayed: () => {},
-    onAdDisplayFailed: () => handleAdFailed(),
-    onAdClicked: () => {},
-    onAdExpanded: () => {},
-    onAdCollapsed: () => {},
-    onAdLeftApplication: () => {},
-  };
-
   return (
     <AdErrorBoundary>
-      <Animated.View style={containerStyle}>
-        <View style={styles.banner}>
-          <LevelPlayBannerAdView
-            ref={bannerAdViewRef}
-            adUnitId={adManager.getBannerUnitId()}
-            adSize={adSize}
-            placementName={placement}
-            listener={listener}
-            onLayout={() => bannerAdViewRef.current?.loadAd()}
-            style={{ width: adSize.width, height: adSize.height }}
-          />
-        </View>
-      </Animated.View>
+      <Suspense fallback={null}>
+        <LazyUnityBanner
+          placement={placement}
+          containerStyle={containerStyle}
+          onAdLoaded={handleAdLoaded}
+          onAdFailed={handleAdFailed}
+        />
+      </Suspense>
     </AdErrorBoundary>
   );
 };
