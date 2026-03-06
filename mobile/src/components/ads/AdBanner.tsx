@@ -1,6 +1,6 @@
-import React, { useState, Component, type ReactNode } from 'react';
+import React, { useCallback, Component, type ReactNode } from 'react';
 import { StyleSheet, Platform } from 'react-native';
-import { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
 import { analytics } from '@/services/analytics';
 import { useFeatureFlag } from '@/features/feature-flags/hooks/useFeatureFlag';
@@ -21,8 +21,8 @@ type AdBannerProps = {
 
 export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   const { colors, borderRadius, elevation } = useThemeContext();
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const loaded = useSharedValue(0);
+  const errored = useSharedValue(0);
 
   const adsEnabled = useFeatureFlag('ads_enable');
   const adFreeUntil = useAdsStore((s) => s.adFreeUntil);
@@ -33,23 +33,23 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   const bannerFlagKey = `ad_banner_${placement}`;
   const bannerEnabled = useFeatureFlag(bannerFlagKey);
 
+  const handleAdLoaded = useCallback(() => {
+    loaded.value = 1;
+    analytics.logEvent('ad_banner_shown', { placement, provider: 'unity' });
+  }, [loaded, placement]);
+
+  const handleAdFailed = useCallback(() => {
+    errored.value = 1;
+  }, [errored]);
+
   const animatedStyle = useAnimatedStyle(() => ({
-    height: withTiming(error ? 0 : 66, { duration: 300 }),
-    opacity: withTiming(loaded && !error ? 1 : 0, { duration: 300 }),
+    height: withTiming(errored.value ? 0 : 66, { duration: 300 }),
+    opacity: withTiming(loaded.value && !errored.value ? 1 : 0, { duration: 300 }),
   }));
 
   if (!adsEnabled || isAdFree || !bannerEnabled || provider !== 'unity' || !sdkReady) {
     return null;
   }
-
-  const handleAdLoaded = () => {
-    setLoaded(true);
-    analytics.logEvent('ad_banner_shown', { placement, provider: 'unity' });
-  };
-
-  const handleAdFailed = () => {
-    setError(true);
-  };
 
   const containerStyle = [
     styles.container,

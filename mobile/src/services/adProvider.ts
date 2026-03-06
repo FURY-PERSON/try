@@ -1,6 +1,8 @@
 import { useAdsStore, type AdProvider } from '@/stores/useAdsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 import { UNITY_APP_KEY } from '@/constants/ads';
+import { LevelPlay, LevelPlayInitRequest } from 'unity-levelplay-mediation';
+const MAX_INIT_TIMEOUT_MS = 1000;
 
 export function detectAdProvider(): AdProvider | null {
   const store = useFeatureFlagsStore.getState();
@@ -22,10 +24,9 @@ export function initAdProvider(): Promise<void> {
 
   return new Promise<void>(async (resolve) => {
     // Never block the app longer than 1 second
-    const timeout = setTimeout(() => resolve(), 1000);
+    const timeout = setTimeout(() => resolve(), MAX_INIT_TIMEOUT_MS);
 
     try {
-      const { LevelPlay, LevelPlayInitRequest } = await import('unity-levelplay-mediation');
       const initRequest = LevelPlayInitRequest.builder(UNITY_APP_KEY).build();
       LevelPlay.init(initRequest, {
         onInitFailed: () => {

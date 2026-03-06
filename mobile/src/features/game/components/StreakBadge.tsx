@@ -197,10 +197,10 @@ const GradientStreakText: FC<{ days: number; isMd: boolean }> = ({ days, isMd })
     <Svg width={textWidth} height={textHeight}>
       <Defs>
         <SvgLinearGradient id="fireGrad" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#FFD700" stopOpacity="1" />
-          <Stop offset="0.4" stopColor="#FFA500" stopOpacity="1" />
-          <Stop offset="0.7" stopColor="#FF4500" stopOpacity="1" />
-          <Stop offset="1" stopColor="#DC143C" stopOpacity="1" />
+          <Stop offset="0" stopColor="#FFFFFF" stopOpacity="1" />
+          <Stop offset="0.35" stopColor="#FFD700" stopOpacity="1" />
+          <Stop offset="0.7" stopColor="#FF8C00" stopOpacity="1" />
+          <Stop offset="1" stopColor="#FF4500" stopOpacity="1" />
         </SvgLinearGradient>
       </Defs>
       <SvgText

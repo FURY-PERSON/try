@@ -17,7 +17,6 @@ import { IconFromName } from '@/components/ui/IconFromName';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { categoriesApi } from '@/features/home/api/categoriesApi';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
-import { useAdsStore } from '@/stores/useAdsStore';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
@@ -35,7 +34,6 @@ export default function CategoryDetailScreen() {
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
   const [starting, setStarting] = useState(false);
   const [showReplayWarning, setShowReplayWarning] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -82,7 +80,6 @@ export default function CategoryDetailScreen() {
         questionCount: session.questions.length,
         replay,
       });
-      markFirstGameToday();
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch {
       // Refetch category to get fresh availableCount

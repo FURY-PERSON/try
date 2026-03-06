@@ -63,6 +63,7 @@
     "hardDesc": "For experts",
     "randomFacts": "Random Facts",
     "randomDesc": "Test your knowledge!",
+    "randomFactsDesc": "Questions from all categories in random order",
     "allFactsDone": "All facts completed!",
     "allFactsDoneDesc": "You've already completed all available facts. No points will be awarded for replaying.",
     "difficultyAllDone": "All facts at this level completed!",

@@ -26,9 +26,5 @@ export const UNITY_AD_UNIT_IDS = {
 
 // --- Frequency settings ---
 export const AD_FREQUENCY = {
-  interstitialCooldownMs: 120_000,
-  interstitialMaxPerDay: 10,
   gracePeriodGames: 3,
-  defaultFactsPerInterstitial: 30,
-  defaultAdFreeMinutes: 30,
 } as const;

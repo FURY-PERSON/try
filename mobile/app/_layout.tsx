@@ -154,7 +154,7 @@ export default function RootLayout() {
       // Init ad provider after flags are loaded.
       // Non-blocking: resolves after max 1 second, SDK continues in background.
       // Don't await — let the app open immediately, ads will appear when ready.
-      initAdProvider().catch(() => {});
+      await initAdProvider().catch(() => {});
 
       // Ensure splash is shown for at least SPLASH_MIN_DURATION_MS
       const elapsed = Date.now() - startedAt;

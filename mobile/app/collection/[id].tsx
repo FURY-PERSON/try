@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/feedback/Skeleton';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { AdBanner } from '@/components/ads/AdBanner';
-import { useAdsStore } from '@/stores/useAdsStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -34,7 +33,6 @@ export default function CollectionDetailScreen() {
   const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
   const [starting, setStarting] = useState(false);
   const [showReplayWarning, setShowReplayWarning] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -81,7 +79,6 @@ export default function CollectionDetailScreen() {
         questionCount: session.questions.length,
         replay,
       });
-      markFirstGameToday();
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error';

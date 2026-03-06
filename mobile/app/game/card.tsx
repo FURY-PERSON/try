@@ -21,6 +21,7 @@ import { useAppStore } from '@/stores/useAppStore';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useInterstitialAd } from '@/components/ads/InterstitialManager';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { DailySetQuestion } from '@/shared';
@@ -36,6 +37,7 @@ export default function CardScreen() {
   const language = useSettingsStore((s) => s.language);
   const collectionType = useGameStore((s) => s.collectionType);
   const currentStreak = useGameStore((s) => s.currentStreak);
+  const isReplay = useGameStore((s) => s.isReplay);
   const storedCollectionQuestions = useGameStore((s) => s.collectionQuestions);
   const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
@@ -61,10 +63,12 @@ export default function CardScreen() {
 
   useEffect(() => {
     if (interstitialShownRef.current) return;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (!interstitialShownRef.current) {
         interstitialShownRef.current = true;
-        showInterstitial();
+        await showInterstitial();
+        // Mark first game today AFTER interstitial check so the check sees the real state
+        useAdsStore.getState().markFirstGameToday();
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -247,7 +251,7 @@ export default function CardScreen() {
         <View style={[styles.padded, { paddingTop: insets.top }]}>
           <GameHeader
             progress={progress}
-            streak={liveStreak}
+            streak={isReplay ? 0 : liveStreak}
             onClose={() => setShowExitConfirm(true)}
           />
         </View>

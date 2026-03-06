@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -8,7 +8,7 @@ import {
   Pressable,
   FlatList,
   ActivityIndicator,
-  Alert,
+
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
@@ -31,14 +31,12 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
 import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
-import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
 import { useUserStore } from '@/stores/useUserStore';
-import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
@@ -56,7 +54,6 @@ export default function HomeScreen() {
   const language = useSettingsStore((s) => s.language);
   const startDailySet = useGameStore((s) => s.startDailySet);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const markFirstGameToday = useAdsStore((s) => s.markFirstGameToday);
 
   const insets = useSafeAreaInsets();
   const { data: feed, isLoading, isError, error, refetch: refetchFeed, isRefetching: isRefetchingFeed } = useHomeFeed();
@@ -68,14 +65,8 @@ export default function HomeScreen() {
     refetchDaily();
   }, [refetchFeed, refetchDaily]);
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
-  const [loadingRandom, setLoadingRandom] = useState(false);
   const [showDisableAds, setShowDisableAds] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
-  const [replayWarning, setReplayWarning] = useState<{
-    visible: boolean;
-    type: 'difficulty' | 'random';
-    difficulty?: 'easy' | 'medium' | 'hard';
-  }>({ visible: false, type: 'difficulty' });
   const showDisableAdsOnReturn = useAdsStore((s) => s.showDisableAdsOnReturn);
 
   // Show disable-ads modal when returning from game after interstitial
@@ -127,10 +118,9 @@ export default function HomeScreen() {
   const handleStartDaily = useCallback(async () => {
     if (dailyData && !daily?.isLocked) {
       startDailySet(dailyData.id ?? null, dailyData.questions?.length ?? CARDS_PER_DAILY_SET, streak);
-      markFirstGameToday();
       router.push('/game/card');
     }
-  }, [dailyData, daily?.isLocked, startDailySet, router, streak, markFirstGameToday]);
+  }, [dailyData, daily?.isLocked, startDailySet, router, streak]);
 
   const handleContinueDaily = useCallback(async () => {
     if (!dailyData || !dailyData.progress) return;
@@ -142,119 +132,21 @@ export default function HomeScreen() {
       timeSpentMs: 0,
     }));
     startDailySet(dailyData.id ?? null, totalCards, streak, dailyData.progress!.currentIndex, previousResults);
-    markFirstGameToday();
     router.push('/game/card');
-  }, [dailyData, startDailySet, router, streak, markFirstGameToday]);
+  }, [dailyData, startDailySet, router, streak]);
 
   const handleOpenCategory = useCallback((categoryId: string) => {
     router.push({ pathname: '/category/[id]', params: { id: categoryId } });
   }, [router]);
 
-  const handleStartDifficulty = useCallback(async (difficulty: 'easy' | 'medium' | 'hard') => {
-    const progress = difficultyProgress?.[difficulty];
-    const isCompleted = progress && progress.totalCount > 0 && progress.answeredCount >= progress.totalCount;
+  const handleStartDifficulty = useCallback((difficulty: 'easy' | 'medium' | 'hard') => {
+    router.push({ pathname: '/difficulty/[level]', params: { level: difficulty } });
+  }, [router]);
 
-    if (isCompleted) {
-      setReplayWarning({ visible: true, type: 'difficulty', difficulty });
-      return;
-    }
+  const handleStartRandom = useCallback(() => {
+    router.push('/random');
+  }, [router]);
 
-    setLoadingCollection(difficulty);
-    try {
-      const session = await collectionsApi.start({
-        type: 'difficulty',
-        difficulty,
-        count: 25,
-      });
-      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, false, streak);
-      analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length });
-      markFirstGameToday();
-      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error';
-      Alert.alert(t('common.error'), message);
-    } finally {
-      setLoadingCollection(null);
-    }
-  }, [startCollectionSession, router, difficultyProgress]);
-
-  const isAllFactsCompleted = useMemo(() => {
-    if (!difficultyProgress) return false;
-    let totalAll = 0;
-    let answeredAll = 0;
-    for (const key of Object.keys(difficultyProgress)) {
-      totalAll += difficultyProgress[key].totalCount;
-      answeredAll += difficultyProgress[key].answeredCount;
-    }
-    return totalAll > 0 && answeredAll >= totalAll;
-  }, [difficultyProgress]);
-
-  const handleStartRandom = useCallback(async () => {
-    if (isAllFactsCompleted) {
-      setReplayWarning({ visible: true, type: 'random' });
-      return;
-    }
-
-    setLoadingRandom(true);
-    try {
-      const session = await collectionsApi.start({
-        type: 'random',
-        count: 30,
-      });
-      startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, false, streak);
-      analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length });
-      markFirstGameToday();
-      router.push({ pathname: '/game/card', params: { mode: 'collection' } });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error';
-      Alert.alert(t('common.error'), message);
-    } finally {
-      setLoadingRandom(false);
-    }
-  }, [startCollectionSession, router, isAllFactsCompleted]);
-
-  const handleConfirmReplay = useCallback(async () => {
-    setReplayWarning((prev) => ({ ...prev, visible: false }));
-
-    if (replayWarning.type === 'difficulty' && replayWarning.difficulty) {
-      const difficulty = replayWarning.difficulty;
-      setLoadingCollection(difficulty);
-      try {
-        const session = await collectionsApi.start({
-          type: 'difficulty',
-          difficulty,
-          replay: true,
-        });
-        startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, true, streak);
-        analytics.logEvent('collection_start', { type: 'difficulty', referenceId: difficulty, questionCount: session.questions.length, replay: true });
-        markFirstGameToday();
-        router.push({ pathname: '/game/card', params: { mode: 'collection' } });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error';
-        Alert.alert(t('common.error'), message);
-      } finally {
-        setLoadingCollection(null);
-      }
-    } else if (replayWarning.type === 'random') {
-      setLoadingRandom(true);
-      try {
-        const session = await collectionsApi.start({
-          type: 'random',
-          count: 30,
-          replay: true,
-        });
-        startCollectionSession(session.sessionId, 'category', session.questions.length, session.questions, true, streak);
-        analytics.logEvent('collection_start', { type: 'random', questionCount: session.questions.length, replay: true });
-        markFirstGameToday();
-        router.push({ pathname: '/game/card', params: { mode: 'collection' } });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Error';
-        Alert.alert(t('common.error'), message);
-      } finally {
-        setLoadingRandom(false);
-      }
-    }
-  }, [replayWarning, startCollectionSession, router, streak, markFirstGameToday, t]);
 
   const handleOpenCollection = useCallback((collectionId: string) => {
     router.push({ pathname: '/collection/[id]', params: { id: collectionId } });
@@ -410,7 +302,7 @@ export default function HomeScreen() {
         <AnimatedEntrance delay={150}>
           <Pressable
             onPress={handleStartRandom}
-            disabled={loadingRandom}
+            
             style={[
               styles.randomButton,
               {
@@ -433,11 +325,7 @@ export default function HomeScreen() {
                 {t('home.randomDesc')}
               </Text>
             </View>
-            {loadingRandom ? (
-              <ActivityIndicator size="small" color={colors.primary} />
-            ) : (
-              <Feather name="play-circle" size={24} color={colors.primary} />
-            )}
+            <Feather name="play-circle" size={24} color={colors.primary} />
           </Pressable>
         </AnimatedEntrance>
 
@@ -537,45 +425,10 @@ export default function HomeScreen() {
         </AnimatedEntrance>
 
         <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
-          <AdBanner placement="home" />
-        </View>
+            <AdBanner placement="home" />
+          </View>
       </ScrollView>
 
-      <OverlayModal
-        visible={replayWarning.visible}
-        onClose={() => setReplayWarning((prev) => ({ ...prev, visible: false }))}
-      >
-        <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-          <Text style={[styles.replayModalTitle, { color: colors.textPrimary }]}>
-            {replayWarning.type === 'difficulty'
-              ? t('home.difficultyAllDone')
-              : t('home.allFactsDone')}
-          </Text>
-          <Text style={[styles.replayModalDesc, { color: colors.textSecondary }]}>
-            {replayWarning.type === 'difficulty'
-              ? t('home.difficultyAllDoneDesc')
-              : t('home.allFactsDoneDesc')}
-          </Text>
-          <View style={styles.replayModalButtons}>
-            <Pressable
-              onPress={() => setReplayWarning((prev) => ({ ...prev, visible: false }))}
-              style={[styles.replayModalBtn, { backgroundColor: colors.surfaceVariant }]}
-            >
-              <Text style={[styles.replayModalBtnText, { color: colors.textPrimary }]}>
-                {t('common.back')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleConfirmReplay}
-              style={[styles.replayModalBtn, { backgroundColor: colors.primary }]}
-            >
-              <Text style={[styles.replayModalBtnText, { color: '#FFFFFF' }]}>
-                {t('home.playAnyway')}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </OverlayModal>
 
       <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
@@ -954,39 +807,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: fontFamily.regular,
   },
-  // Replay warning modal
-  replayModal: {
-    width: '100%',
-    padding: 24,
-    alignItems: 'center',
-    gap: 12,
-  },
-  replayModalTitle: {
-    fontSize: 20,
-    fontFamily: fontFamily.bold,
-    textAlign: 'center',
-  },
-  replayModalDesc: {
-    fontSize: 15,
-    fontFamily: fontFamily.regular,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  replayModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    width: '100%',
-  },
-  replayModalBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  replayModalBtnText: {
-    fontSize: 15,
-    fontFamily: fontFamily.semiBold,
-  },
+
 });

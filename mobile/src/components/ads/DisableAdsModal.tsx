@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
@@ -6,7 +6,7 @@ import { useThemeContext } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { useRewardedAd } from './RewardedAdManager';
 import { useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
-import { AD_FREQUENCY } from '@/constants/ads';
+import { adManager } from '@/services/ads';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
@@ -20,13 +20,25 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
   const { t } = useTranslation();
   const { showForReward, isReady } = useRewardedAd();
 
-  const payload = useFeatureFlagPayload<{ adFreeMinutes?: number }>('ad_rewarded_video');
-  const minutes = payload?.adFreeMinutes ?? AD_FREQUENCY.defaultAdFreeMinutes;
+  const payload = useFeatureFlagPayload<{ adFreeMinutes?: number; requiredViews?: number }>('ad_rewarded_video');
+  const minutes = payload?.adFreeMinutes ?? 30;
+  const requiredViews = payload?.requiredViews ?? 2;
+  const [watchedCount, setWatchedCount] = useState(0);
+
+  // Reset counter when modal opens
+  useEffect(() => {
+    if (visible) setWatchedCount(0);
+  }, [visible]);
 
   const handleWatch = async () => {
     const shown = await showForReward();
     if (shown) {
-      onClose();
+      const newCount = watchedCount + 1;
+      setWatchedCount(newCount);
+      if (newCount >= requiredViews) {
+        adManager.activateAdFree();
+        onClose();
+      }
     }
   };
 
@@ -49,7 +61,9 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
           ]}
         >
           <Text style={[styles.watchBtnText, { color: isReady ? '#FFFFFF' : colors.textTertiary }]}>
-            {isReady ? t('ads.watchVideo') : t('common.loading')}
+            {isReady
+              ? `${t('ads.watchVideo')} (${watchedCount}/${requiredViews})`
+              : t('common.loading')}
           </Text>
         </Pressable>
         <Pressable onPress={onClose} style={styles.cancelBtn}>

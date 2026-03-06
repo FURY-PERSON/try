@@ -1,4 +1,4 @@
-import { UNITY_AD_UNIT_IDS, AD_FREQUENCY } from '@/constants/ads';
+import { UNITY_AD_UNIT_IDS } from '@/constants/ads';
 import { appStorage } from './storage';
 import { analytics } from './analytics';
 import { getAdProvider } from './adProvider';
@@ -6,18 +6,12 @@ import { useAdsStore } from '@/stores/useAdsStore';
 import { useFeatureFlagsStore } from '@/stores/useFeatureFlagsStore';
 
 type AdState = {
-  interstitialLastShown: number;
-  interstitialTodayCount: number;
-  interstitialCountDate: string;
   userTotalGames: number;
 };
 
 const AD_STATE_KEY = 'factfront-ad-state';
 
 const getDefaultState = (): AdState => ({
-  interstitialLastShown: 0,
-  interstitialTodayCount: 0,
-  interstitialCountDate: new Date().toISOString().split('T')[0] ?? '',
   userTotalGames: 0,
 });
 
@@ -30,11 +24,6 @@ class AdManager {
 
     const saved = await appStorage.get<AdState>(AD_STATE_KEY);
     if (saved) {
-      const today = new Date().toISOString().split('T')[0] ?? '';
-      if (saved.interstitialCountDate !== today) {
-        saved.interstitialTodayCount = 0;
-        saved.interstitialCountDate = today;
-      }
       this.state = saved;
     }
 
@@ -81,10 +70,6 @@ class AdManager {
     const flagStore = useFeatureFlagsStore.getState();
     if (!flagStore.isEnabled('ad_interstitial_game')) return false;
 
-    if (this.state.interstitialTodayCount >= AD_FREQUENCY.interstitialMaxPerDay) return false;
-    if (Date.now() - this.state.interstitialLastShown < AD_FREQUENCY.interstitialCooldownMs)
-      return false;
-
     return true;
   }
 
@@ -98,15 +83,13 @@ class AdManager {
 
     const flagStore = useFeatureFlagsStore.getState();
     const payload = flagStore.getPayload<{ factsThreshold?: number }>('ad_interstitial_game');
-    const threshold = payload?.factsThreshold ?? AD_FREQUENCY.defaultFactsPerInterstitial;
+    const threshold = payload?.factsThreshold ?? 30;
 
     const factsSinceLastAd = adsStore.totalFactsAnswered - adsStore.lastInterstitialFactCount;
     return factsSinceLastAd >= threshold;
   }
 
   async onInterstitialShown(): Promise<void> {
-    this.state.interstitialLastShown = Date.now();
-    this.state.interstitialTodayCount += 1;
     analytics.logEvent('ad_interstitial_shown');
 
     const adsStore = useAdsStore.getState();
@@ -122,8 +105,8 @@ class AdManager {
 
   activateAdFree(): void {
     const flagStore = useFeatureFlagsStore.getState();
-    const payload = flagStore.getPayload<{ adFreeMinutes?: number }>('ad_rewarded_video');
-    const minutes = payload?.adFreeMinutes ?? AD_FREQUENCY.defaultAdFreeMinutes;
+    const payload = flagStore.getPayload<{ minutes?: number }>('ad_rewarded_video');
+    const minutes = payload?.minutes ?? 30;
     const until = Date.now() + minutes * 60 * 1000;
     useAdsStore.getState().setAdFreeUntil(until);
     analytics.logEvent('ad_free_activated', { minutes });

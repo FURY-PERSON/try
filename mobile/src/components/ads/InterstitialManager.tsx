@@ -1,62 +1,95 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
-import { getAdProvider } from '@/services/adProvider';
+
+// Singleton interstitial ad — persists across screen mounts
+let singletonAd: any = null;
+let adLoaded = false;
+let listenerSet = false;
+let onClosedCallback: (() => void) | null = null;
+
+function ensureAdLoaded() {
+  const provider = useAdsStore.getState().detectedProvider;
+  const sdkReady = useAdsStore.getState().sdkReady;
+  if (provider !== 'unity' || !sdkReady || listenerSet) return;
+
+  listenerSet = true;
+
+  import('unity-levelplay-mediation').then(({ LevelPlayInterstitialAd }) => {
+    try {
+      const ad = new LevelPlayInterstitialAd(adManager.getInterstitialUnitId());
+      singletonAd = ad;
+
+      ad.setListener({
+        onAdLoaded: () => { adLoaded = true; },
+        onAdLoadFailed: () => { adLoaded = false; },
+        onAdInfoChanged: () => {},
+        onAdDisplayed: () => {},
+        onAdDisplayFailed: () => {
+          onClosedCallback?.();
+          onClosedCallback = null;
+        },
+        onAdClicked: () => {},
+        onAdClosed: () => {
+          adLoaded = false;
+          ad.loadAd();
+          onClosedCallback?.();
+          onClosedCallback = null;
+        },
+      });
+
+      ad.loadAd();
+    } catch {
+      // Unity ad creation failed
+    }
+  }).catch(() => {});
+}
+
+// Initialize singleton when SDK becomes ready
+useAdsStore.subscribe((state, prev) => {
+  if (state.sdkReady && !prev.sdkReady) {
+    ensureAdLoaded();
+  }
+});
+
+// Also try on import in case SDK is already ready
+if (useAdsStore.getState().sdkReady) {
+  ensureAdLoaded();
+}
+
+/**
+ * Wait for the ad to be loaded, with a max timeout.
+ */
+function waitForAdLoaded(timeoutMs: number): Promise<boolean> {
+  if (adLoaded) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const interval = setInterval(() => {
+      if (adLoaded) {
+        clearInterval(interval);
+        resolve(true);
+      } else if (Date.now() - start >= timeoutMs) {
+        clearInterval(interval);
+        resolve(false);
+      }
+    }, 100);
+  });
+}
 
 export const useInterstitialAd = () => {
-  const loadedRef = useRef(false);
-  const onClosedCallbackRef = useRef<(() => void) | null>(null);
-  const unityAdRef = useRef<any>(null);
-
-  const provider = getAdProvider();
-  const sdkReady = useAdsStore((s) => s.sdkReady);
-
-  useEffect(() => {
-    if (provider !== 'unity' || !sdkReady) return;
-
-    import('unity-levelplay-mediation').then(({ LevelPlayInterstitialAd }) => {
-      try {
-        const ad = new LevelPlayInterstitialAd(adManager.getInterstitialUnitId());
-        unityAdRef.current = ad;
-
-        ad.setListener({
-          onAdLoaded: () => { loadedRef.current = true; },
-          onAdLoadFailed: () => { loadedRef.current = false; },
-          onAdInfoChanged: () => {},
-          onAdDisplayed: () => {},
-          onAdDisplayFailed: () => {
-            onClosedCallbackRef.current?.();
-            onClosedCallbackRef.current = null;
-          },
-          onAdClicked: () => {},
-          onAdClosed: () => {
-            loadedRef.current = false;
-            ad.loadAd();
-            onClosedCallbackRef.current?.();
-            onClosedCallbackRef.current = null;
-          },
-        });
-
-        ad.loadAd();
-      } catch {
-        // Unity ad creation failed
-      }
-    }).catch(() => {});
-  }, [provider, sdkReady]);
-
   const showIfReady = useCallback(async (onClosed?: () => void): Promise<boolean> => {
-    if (!loadedRef.current || !adManager.isAdsEnabled()) {
+    if (!adLoaded || !adManager.isAdsEnabled()) {
       return false;
     }
 
     try {
       if (onClosed) {
-        onClosedCallbackRef.current = onClosed;
+        onClosedCallback = onClosed;
       }
 
-      if (unityAdRef.current) {
-        unityAdRef.current.showAd();
+      if (singletonAd) {
+        singletonAd.showAd();
       } else {
         return false;
       }
@@ -69,23 +102,20 @@ export const useInterstitialAd = () => {
     }
   }, []);
 
-  /**
-   * Show interstitial for game start context.
-   * Checks frequency capping rules. Does NOT navigate -- caller is responsible for navigation.
-   * Returns true if ad was shown.
-   */
   const showForGameStart = useCallback(async (): Promise<boolean> => {
     if (!adManager.shouldShowInterstitialForFacts()) {
       return false;
     }
 
-    if (!loadedRef.current) {
+    // Wait up to 3 seconds for the ad to load
+    const loaded = await waitForAdLoaded(3000);
+    if (!loaded) {
       return false;
     }
 
     try {
-      if (unityAdRef.current) {
-        unityAdRef.current.showAd();
+      if (singletonAd) {
+        singletonAd.showAd();
       } else {
         return false;
       }

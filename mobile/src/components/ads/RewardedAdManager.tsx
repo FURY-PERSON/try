@@ -42,9 +42,6 @@ export const useRewardedAd = () => {
           onAdClicked: () => {},
           onAdClosed: () => {
             const wasRewarded = rewardEarnedRef.current;
-            if (wasRewarded) {
-              adManager.activateAdFree();
-            }
             rewardEarnedRef.current = false;
             loadedRef.current = false;
             setIsReady(false);
@@ -55,7 +52,6 @@ export const useRewardedAd = () => {
           onAdRewarded: () => {
             rewardEarnedRef.current = true;
             analytics.logEvent('ad_rewarded_completed');
-            adManager.activateAdFree();
           },
         });
 
