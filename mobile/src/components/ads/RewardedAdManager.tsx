@@ -85,5 +85,7 @@ export const useRewardedAd = () => {
     });
   }, []);
 
-  return { showForReward, isReady };
+  const getAdNetwork = useCallback(() => adNetworkRef.current, []);
+
+  return { showForReward, isReady, getAdNetwork };
 };

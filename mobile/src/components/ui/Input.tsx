@@ -105,7 +105,7 @@ export const Input: FC<InputProps> = ({
           {
             color: colors.textPrimary,
             fontFamily: typography.bodyLarge.fontFamily,
-            fontSize: isAnswer ? 24 : (typography.bodyLarge.fontSize as number),
+            fontSize: isAnswer ? 17 : (typography.bodyLarge.fontSize as number),
           },
         ]}
         {...rest}

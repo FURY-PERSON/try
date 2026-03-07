@@ -47,4 +47,12 @@ export const profileApi = {
     const response = await apiClient.get<StatsResponse>('/v1/users/me/stats');
     return response.data.data;
   },
+
+  async checkNickname(nickname: string): Promise<boolean> {
+    const response = await apiClient.get<{ data: { available: boolean } }>(
+      '/v1/users/nickname/check',
+      { params: { nickname } },
+    );
+    return response.data.data.available;
+  },
 };

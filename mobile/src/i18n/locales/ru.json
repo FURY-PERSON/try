@@ -157,7 +157,8 @@
     "title": "Никнейм",
     "placeholder": "Введи никнейм",
     "hint": "От 3 до 16 символов",
-    "tapToChangeAvatar": "Нажми, чтобы сменить аватар"
+    "tapToChangeAvatar": "Нажми, чтобы сменить аватар",
+    "alreadyTaken": "Уже занято"
   },
   "streakMilestone": {
     "title7": "7 дней подряд!",

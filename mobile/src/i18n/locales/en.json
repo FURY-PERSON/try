@@ -157,7 +157,8 @@
     "title": "Nickname",
     "placeholder": "Enter nickname",
     "hint": "3 to 16 characters",
-    "tapToChangeAvatar": "Tap to change avatar"
+    "tapToChangeAvatar": "Tap to change avatar",
+    "alreadyTaken": "Already taken"
   },
   "streakMilestone": {
     "title7": "7 days in a row!",

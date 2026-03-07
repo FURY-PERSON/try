@@ -113,14 +113,15 @@ export const useInterstitialAd = () => {
   }, []);
 
   const showForGameStart = useCallback(async (): Promise<boolean> => {
-    if (!adManager.shouldShowInterstitialForFacts()) {
-      return false;
-    }
-
-    // Wait up to 3 seconds for the ad to load
+    // Wait up to 3 seconds for the ad to load so we know the adNetwork
     const loaded = await waitForAdLoaded(3000);
     if (!loaded) {
       analytics.logEvent('ad_interstitial_failed', { provider: useAdsStore.getState().detectedProvider ?? 'unknown', reason: 'not_loaded' });
+      return false;
+    }
+
+    // Check threshold using the loaded ad's network
+    if (!adManager.shouldShowInterstitialForFacts(lastAdNetwork)) {
       return false;
     }
 
@@ -131,7 +132,7 @@ export const useInterstitialAd = () => {
         return false;
       }
 
-      await adManager.onInterstitialShown();
+      await adManager.onInterstitialShown(lastAdNetwork);
       useAdsStore.getState().setShowDisableAdsOnReturn(true);
       analytics.logEvent('ad_interstitial_shown', { context: 'game_start', provider: useAdsStore.getState().detectedProvider ?? 'unknown', adNetwork: lastAdNetwork });
       return true;

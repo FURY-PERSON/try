@@ -136,8 +136,8 @@ VALUES
   ('clref0009flag0bancat',    'ad_banner_category',    'Баннер: Категория',                'Баннер на экране информации о категории',                                 true,  NULL, NOW(), NOW()),
   ('clref0010flag0bangame',   'ad_banner_game',        'Баннер: Игра',                     'Баннер внизу экрана игры',                                                true,  NULL, NOW(), NOW()),
   ('clref0011flag0banres',    'ad_banner_results',     'Баннер: Результаты',               'Баннер на экране завершения игры',                                        true,  NULL, NOW(), NOW()),
-  ('clref0012flag0intgame',   'ad_interstitial_game',  'Полноэкранная реклама',            'Полноэкранная реклама перед началом игры',                                true,  '{"factsThreshold": 26}', NOW(), NOW()),
-  ('clref0013flag0rewvideo',  'ad_rewarded_video',     'Видео реклама (отключение рекламы)','Видео для отключения рекламы. Payload: adFreeMinutes, requiredViews',     true,  '{"adFreeMinutes": 30, "requiredViews": 2}', NOW(), NOW())
+  ('clref0012flag0intgame',   'ad_interstitial_game',  'Полноэкранная реклама',            'Полноэкранная реклама перед началом игры',                                true,  '{"factsThreshold": 24, "yandex_factsThreshold": 24, "unity_factsThreshold": 39}', NOW(), NOW()),
+  ('clref0013flag0rewvideo',  'ad_rewarded_video',     'Видео реклама (отключение рекламы)','Видео для отключения рекламы',                                            true,  '{"adFreeMinutes": 25, "requiredViews": 2, "yandex_requiredViews": 2, "unity_requiredViews": 1}', NOW(), NOW())
 ON CONFLICT (key) DO NOTHING;
 
 COMMIT;

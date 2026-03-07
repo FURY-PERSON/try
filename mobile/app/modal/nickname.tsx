@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -33,8 +33,32 @@ export default function NicknameModal() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [nicknameAvailable, setNicknameAvailable] = useState(true);
+  const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isValid = value.length >= 3 && value.length <= 16;
+
+  useEffect(() => {
+    if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
+
+    if (!isValid || value === currentNickname) {
+      setNicknameAvailable(true);
+      return;
+    }
+
+    checkTimerRef.current = setTimeout(async () => {
+      try {
+        const available = await profileApi.checkNickname(value);
+        setNicknameAvailable(available);
+      } catch {
+        setNicknameAvailable(true);
+      }
+    }, 500);
+
+    return () => {
+      if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
+    };
+  }, [value, isValid, currentNickname]);
 
   const loadEmojis = useCallback(async () => {
     try {
@@ -180,10 +204,10 @@ export default function NicknameModal() {
       <AnimatedEntrance delay={400} direction="up">
         <View style={styles.footer}>
           <Button
-            label={t('common.save')}
+            label={isValid && !nicknameAvailable ? t('nickname.alreadyTaken') : t('common.save')}
             variant="primary"
             size="lg"
-            disabled={!isValid}
+            disabled={!isValid || !nicknameAvailable}
             loading={loading}
             onPress={handleSave}
           />

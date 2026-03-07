@@ -18,11 +18,26 @@ type DisableAdsModalProps = {
 export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) => {
   const { colors } = useThemeContext();
   const { t } = useTranslation();
-  const { showForReward, isReady } = useRewardedAd();
+  const { showForReward, isReady, getAdNetwork } = useRewardedAd();
 
-  const payload = useFeatureFlagPayload<{ adFreeMinutes?: number; requiredViews?: number }>('ad_rewarded_video');
+  const payload = useFeatureFlagPayload<{
+    adFreeMinutes?: number;
+    requiredViews?: number;
+    yandex_requiredViews?: number;
+    unity_requiredViews?: number;
+  }>('ad_rewarded_video');
   const minutes = payload?.adFreeMinutes ?? 30;
-  const requiredViews = payload?.requiredViews ?? 2;
+
+  const getRequiredViews = useCallback(() => {
+    const network = getAdNetwork().toLowerCase();
+    if (network.includes('yandex') && payload?.yandex_requiredViews != null) {
+      return payload.yandex_requiredViews;
+    }
+    if (network.includes('unity') && payload?.unity_requiredViews != null) {
+      return payload.unity_requiredViews;
+    }
+    return payload?.requiredViews ?? 2;
+  }, [payload, getAdNetwork]);
   const [watchedCount, setWatchedCount] = useState(0);
 
   // Reset counter when modal opens
@@ -35,7 +50,7 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
     if (shown) {
       const newCount = watchedCount + 1;
       setWatchedCount(newCount);
-      if (newCount >= requiredViews) {
+      if (newCount >= getRequiredViews()) {
         adManager.activateAdFree();
         onClose();
       }
@@ -62,7 +77,7 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
         >
           <Text style={[styles.watchBtnText, { color: isReady ? '#FFFFFF' : colors.textTertiary }]}>
             {isReady
-              ? `${t('ads.watchVideo')} (${watchedCount}/${requiredViews})`
+              ? `${t('ads.watchVideo')} (${watchedCount}/${getRequiredViews()})`
               : t('common.loading')}
           </Text>
         </Pressable>

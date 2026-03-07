@@ -3,6 +3,7 @@ import {
   Post,
   Patch,
   Get,
+  Query,
   Body,
   UseGuards,
 } from '@nestjs/common';
@@ -47,6 +48,18 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized - invalid or missing device authentication' })
   async getMyStats(@CurrentUser() user: User): Promise<UserStats> {
     return this.usersService.getUserStats(user.id);
+  }
+
+  @Get('nickname/check')
+  @UseGuards(DeviceAuthGuard)
+  @ApiOperation({ summary: 'Check if a nickname is available' })
+  @ApiResponse({ status: 200, description: 'Availability check result' })
+  async checkNickname(
+    @CurrentUser() user: User,
+    @Query('nickname') nickname: string,
+  ): Promise<{ available: boolean }> {
+    const available = await this.usersService.isNicknameAvailable(nickname, user.id);
+    return { available };
   }
 
   @Post('me/nickname/regenerate')

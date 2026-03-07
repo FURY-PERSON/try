@@ -152,6 +152,14 @@ export class UsersService {
     };
   }
 
+  async isNicknameAvailable(nickname: string, currentUserId: string): Promise<boolean> {
+    const existing = await this.prisma.user.findUnique({
+      where: { nickname },
+      select: { id: true },
+    });
+    return !existing || existing.id === currentUserId;
+  }
+
   async regenerateNickname(userId: string, language: string = 'ru'): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');

@@ -73,7 +73,25 @@ class AdManager {
     return true;
   }
 
-  shouldShowInterstitialForFacts(): boolean {
+  getInterstitialThreshold(adNetwork?: string): number {
+    const flagStore = useFeatureFlagsStore.getState();
+    const payload = flagStore.getPayload<{
+      factsThreshold?: number;
+      yandex_factsThreshold?: number;
+      unity_factsThreshold?: number;
+    }>('ad_interstitial_game');
+
+    const network = adNetwork?.toLowerCase() ?? '';
+    if (network.includes('yandex') && payload?.yandex_factsThreshold != null) {
+      return payload.yandex_factsThreshold;
+    }
+    if (network.includes('unity') && payload?.unity_factsThreshold != null) {
+      return payload.unity_factsThreshold;
+    }
+    return payload?.factsThreshold ?? 30;
+  }
+
+  shouldShowInterstitialForFacts(adNetwork?: string): boolean {
     if (!this.canShowInterstitial()) return false;
 
     const adsStore = useAdsStore.getState();
@@ -81,20 +99,15 @@ class AdManager {
     // Don't show for first game today
     if (adsStore.isFirstGameToday()) return false;
 
-    const flagStore = useFeatureFlagsStore.getState();
-    const payload = flagStore.getPayload<{ factsThreshold?: number }>('ad_interstitial_game');
-    const threshold = payload?.factsThreshold ?? 30;
-
+    const threshold = this.getInterstitialThreshold(adNetwork);
     const factsSinceLastAd = adsStore.totalFactsAnswered - adsStore.lastInterstitialFactCount;
     return factsSinceLastAd >= threshold;
   }
 
-  async onInterstitialShown(): Promise<void> {
+  async onInterstitialShown(adNetwork?: string): Promise<void> {
     analytics.logEvent('ad_interstitial_shown');
 
-    const flagStore = useFeatureFlagsStore.getState();
-    const payload = flagStore.getPayload<{ factsThreshold?: number }>('ad_interstitial_game');
-    const threshold = payload?.factsThreshold ?? 30;
+    const threshold = this.getInterstitialThreshold(adNetwork);
 
     const adsStore = useAdsStore.getState();
     // Advance by threshold instead of resetting to current total,
