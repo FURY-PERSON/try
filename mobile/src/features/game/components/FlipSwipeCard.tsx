@@ -176,14 +176,19 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       const springToZero = (vel: number) =>
         withSpring(0, { velocity: vel, damping: 18, stiffness: 120, mass: 1 });
 
+      // Spring with high damping for answer swipes — keeps inertia feel
+      // but settles quickly without long oscillation before flip
+      const answerSpring = (vel: number) =>
+        withSpring(0, { velocity: vel, damping: 26, stiffness: 200, mass: 1 });
+
       if (phase.value === 'front') {
         // Phase 1: swipe to answer
         if (amplifiedX > swipeThreshold) {
-          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
+          translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
           runOnJS(onSwipe)('right');
         } else if (amplifiedX < -swipeThreshold) {
-          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
+          translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
           runOnJS(onSwipe)('left');
         } else {
@@ -211,10 +216,12 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     });
 
   // Card transform (translate + rotate from drag)
+  const halfScreen = screenWidth / 2;
   const cardDragStyle = useAnimatedStyle(() => {
+    'worklet';
     const rotation = interpolate(
       translateX.value,
-      [-screenWidth / 2, 0, screenWidth / 2],
+      [-halfScreen, 0, halfScreen],
       [-15, 0, 15],
       Extrapolation.CLAMP,
     );
@@ -222,44 +229,51 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
-        { rotate: `${rotation}deg` },
+        { rotateZ: `${rotation}deg` },
       ],
     };
   });
 
   // Front face: 0 -> 180deg (opacity toggle at 90deg for Android reliability)
   const frontFaceStyle = useAnimatedStyle(() => {
+    'worklet';
+    const fp = flipProgress.value;
     return {
       transform: [
         PERSPECTIVE,
-        { rotateY: `${flipProgress.value}deg` },
+        { rotateY: `${fp}deg` },
       ],
-      opacity: flipProgress.value < 90 ? 1 : 0,
+      opacity: fp < 90 ? 1 : 0,
     };
   });
 
   // Back face: 180 -> 360deg (opacity toggle at 90deg for Android reliability)
   const backFaceStyle = useAnimatedStyle(() => {
+    'worklet';
+    const fp = flipProgress.value;
     return {
       transform: [
         PERSPECTIVE,
-        { rotateY: `${flipProgress.value + 180}deg` },
+        { rotateY: `${fp + 180}deg` },
       ],
-      opacity: flipProgress.value < 90 ? 0 : 1,
+      opacity: fp < 90 ? 0 : 1,
     };
   });
 
   // Combined glow + submitting border (replaces separate cardGlowStyle + submittingStyle)
+  const borderColorDefault = colors.border;
   const cardBorderStyle = useAnimatedStyle(() => {
+    'worklet';
+    const fp = flipProgress.value;
     // Submitting state takes priority (only on front face)
-    if (isSubmittingShared.value && flipProgress.value === 0) {
+    if (isSubmittingShared.value && fp === 0) {
       return {
         borderColor: 'rgba(99, 102, 241, 0.3)',
         borderWidth: 2,
       };
     }
-    if (flipProgress.value > 0) {
-      return { borderColor: colors.border, borderWidth: 2 };
+    if (fp > 0) {
+      return { borderColor: borderColorDefault, borderWidth: 2 };
     }
     const progress = interpolate(
       translateX.value,
@@ -267,9 +281,9 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       [-1, 0, 1],
       Extrapolation.CLAMP,
     );
-    const absProgress = Math.abs(progress);
+    const absProgress = progress < 0 ? -progress : progress;
     if (absProgress < 0.01) {
-      return { borderColor: colors.border, borderWidth: 2 };
+      return { borderColor: borderColorDefault, borderWidth: 2 };
     }
     const glowOpacity = absProgress * 0.19;
     const isRight = progress > 0;
@@ -284,52 +298,71 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
 
   // FACT overlay opacity (front only)
   const factOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
     if (flipProgress.value > 0) return { opacity: 0 };
-    const o = interpolate(
-      translateX.value,
-      [0, swipeThreshold],
-      [0, 1],
-      Extrapolation.CLAMP,
-    );
-    return { opacity: o };
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [0, swipeThreshold],
+        [0, 1],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
 
   // FAKE overlay opacity (front only)
   const fakeOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
     if (flipProgress.value > 0) return { opacity: 0 };
-    const o = interpolate(
-      translateX.value,
-      [-swipeThreshold, 0],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return { opacity: o };
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [-swipeThreshold, 0],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
 
   const secondStackStyle = useAnimatedStyle(() => {
-    const scale = interpolate(entranceProgress.value, [0, 1], [0.92, 0.96]);
-    const top = interpolate(entranceProgress.value, [0, 1], [24, 12]);
-    return { transform: [{ scale }], top, opacity: 0.85 };
+    'worklet';
+    const ep = entranceProgress.value;
+    return {
+      transform: [{ scale: 0.92 + ep * 0.04 }],
+      top: 24 - ep * 12,
+      opacity: 0.85,
+    };
   });
 
   const thirdStackStyle = useAnimatedStyle(() => {
-    const scale = interpolate(entranceProgress.value, [0, 1], [0.88, 0.92]);
-    const top = interpolate(entranceProgress.value, [0, 1], [36, 24]);
-    return { transform: [{ scale }], top, opacity: 0.5 };
+    'worklet';
+    const ep = entranceProgress.value;
+    return {
+      transform: [{ scale: 0.88 + ep * 0.04 }],
+      top: 36 - ep * 12,
+      opacity: 0.5,
+    };
   });
 
   const fourthStackStyle = useAnimatedStyle(() => {
-    const scale = interpolate(entranceProgress.value, [0, 1], [0.84, 0.88]);
-    const top = interpolate(entranceProgress.value, [0, 1], [48, 36]);
-    return { transform: [{ scale }], top, opacity: 0 };
+    'worklet';
+    const ep = entranceProgress.value;
+    return {
+      transform: [{ scale: 0.84 + ep * 0.04 }],
+      top: 48 - ep * 12,
+      opacity: 0,
+    };
   });
 
-  // Main card entrance — animate from stack position to full size (no opacity to avoid bleed-through)
+  // Main card entrance — animate from stack position to full size
   const mainEntranceStyle = useAnimatedStyle(() => {
-    const scale = interpolate(entranceProgress.value, [0, 1], [0.96, 1]);
-    const translateYEntrance = interpolate(entranceProgress.value, [0, 1], [12, 0]);
+    'worklet';
+    const ep = entranceProgress.value;
     return {
-      transform: [{ scale }, { translateY: translateYEntrance }],
+      transform: [
+        { scale: 0.96 + ep * 0.04 },
+        { translateY: 12 - ep * 12 },
+      ],
     };
   });
 
@@ -461,6 +494,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       {/* Main interactive card */}
       <GestureDetector gesture={gesture}>
         <Animated.View
+          renderToHardwareTextureAndroid
           style={[
             styles.card,
             dynamicStyles.card,
@@ -469,7 +503,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
           ]}
         >
           {/* ---- FRONT FACE ---- */}
-          <Animated.View style={[styles.faceOuter, frontFaceStyle]}>
+          <Animated.View renderToHardwareTextureAndroid style={[styles.faceOuter, frontFaceStyle]}>
             <Animated.View
               style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardBorderStyle]}
             >
@@ -556,7 +590,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
           </Animated.View>
 
           {/* ---- BACK FACE ---- */}
-          <Animated.View style={[styles.backFaceOuter, backFaceStyle]}>
+          <Animated.View renderToHardwareTextureAndroid style={[styles.backFaceOuter, backFaceStyle]}>
             <View
               style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }]}
             >
@@ -666,10 +700,12 @@ const styles = StyleSheet.create({
   },
   card: {
     minHeight: 300,
+    overflow: 'visible',
   },
   faceOuter: {
     width: '100%',
     minHeight: 300,
+    overflow: 'visible',
   },
   backFaceOuter: {
     position: 'absolute',
@@ -677,6 +713,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    overflow: 'visible',
   },
   faceInner: {
     flex: 1,

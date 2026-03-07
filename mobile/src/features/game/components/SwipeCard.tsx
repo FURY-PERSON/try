@@ -77,10 +77,13 @@ export const SwipeCard: FC<SwipeCardProps> = ({
       }
     });
 
+  const HALF_SCREEN = SCREEN_WIDTH / 2;
+
   const cardStyle = useAnimatedStyle(() => {
+    'worklet';
     const rotation = interpolate(
       translateX.value,
-      [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
+      [-HALF_SCREEN, 0, HALF_SCREEN],
       [-15, 0, 15],
       Extrapolation.CLAMP,
     );
@@ -88,20 +91,21 @@ export const SwipeCard: FC<SwipeCardProps> = ({
       transform: [
         { translateX: translateX.value },
         { translateY: translateY.value },
-        { rotate: `${rotation}deg` },
+        { rotateZ: `${rotation}deg` },
       ],
     };
   });
 
   const cardGlowStyle = useAnimatedStyle(() => {
+    'worklet';
     const progress = interpolate(
       translateX.value,
       [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
       [-1, 0, 1],
       Extrapolation.CLAMP,
     );
-    // Avoid interpolateColor with 'transparent' / hex+alpha — breaks on Android
-    const opacity = Math.abs(progress) * 0.19;
+    const absProgress = progress < 0 ? -progress : progress;
+    const opacity = absProgress * 0.19;
     const isRight = progress > 0;
     const r = isRight ? 16 : 239;
     const g = isRight ? 185 : 68;
@@ -113,23 +117,27 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   });
 
   const factOverlayStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP,
-    );
-    return { opacity };
+    'worklet';
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [0, SWIPE_THRESHOLD],
+        [0, 1],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
 
   const fakeOverlayStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return { opacity };
+    'worklet';
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [-SWIPE_THRESHOLD, 0],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
 
   const remainingCards = totalCards - cardIndex;
@@ -199,6 +207,7 @@ export const SwipeCard: FC<SwipeCardProps> = ({
       {/* Main interactive card */}
       <GestureDetector gesture={gesture}>
         <Animated.View
+          renderToHardwareTextureAndroid
           style={[
             styles.card,
             {
