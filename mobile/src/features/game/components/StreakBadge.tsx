@@ -38,14 +38,13 @@ type StreakTier = {
 };
 
 function getStreakTier(streak: number): StreakTier {
-  if (streak <= 0) return { tier: 0, color: '#F59E0B', rotationAmplitude: 0, scalePulse: 0, glowRadius: 0 };
-  if (streak < 5) return { tier: 1, color: '#F59E0B', rotationAmplitude: 3, scalePulse: 0.02, glowRadius: 4 };
-  if (streak < 10) return { tier: 2, color: '#F97316', rotationAmplitude: 4, scalePulse: 0.04, glowRadius: 8 };
-  if (streak < 25) return { tier: 3, color: '#EF4444', rotationAmplitude: 5, scalePulse: 0.06, glowRadius: 12 };
-  if (streak < 50) return { tier: 4, color: '#DC2626', rotationAmplitude: 7, scalePulse: 0.08, glowRadius: 16 };
-  if (streak < 85) return { tier: 5, color: '#7C3AED', rotationAmplitude: 9, scalePulse: 0.10, glowRadius: 20 };
-  if (streak < 100) return { tier: 6, color: '#6D28D9', rotationAmplitude: 10, scalePulse: 0.12, glowRadius: 24 };
-  return { tier: 7, color: '#B91C1C', rotationAmplitude: 12, scalePulse: 0.14, glowRadius: 28 };
+  if (streak <= 0) return { tier: 0, color: '#22C55E', rotationAmplitude: 0, scalePulse: 0, glowRadius: 0 };
+  if (streak < 5) return { tier: 1, color: '#22C55E', rotationAmplitude: 3, scalePulse: 0.02, glowRadius: 4 };
+  if (streak < 10) return { tier: 2, color: '#EAB308', rotationAmplitude: 4, scalePulse: 0.04, glowRadius: 8 };
+  if (streak < 25) return { tier: 3, color: '#F97316', rotationAmplitude: 5, scalePulse: 0.06, glowRadius: 12 };
+  if (streak < 50) return { tier: 4, color: '#EF4444', rotationAmplitude: 7, scalePulse: 0.08, glowRadius: 16 };
+  if (streak < 100) return { tier: 5, color: '#DC2626', rotationAmplitude: 9, scalePulse: 0.10, glowRadius: 20 };
+  return { tier: 7, color: '#9333EA', rotationAmplitude: 12, scalePulse: 0.14, glowRadius: 28 };
 }
 
 const BURST_DIRECTIONS = [
@@ -264,7 +263,7 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   const [plusOneKey, setPlusOneKey] = useState(0);
   const { tier, color, rotationAmplitude, scalePulse, glowRadius } = getStreakTier(days);
 
-  const isInferno = days > 100;
+  const isInferno = days >= 100;
 
   const rotation = useSharedValue(0);
   const glowScale = useSharedValue(1);

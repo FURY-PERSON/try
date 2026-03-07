@@ -32,6 +32,7 @@ export const useCardGame = (
   const collectionType = useGameStore((s) => s.collectionType);
   const isReplay = useGameStore((s) => s.isReplay);
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
+  const [previousFeedback, setPreviousFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const currentStreak = useGameStore((s) => s.currentStreak);
   const [liveStreak, setLiveStreak] = useState(currentStreak);
@@ -257,6 +258,8 @@ export const useCardGame = (
 
   const handleNextCard = useCallback(async () => {
     if (pendingResult) {
+      // Store current feedback as previous before clearing
+      setPreviousFeedback(feedback);
       // Clear feedback BEFORE advancing index to prevent stale content flash
       setFeedback(null);
       setPendingResult(null);
@@ -305,13 +308,14 @@ export const useCardGame = (
     } else {
       setFeedback(null);
     }
-  }, [pendingResult, submitCardResult, collectionType, dailySetId, sessionId, isReplay, submitDailySetResults, submitCollectionResults]);
+  }, [pendingResult, feedback, submitCardResult, collectionType, dailySetId, sessionId, isReplay, submitDailySetResults, submitCollectionResults]);
 
   return {
     currentQuestion,
     currentIndex,
     totalCards: dailyProgress.totalCards,
     feedback,
+    previousFeedback,
     isSubmitting,
     isComplete,
     progress: currentIndex / dailyProgress.totalCards,

@@ -7,6 +7,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { Screen } from '@/components/layout/Screen';
 import { GameHeader } from '@/features/game/components/GameHeader';
 import { FlipSwipeCard } from '@/features/game/components/FlipSwipeCard';
@@ -24,6 +25,7 @@ import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import type { FlipSwipeCardRef } from '@/features/game/components/FlipSwipeCard';
 import type { DailySetQuestion } from '@/shared';
 
 // Static LinearGradient point objects
@@ -56,6 +58,16 @@ export default function CardScreen() {
   const hasSeenSwipeContinueHint = useAppStore((s) => s.hasSeenSwipeContinueHint);
   const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
   const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
+
+  // Undo: show previous card explanation
+  const [showPreviousCard, setShowPreviousCard] = useState(false);
+
+  // Track if user interacted via button (to suppress swipe hints)
+  const usedButtonRef = useRef(false);
+  const continueHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Ref for programmatic card control
+  const cardRef = useRef<FlipSwipeCardRef>(null);
 
   // Android back button → show exit confirmation
   useEffect(() => {
@@ -160,6 +172,7 @@ export default function CardScreen() {
     currentIndex,
     totalCards,
     feedback,
+    previousFeedback,
     isSubmitting,
     isComplete,
     progress,
@@ -176,12 +189,20 @@ export default function CardScreen() {
     }
   }, [currentQuestion, currentIndex, feedback, hasSeenSwipeAnswerHint]);
 
-  // Show swipe-to-continue hint on first ever feedback
+  // Show swipe-to-continue hint on first ever feedback (with 1.5s delay)
   useEffect(() => {
-    if (feedback && !hasSeenSwipeContinueHint) {
-      setSwipeHintVariant('continue');
-      setShowSwipeHint(true);
+    if (feedback && !hasSeenSwipeContinueHint && !usedButtonRef.current) {
+      continueHintTimerRef.current = setTimeout(() => {
+        setSwipeHintVariant('continue');
+        setShowSwipeHint(true);
+      }, 1500);
     }
+    return () => {
+      if (continueHintTimerRef.current) {
+        clearTimeout(continueHintTimerRef.current);
+        continueHintTimerRef.current = null;
+      }
+    };
   }, [feedback, hasSeenSwipeContinueHint]);
 
   const dismissSwipeHint = useCallback(() => {
@@ -193,9 +214,45 @@ export default function CardScreen() {
     }
   }, [swipeHintVariant, markSwipeAnswerHintSeen, markSwipeContinueHintSeen]);
 
-  const showHintManually = useCallback((variant: 'answer' | 'continue') => {
-    setSwipeHintVariant(variant);
-    setShowSwipeHint(true);
+  // Throttle button presses to prevent accidental double-taps
+  const lastButtonPressRef = useRef(0);
+  const BUTTON_THROTTLE_MS = 600;
+
+  // Button press handlers — trigger programmatic card animation
+  const handleFakePress = useCallback(() => {
+    const now = Date.now();
+    if (now - lastButtonPressRef.current < BUTTON_THROTTLE_MS) return;
+    lastButtonPressRef.current = now;
+    usedButtonRef.current = true;
+    if (continueHintTimerRef.current) {
+      clearTimeout(continueHintTimerRef.current);
+      continueHintTimerRef.current = null;
+    }
+    cardRef.current?.programmaticSwipe('left');
+  }, []);
+
+  const handleFactPress = useCallback(() => {
+    const now = Date.now();
+    if (now - lastButtonPressRef.current < BUTTON_THROTTLE_MS) return;
+    lastButtonPressRef.current = now;
+    usedButtonRef.current = true;
+    if (continueHintTimerRef.current) {
+      clearTimeout(continueHintTimerRef.current);
+      continueHintTimerRef.current = null;
+    }
+    cardRef.current?.programmaticSwipe('right');
+  }, []);
+
+  const handleNextPress = useCallback(() => {
+    const now = Date.now();
+    if (now - lastButtonPressRef.current < BUTTON_THROTTLE_MS) return;
+    lastButtonPressRef.current = now;
+    usedButtonRef.current = true;
+    if (continueHintTimerRef.current) {
+      clearTimeout(continueHintTimerRef.current);
+      continueHintTimerRef.current = null;
+    }
+    cardRef.current?.programmaticDismiss();
   }, []);
 
   useEffect(() => {
@@ -222,7 +279,7 @@ export default function CardScreen() {
     );
   }
 
-  if (!currentQuestion && !feedback) {
+  if (!currentQuestion && !feedback && !isComplete) {
     return (
       <Screen style={{ paddingTop: insets.top }}>
         <ErrorState message="No questions available" onRetry={refetch} />
@@ -265,71 +322,27 @@ export default function CardScreen() {
           />
         </View>
 
-        <Text style={[styles.counterText, { color: colors.textTertiary }]}>
-          {currentIndex + 1} / {totalCards}
-        </Text>
+        <View style={styles.counterRow}>
+          <Text style={[styles.counterText, { color: colors.textTertiary }]}>
+            {currentIndex + 1} / {totalCards}
+          </Text>
+          {/* Undo button — show previous card explanation */}
+          {previousFeedback && currentIndex > 0 && (
+            <Pressable
+              onPress={() => setShowPreviousCard(true)}
+              style={[styles.undoButton, { backgroundColor: colors.surfaceVariant }]}
+              hitSlop={8}
+            >
+              <Feather name="rotate-ccw" size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
 
         {currentQuestion ? (
           <View style={styles.cardArea}>
-            <View style={styles.hintsRow}>
-              {feedback ? (
-                <Animated.View
-                  key="continue"
-                  entering={FadeIn.duration(300)}
-                  exiting={FadeOut.duration(150)}
-                  style={styles.hintsContent}
-                >
-                  <Pressable
-                    onPress={() => showHintManually('continue')}
-                    style={[styles.hintBadge, { backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }]}
-                  >
-                    <Text style={[styles.hintText, { color: colors.primary }]}>
-                      ← {t('game.continue')}
-                    </Text>
-                  </Pressable>
-                  <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
-                    {t('game.swipeToContinue')}
-                  </Text>
-                  <Pressable
-                    onPress={() => showHintManually('continue')}
-                    style={[styles.hintBadge, { backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '20' }]}
-                  >
-                    <Text style={[styles.hintText, { color: colors.primary }]}>
-                      {t('game.continue')} →
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              ) : (
-                <Animated.View
-                  key="answer"
-                  entering={FadeIn.duration(300)}
-                  exiting={FadeOut.duration(150)}
-                  style={styles.hintsContent}
-                >
-                  <Pressable
-                    onPress={() => showHintManually('answer')}
-                    style={[styles.hintBadge, { backgroundColor: colors.red + '10', borderWidth: 1, borderColor: colors.red + '20' }]}
-                  >
-                    <Text style={[styles.hintText, { color: colors.red }]}>
-                      ← {t('game.fake')}
-                    </Text>
-                  </Pressable>
-                  <Text style={[styles.hintCenter, { color: colors.textTertiary }]}>
-                    {t('game.swipeHint')}
-                  </Text>
-                  <Pressable
-                    onPress={() => showHintManually('answer')}
-                    style={[styles.hintBadge, { backgroundColor: colors.emerald + '10', borderWidth: 1, borderColor: colors.emerald + '20' }]}
-                  >
-                    <Text style={[styles.hintText, { color: colors.emerald }]}>
-                      {t('game.fact')} →
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              )}
-            </View>
             <View style={styles.padded}>
               <FlipSwipeCard
+                ref={cardRef}
                 statement={statement}
                 categoryName={categoryName}
                 cardIndex={currentIndex}
@@ -342,6 +355,82 @@ export default function CardScreen() {
                 nextStatement={nextStatement}
                 nextCategoryName={nextCategoryName}
               />
+            </View>
+
+            {/* Action buttons below card */}
+            <View style={styles.buttonsRow}>
+              {feedback ? (
+                <Animated.View
+                  key="continue-btns"
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeOut.duration(150)}
+                  style={styles.buttonsContent}
+                >
+                  <Pressable
+                    onPress={handleNextPress}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      styles.nextButton,
+                      {
+                        backgroundColor: pressed ? colors.primary : colors.primary + 'E6',
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Text style={styles.actionButtonTextWhite}>
+                      {t('game.continue')}
+                    </Text>
+                    <Feather name="chevron-right" size={18} color="#FFFFFF" />
+                  </Pressable>
+                </Animated.View>
+              ) : (
+                <Animated.View
+                  key="answer-btns"
+                  entering={FadeIn.duration(300)}
+                  exiting={FadeOut.duration(150)}
+                  style={styles.buttonsContent}
+                >
+                  <Pressable
+                    onPress={handleFakePress}
+                    disabled={isSubmitting}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      styles.fakeButton,
+                      {
+                        backgroundColor: pressed ? colors.red + '30' : colors.red + '15',
+                        borderColor: colors.red + '40',
+                        opacity: isSubmitting ? 0.5 : 1,
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Feather name="x" size={18} color={colors.red} />
+                    <Text style={[styles.actionButtonText, { color: colors.red }]}>
+                      {t('game.fake')}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleFactPress}
+                    disabled={isSubmitting}
+                    style={({ pressed }) => [
+                      styles.actionButton,
+                      styles.factButton,
+                      {
+                        backgroundColor: pressed ? colors.emerald + '30' : colors.emerald + '15',
+                        borderColor: colors.emerald + '40',
+                        opacity: isSubmitting ? 0.5 : 1,
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      },
+                    ]}
+                  >
+                    <Feather name="check" size={18} color={colors.emerald} />
+                    <Text style={[styles.actionButtonText, { color: colors.emerald }]}>
+                      {t('game.fact')}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
+              )}
             </View>
           </View>
         ) : null}
@@ -381,6 +470,50 @@ export default function CardScreen() {
         </View>
       </OverlayModal>
 
+      {/* Previous card explanation overlay */}
+      <OverlayModal visible={showPreviousCard} onClose={() => setShowPreviousCard(false)}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+          {previousFeedback && (
+            <>
+              <View style={styles.prevCardHeader}>
+                <MaterialCommunityIcons
+                  name={previousFeedback.userAnsweredCorrectly ? 'check-circle' : 'close-circle'}
+                  size={24}
+                  color={previousFeedback.userAnsweredCorrectly ? colors.emerald : colors.red}
+                />
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                  {previousFeedback.userAnsweredCorrectly ? t('game.correct') : t('game.incorrect')}
+                </Text>
+              </View>
+              <Text style={[styles.prevCardStatement, { color: colors.textSecondary }]}>
+                &laquo;{previousFeedback.statement}&raquo;
+              </Text>
+              <View
+                style={[
+                  styles.prevCardTruthBadge,
+                  { backgroundColor: (previousFeedback.isTrue ? colors.emerald : colors.red) + '15' },
+                ]}
+              >
+                <Text style={[styles.prevCardTruthText, { color: previousFeedback.isTrue ? colors.emerald : colors.red }]}>
+                  {t('game.thisIs')} {previousFeedback.isTrue ? t('game.fact') : t('game.fake')}
+                </Text>
+              </View>
+              <Text style={[styles.prevCardExplanation, { color: colors.textPrimary }]}>
+                {previousFeedback.explanation}
+              </Text>
+            </>
+          )}
+          <Pressable
+            onPress={() => setShowPreviousCard(false)}
+            style={[styles.prevCardCloseBtn, { backgroundColor: colors.surfaceVariant }]}
+          >
+            <Text style={[styles.modalButtonText, { color: colors.textPrimary }]}>
+              {t('common.close')}
+            </Text>
+          </Pressable>
+        </View>
+      </OverlayModal>
+
       <SwipeHintOverlay
         variant={swipeHintVariant}
         visible={showSwipeHint}
@@ -400,41 +533,66 @@ const styles = StyleSheet.create({
   cardArea: {
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: '20%',
+    paddingBottom: '12%',
+  },
+  counterRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
   },
   counterText: {
     fontSize: 15,
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
-    marginTop: 4,
     letterSpacing: 0.5,
   },
-  hintsRow: {
+  undoButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonsRow: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+    height: 56,
+  },
+  buttonsContent: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    height: 40,
+    gap: 12,
   },
-  hintsContent: {
+  actionButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
   },
-  hintBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
+  fakeButton: {
+    flex: 1,
   },
-  hintText: {
-    fontSize: 13,
-    fontFamily: fontFamily.semiBold,
+  factButton: {
+    flex: 1,
   },
-  hintCenter: {
-    fontSize: 12,
-    fontFamily: fontFamily.regular,
+  nextButton: {
+    flex: 1,
+    borderWidth: 0,
+  },
+  actionButtonText: {
+    fontSize: 17,
+    fontFamily: fontFamily.bold,
+  },
+  actionButtonTextWhite: {
+    fontSize: 17,
+    fontFamily: fontFamily.bold,
+    color: '#FFFFFF',
   },
   modalContent: {
     width: '100%',
@@ -474,5 +632,40 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+  },
+  // Previous card overlay styles
+  prevCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  prevCardStatement: {
+    fontSize: 15,
+    fontFamily: fontFamily.medium,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  prevCardTruthBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 16,
+  },
+  prevCardTruthText: {
+    fontSize: 15,
+    fontFamily: fontFamily.semiBold,
+  },
+  prevCardExplanation: {
+    fontSize: 15,
+    fontFamily: fontFamily.regular,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  prevCardCloseBtn: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 4,
   },
 });

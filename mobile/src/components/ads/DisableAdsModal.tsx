@@ -60,7 +60,9 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
   return (
     <OverlayModal visible={visible} onClose={onClose}>
       <View style={[styles.modal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-        <MaterialCommunityIcons name="television-play" size={48} color={colors.gold} />
+        <Pressable onPress={handleWatch} disabled={!isReady}>
+          <MaterialCommunityIcons name="television-play" size={48} color={isReady ? colors.gold : colors.textTertiary} />
+        </Pressable>
         <Text style={[styles.title, { color: colors.textPrimary }]}>
           {t('ads.disableTitle')}
         </Text>

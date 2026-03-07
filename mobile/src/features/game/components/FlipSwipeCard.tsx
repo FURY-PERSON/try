@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useImperativeHandle, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
+  withSequence,
   runOnJS,
   interpolate,
   Extrapolation,
@@ -24,7 +25,6 @@ import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
-import type { FC } from 'react';
 import type { SwipeDirection } from '../types';
 
 // Static transform object — avoids per-frame allocation in worklets
@@ -43,6 +43,11 @@ type AnswerFeedback = {
   sourceUrl?: string;
 };
 
+export type FlipSwipeCardRef = {
+  programmaticSwipe: (direction: SwipeDirection) => void;
+  programmaticDismiss: () => void;
+};
+
 type FlipSwipeCardProps = {
   statement: string;
   categoryName: string;
@@ -59,7 +64,7 @@ type FlipSwipeCardProps = {
 
 type FlipPhase = 'front' | 'flipping' | 'back';
 
-const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
+const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps>(({
   statement,
   categoryName,
   cardIndex,
@@ -70,7 +75,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
   isSubmitting = false,
   nextStatement,
   nextCategoryName,
-}) => {
+}, ref) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
   const { width: screenWidth } = useWindowDimensions();
@@ -145,6 +150,32 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       });
     }
   }, [activeFeedback]);
+
+  // Imperative methods for programmatic swipe/dismiss
+  const programmaticSwipe = useCallback((direction: SwipeDirection) => {
+    if (isSubmittingShared.value) return;
+    const peakX = direction === 'right' ? swipeThreshold * 1.2 : -swipeThreshold * 1.2;
+    translateX.value = withSequence(
+      withTiming(peakX, { duration: 150, easing: Easing.out(Easing.cubic) }),
+      withSpring(0, { damping: 26, stiffness: 200 }),
+    );
+    onSwipe(direction);
+  }, [swipeThreshold, onSwipe, isSubmittingShared, translateX]);
+
+  const programmaticDismiss = useCallback(() => {
+    translateX.value = withTiming(
+      screenWidth * 1.5,
+      { duration: 200, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        if (finished) runOnJS(onDismiss)();
+      },
+    );
+  }, [screenWidth, onDismiss, translateX]);
+
+  useImperativeHandle(ref, () => ({
+    programmaticSwipe,
+    programmaticDismiss,
+  }), [programmaticSwipe, programmaticDismiss]);
 
   // Card moves faster than finger for snappier feel
   const SWIPE_SPEED_MULTIPLIER = 1.5;
@@ -289,7 +320,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
     const isRight = progress > 0;
     const r = isRight ? 16 : 239;
     const g = isRight ? 185 : 68;
-    const b = isRight ? 129 : 68;
+    const b = isRight ? 68 : 68;
     return {
       borderColor: `rgba(${r}, ${g}, ${b}, ${glowOpacity})`,
       borderWidth: 2,
@@ -596,25 +627,28 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
             >
             {activeFeedback && (
               <>
-                <LinearGradient
-                  colors={resultGradient}
-                  start={GRADIENT_START}
-                  end={GRADIENT_END_H}
-                  style={[
-                    styles.resultBanner,
-                    {
-                      borderTopLeftRadius: borderRadius.xxl,
-                      borderTopRightRadius: borderRadius.xxl,
-                    },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={resultIcon}
-                    size={24}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.resultText}>{resultText}</Text>
-                </LinearGradient>
+                <Pressable onPress={programmaticDismiss}>
+                  <LinearGradient
+                    colors={resultGradient}
+                    start={GRADIENT_START}
+                    end={GRADIENT_END_H}
+                    style={[
+                      styles.resultBanner,
+                      {
+                        borderTopLeftRadius: borderRadius.xxl,
+                        borderTopRightRadius: borderRadius.xxl,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={resultIcon}
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.resultText}>{resultText}</Text>
+                    <Feather name="chevron-right" size={18} color="rgba(255,255,255,0.6)" style={styles.resultChevron} />
+                  </LinearGradient>
+                </Pressable>
 
                 <ScrollView
                   style={styles.backBody}
@@ -684,7 +718,7 @@ const FlipSwipeCardInner: FC<FlipSwipeCardProps> = ({
       </GestureDetector>
     </View>
   );
-};
+});
 
 export const FlipSwipeCard = React.memo(FlipSwipeCardInner);
 
@@ -789,6 +823,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
+  },
+  resultChevron: {
+    marginLeft: 4,
   },
   backBody: {
     flex: 1,
