@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, Pressable, Switch } from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable, Switch, Platform } from 'react-native';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -216,7 +216,7 @@ export default function CollectionDetailScreen() {
 
       {/* Footer */}
       <AnimatedEntrance delay={300}>
-        <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding }]}>
+        <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding, paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
           {collection.completed ? (
             <Button
               label={t('collection.playAgain')}

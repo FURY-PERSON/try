@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, BackHandler } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -56,6 +56,15 @@ export default function CardScreen() {
   const hasSeenSwipeContinueHint = useAppStore((s) => s.hasSeenSwipeContinueHint);
   const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
   const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
+
+  // Android back button → show exit confirmation
+  useEffect(() => {
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      setShowExitConfirm(true);
+      return true;
+    });
+    return () => handler.remove();
+  }, []);
 
   // Task 5: Show interstitial 500ms after game screen opens
   const { showForGameStart: showInterstitial } = useInterstitialAd();

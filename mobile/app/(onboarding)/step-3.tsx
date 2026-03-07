@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -51,7 +51,7 @@ export default function OnboardingStep3() {
         </View>
 
         <AnimatedEntrance delay={450} direction="up">
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
             <View style={styles.dots}>
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />

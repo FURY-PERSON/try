@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -154,7 +154,7 @@ export default function DifficultyDetailScreen() {
       </View>
 
       <AnimatedEntrance delay={300}>
-        <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding }]}>
+        <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding, paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
           <Button
             label={isCompleted ? t('category.playAgain') : t('category.start')}
             variant="primary"

@@ -193,7 +193,7 @@ export default function OnboardingStep4() {
         </View>
 
         <AnimatedEntrance delay={450} direction="up">
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
             <View style={styles.dots}>
               <View style={[styles.dot, { backgroundColor: colors.border }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />

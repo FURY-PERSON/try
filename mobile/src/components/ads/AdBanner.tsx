@@ -48,6 +48,9 @@ export const AdBanner: FC<AdBannerProps> = ({ placement }) => {
   }));
 
   if (!adsEnabled || isAdFree || !bannerEnabled || provider !== 'unity' || !sdkReady) {
+    if (__DEV__) {
+      console.log(`[AdBanner:${placement}] hidden — adsEnabled=${adsEnabled} isAdFree=${isAdFree} bannerEnabled=${bannerEnabled} provider=${provider} sdkReady=${sdkReady}`);
+    }
     return null;
   }
 

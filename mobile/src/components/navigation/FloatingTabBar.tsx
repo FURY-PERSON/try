@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -85,7 +85,8 @@ export const FloatingTabBar: FC<BottomTabBarProps> = ({
   const { colors, isDark } = useThemeContext();
   const insets = useSafeAreaInsets();
 
-  const bottomOffset = Math.max(insets.bottom, TAB_BAR_MARGIN_BOTTOM);
+  const androidExtra = Platform.OS === 'android' ? 8 : 0;
+  const bottomOffset = Math.max(insets.bottom, TAB_BAR_MARGIN_BOTTOM) + androidExtra;
   const fadeBase = isDark ? '15, 23, 42' : '255, 255, 255';
 
   return (
@@ -170,7 +171,15 @@ export const FloatingTabBar: FC<BottomTabBarProps> = ({
   );
 };
 
-/** Height of the floating tab bar including bottom margin, for content padding */
+/** Returns the total height the floating tab bar occupies, accounting for the device's safe area (Android only). */
+export function useFloatingTabBarHeight(): number {
+  const insets = useSafeAreaInsets();
+  if (Platform.OS !== 'android') return FLOATING_TAB_BAR_HEIGHT;
+  const bottomOffset = Math.max(insets.bottom, TAB_BAR_MARGIN_BOTTOM) + 8;
+  return TAB_BAR_HEIGHT + bottomOffset + 8;
+}
+
+/** Static fallback for contexts without SafeAreaProvider */
 export const FLOATING_TAB_BAR_HEIGHT = TAB_BAR_HEIGHT + TAB_BAR_MARGIN_BOTTOM + 8;
 
 const styles = StyleSheet.create({

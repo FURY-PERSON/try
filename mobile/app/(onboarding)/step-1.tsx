@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +64,7 @@ export default function OnboardingStep1() {
         </View>
 
         <AnimatedEntrance delay={450} direction="up">
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
             <View style={styles.dots}>
               <View style={[styles.dot, styles.dotActive, { backgroundColor: colors.primary }]} />
               <View style={[styles.dot, { backgroundColor: colors.border }]} />

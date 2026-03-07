@@ -44,12 +44,16 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
   const adSize = LevelPlayAdSize.BANNER;
   const listener: LevelPlayBannerAdViewListener = {
     onAdLoaded: (adInfo) => {
+      console.log(`[UnityBanner:${placement}] loaded, network=${adInfo?.adNetwork}`);
       retriesRef.current = 0;
       onAdLoaded(adInfo?.adNetwork ?? 'unknown');
     },
-    onAdLoadFailed: () => { scheduleRetry(); },
-    onAdDisplayed: () => {},
-    onAdDisplayFailed: () => { onAdFailed(); },
+    onAdLoadFailed: (error) => {
+      console.warn(`[UnityBanner:${placement}] load failed (retry ${retriesRef.current}/${RETRY_DELAYS_S.length}):`, error);
+      scheduleRetry();
+    },
+    onAdDisplayed: () => { console.log(`[UnityBanner:${placement}] displayed`); },
+    onAdDisplayFailed: (error) => { console.warn(`[UnityBanner:${placement}] display failed:`, error); onAdFailed(); },
     onAdClicked: () => {},
     onAdExpanded: () => {},
     onAdCollapsed: () => {},
@@ -65,7 +69,7 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
           adSize={adSize}
           placementName={placement}
           listener={listener}
-          onLayout={() => bannerAdViewRef.current?.loadAd()}
+          onLayout={() => { console.log(`[UnityBanner:${placement}] onLayout, loading ad... unitId=${adManager.getBannerUnitId()}`); bannerAdViewRef.current?.loadAd(); }}
           style={{ width: adSize.width, height: adSize.height }}
         />
       </View>

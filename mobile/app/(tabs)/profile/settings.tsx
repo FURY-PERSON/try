@@ -14,9 +14,11 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { APP_VERSION, PRIVACY_POLICY_URL } from '@/constants/config';
+import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useFloatingTabBarHeight();
   const { colors, spacing } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
 
   return (
     <Screen>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarHeight + 16 }}>
         <View style={[styles.header, { paddingTop: insets.top }]}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Feather name="chevron-left" size={24} color={colors.primary} />

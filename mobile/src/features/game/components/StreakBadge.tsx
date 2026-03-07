@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,7 +45,7 @@ function getStreakTier(streak: number): StreakTier {
   if (streak < 50) return { tier: 4, color: '#DC2626', rotationAmplitude: 7, scalePulse: 0.08, glowRadius: 16 };
   if (streak < 85) return { tier: 5, color: '#7C3AED', rotationAmplitude: 9, scalePulse: 0.10, glowRadius: 20 };
   if (streak < 100) return { tier: 6, color: '#6D28D9', rotationAmplitude: 10, scalePulse: 0.12, glowRadius: 24 };
-  return { tier: 7, color: '#FF4500', rotationAmplitude: 12, scalePulse: 0.14, glowRadius: 28 };
+  return { tier: 7, color: '#B91C1C', rotationAmplitude: 12, scalePulse: 0.14, glowRadius: 28 };
 }
 
 const BURST_DIRECTIONS = [
@@ -125,39 +125,41 @@ const InfernoGlowRing: FC<{ containerSize: number }> = ({ containerSize }) => {
   useEffect(() => {
     glowProgress.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 800 }),
-        withTiming(0, { duration: 800 }),
+        withTiming(1, { duration: 1000 }),
+        withTiming(0, { duration: 1000 }),
       ),
       -1,
       true,
     );
   }, [glowProgress]);
 
-  const ringStyle1 = useAnimatedStyle(() => {
-    const bgColor = interpolateColor(
-      glowProgress.value,
-      [0, 0.5, 1],
-      ['#FF450060', '#FFD70060', '#FF000060'],
-    );
-    return {
-      backgroundColor: bgColor,
-      transform: [{ scale: 1 + glowProgress.value * 0.15 }],
-      opacity: 0.6 - glowProgress.value * 0.2,
-    };
-  });
+  const ringStyle1 = useAnimatedStyle(() => ({
+    backgroundColor: '#FF450050',
+    transform: [{ scale: 1 + glowProgress.value * 0.15 }],
+    opacity: 0.6 - glowProgress.value * 0.2,
+  }));
 
-  const ringStyle2 = useAnimatedStyle(() => {
-    const bgColor = interpolateColor(
-      glowProgress.value,
-      [0, 0.5, 1],
-      ['#FFD70040', '#FF450040', '#FFA50040'],
+  if (Platform.OS === 'android') {
+    return (
+      <Animated.View
+        style={[
+          styles.infernoRing,
+          {
+            width: containerSize + 12,
+            height: containerSize - 6,
+            borderRadius: 9999,
+          },
+          ringStyle1,
+        ]}
+      />
     );
-    return {
-      backgroundColor: bgColor,
-      transform: [{ scale: 1.1 + glowProgress.value * 0.2 }],
-      opacity: 0.4 - glowProgress.value * 0.15,
-    };
-  });
+  }
+
+  const ringStyle2 = useAnimatedStyle(() => ({
+    backgroundColor: '#FFD70040',
+    transform: [{ scale: 1.1 + glowProgress.value * 0.2 }],
+    opacity: 0.4 - glowProgress.value * 0.15,
+  }));
 
   return (
     <>
@@ -378,8 +380,8 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   const iconSize = isMd ? 20 : 16;
   const containerSize = isMd ? 52 : 42;
 
-  const glowColor = isInferno ? '#FF4500' : color;
-  const bgColor = isInferno ? '#FF450020' : color + '20';
+  const glowColor = isInferno ? '#B91C1C' : color;
+  const bgColor = isInferno ? '#B91C1C30' : color + '20';
 
   return (
     <Animated.View style={[styles.outerWrap, burstAnimatedStyle]}>

@@ -18,11 +18,13 @@ import { useStats } from '@/features/profile/hooks/useStats';
 import { profileApi } from '@/features/profile/api/profileApi';
 import { useUserStore } from '@/stores/useUserStore';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useFloatingTabBarHeight();
   const { colors, spacing, gradients, borderRadius } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
@@ -43,7 +45,7 @@ export default function ProfileScreen() {
     <Screen padded={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 16 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={128} />}
       >
         {/* Profile Header with Gradient */}

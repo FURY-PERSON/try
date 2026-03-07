@@ -33,6 +33,7 @@ import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
 import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
 import { IconFromName } from '@/components/ui/IconFromName';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
+import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { useDailySet } from '@/features/game/hooks/useDailySet';
@@ -56,6 +57,7 @@ export default function HomeScreen() {
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
 
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useFloatingTabBarHeight();
   const { data: feed, isLoading, isError, error, refetch: refetchFeed, isRefetching: isRefetchingFeed } = useHomeFeed();
   const { data: dailyData, refetch: refetchDaily, isRefetching: isRefetchingDaily } = useDailySet();
 
@@ -205,7 +207,7 @@ export default function HomeScreen() {
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={128} />
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarHeight + 16 }}
         onTouchStart={() => setUserScrolled(true)}
       >
         {/* Header */}

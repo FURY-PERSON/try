@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { LeaderboardEntry } from './LeaderboardEntry';
 import { AdBanner } from '@/components/ads/AdBanner';
+import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
@@ -20,6 +21,7 @@ type LeaderboardListProps = {
 
 export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId, mode = 'score', userContext, positionLabel, refreshing, onRefresh }) => {
   const { colors, borderRadius } = useThemeContext();
+  const tabBarHeight = useFloatingTabBarHeight();
 
   const footer = (
     <View>
@@ -64,7 +66,7 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
         />
       )}
       ListFooterComponent={footer}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ paddingBottom: tabBarHeight + 16 }}
       showsVerticalScrollIndicator={false}
       refreshing={refreshing}
       onRefresh={onRefresh}
@@ -73,9 +75,6 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
 };
 
 const styles = StyleSheet.create({
-  list: {
-    paddingBottom: 100,
-  },
   contextBlock: {
     marginTop: 8,
   },
