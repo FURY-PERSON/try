@@ -10,7 +10,7 @@ type AvatarEmojisResponse = Record<string, string[]>;
 export const referenceApi = {
   async getNicknameOptions(language: string = 'ru'): Promise<NicknameOptions> {
     const response = await apiClient.get<{ data: NicknameOptions }>(
-      `/v1/reference/nickname-options?language=${language}`,
+      `/v1/reference/nickname-options?language=${language}&_t=${Date.now()}`,
     );
     return response.data.data;
   },

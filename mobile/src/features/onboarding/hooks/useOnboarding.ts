@@ -26,9 +26,11 @@ export const useOnboarding = () => {
   const finishWithProfile = useCallback(
     async (nickname: string, avatarEmoji: string) => {
       try {
+        const deviceId = useAppStore.getState().deviceId;
+        await profileApi.register(deviceId);
         await profileApi.updateProfile({ nickname, avatarEmoji });
       } catch {
-        // Profile update failed, continue anyway — name will sync later
+        // Registration or profile update failed, continue anyway
       }
       setNickname(nickname);
       setAvatarEmoji(avatarEmoji);
@@ -39,7 +41,13 @@ export const useOnboarding = () => {
     [completeOnboarding, setNickname, setAvatarEmoji, router],
   );
 
-  const skip = useCallback(() => {
+  const skip = useCallback(async () => {
+    try {
+      const deviceId = useAppStore.getState().deviceId;
+      await profileApi.register(deviceId);
+    } catch {
+      // Registration failed, continue anyway
+    }
     completeOnboarding();
     analytics.logEvent('onboarding_complete', { skipped: true });
     router.replace('/(tabs)/home');

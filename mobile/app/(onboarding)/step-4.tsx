@@ -22,7 +22,6 @@ export default function OnboardingStep4() {
   const language = useSettingsStore((s) => s.language);
 
   const [nickname, setNickname] = useState('');
-  const [placeholder, setPlaceholder] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('🦊');
   const [emojiGroups, setEmojiGroups] = useState<Record<string, string[]>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -34,10 +33,10 @@ export default function OnboardingStep4() {
     setGeneratingNickname(true);
     try {
       const options = await referenceApi.getNicknameOptions(language);
-      setPlaceholder(options.placeholder);
+      setNickname(options.placeholder);
       setSelectedEmoji(options.emoji);
     } catch {
-      setPlaceholder(language === 'en' ? 'Swift Fox' : 'Быстрый Лис');
+      setNickname(language === 'en' ? 'Swift Fox' : 'Быстрый Лис');
     } finally {
       setGeneratingNickname(false);
     }
@@ -66,9 +65,9 @@ export default function OnboardingStep4() {
   };
 
   const handleContinue = async () => {
-    const finalNickname = nickname.trim() || placeholder;
+    const finalNickname = nickname.trim();
 
-    if (nickname.trim().length > 0 && nickname.trim().length < 3) {
+    if (finalNickname.length < 3) {
       setValidationError(t('onboarding.step4MinChars'));
       return;
     }
@@ -169,7 +168,7 @@ export default function OnboardingStep4() {
                     setNickname(text);
                     if (validationError) setValidationError('');
                   }}
-                  placeholder={placeholder}
+                  placeholder={t('nickname.placeholder')}
                   maxLength={16}
                   autoCapitalize="words"
                   autoCorrect={false}
