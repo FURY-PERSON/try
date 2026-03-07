@@ -1,28 +1,24 @@
-import { IS_DEV } from './config';
+import { Platform } from 'react-native';
 
 // --- Unity LevelPlay ---
-// App Key from Unity LevelPlay dashboard
-export const UNITY_APP_KEY = IS_DEV ? '257423975' : '257423975';
+// App Key from Unity LevelPlay dashboard (per platform)
+export const UNITY_APP_KEY = Platform.select({
+  ios: '257423975',
+  android: '257819945',
+}) as string;
 
-const UNITY_TEST_IDS = {
-  banner: 'iq297okfs9s042o8',
-  interstitial: 'gdrgnjvgm8lz9qwn',
-  rewarded: 'trtyxfqi2bgtjz8q',
-} as const;
-
-const UNITY_PROD_IDS = {
-  banner: 'iq297okfs9s042o8',
-  interstitial: 'gdrgnjvgm8lz9qwn',
-  rewarded: 'trtyxfqi2bgtjz8q',
-} as const;
-
-const unityIds = IS_DEV ? UNITY_TEST_IDS : UNITY_PROD_IDS;
-
-export const UNITY_AD_UNIT_IDS = {
-  banner: unityIds.banner,
-  interstitial: unityIds.interstitial,
-  rewarded: unityIds.rewarded,
-} as const;
+export const UNITY_AD_UNIT_IDS = Platform.select({
+  ios: {
+    banner: 'iq297okfs9s042o8',
+    interstitial: 'gdrgnjvgm8lz9qwn',
+    rewarded: 'trtyxfqi2bgtjz8q',
+  },
+  android: {
+    banner: 'tk0iaczylahwrgm1',
+    interstitial: '7r741iobz72v7m3j',
+    rewarded: 'pjt029zip3pt426f',
+  },
+})!;
 
 // --- Frequency settings ---
 export const AD_FREQUENCY = {
