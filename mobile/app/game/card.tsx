@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
   },
   buttonsRow: {
     paddingHorizontal: 20,
-    marginTop: 16,
+    marginTop: 24,
     height: 56,
   },
   buttonsContent: {
