@@ -533,13 +533,14 @@ const styles = StyleSheet.create({
   cardArea: {
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: '12%',
+    paddingBottom: '30%',
   },
   counterRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 4,
+    height: 28,
     gap: 8,
   },
   counterText: {
