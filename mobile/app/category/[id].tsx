@@ -227,8 +227,8 @@ export default function CategoryDetailScreen() {
       </View>
 
       {/* Ad Banner above buttons */}
-      <View style={{ paddingHorizontal: spacing.screenPadding, marginBottom: 8 }}>
-        <AdBanner placement="category" />
+      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.screenPadding, marginBottom: 8 }}>
+        <AdBanner placement="category" size="adaptive" />
       </View>
 
       {/* Footer */}
@@ -346,7 +346,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   content: {
-    flex: 1,
     gap: 16,
   },
   infoCard: {

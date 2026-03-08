@@ -149,8 +149,8 @@ export default function DifficultyDetailScreen() {
         )}
       </View>
 
-      <View style={{ paddingHorizontal: spacing.screenPadding, marginBottom: 8 }}>
-        <AdBanner placement="category" />
+      <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.screenPadding, marginBottom: 8 }}>
+        <AdBanner placement="category" size="adaptive" />
       </View>
 
       <AnimatedEntrance delay={300}>
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
-  content: { flex: 1, gap: 16 },
+  content: { gap: 16 },
   infoCard: { paddingVertical: 18, paddingHorizontal: 20, gap: 10 },
   progressLabel: { fontSize: 14, fontFamily: fontFamily.semiBold },
   progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden' },

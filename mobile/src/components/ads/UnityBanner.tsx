@@ -16,14 +16,17 @@ import type { ViewStyle } from 'react-native';
 // Fibonacci-based delays in seconds: 1, 2, 5, 13, 34
 const RETRY_DELAYS_S = [1, 2, 5, 13, 34];
 
+export type BannerSize = 'BANNER' | 'LARGE' | 'MEDIUM_RECTANGLE';
+
 type UnityBannerProps = {
   placement: string;
+  size?: BannerSize;
   containerStyle: ViewStyle[];
   onAdLoaded: (adNetwork: string) => void;
   onAdFailed: () => void;
 };
 
-export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, onAdLoaded, onAdFailed }) => {
+export const UnityBanner: FC<UnityBannerProps> = ({ placement, size = 'BANNER', containerStyle, onAdLoaded, onAdFailed }) => {
   const bannerAdViewRef = useRef<LevelPlayBannerAdViewMethods>(null);
   const retriesRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -41,7 +44,7 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, containerStyle, o
     }, delaySec * 1000);
   }, [onAdFailed]);
 
-  const adSize = LevelPlayAdSize.BANNER;
+  const adSize = LevelPlayAdSize[size];
   const listener: LevelPlayBannerAdViewListener = {
     onAdLoaded: (adInfo) => {
       console.log(`[UnityBanner:${placement}] loaded, network=${adInfo?.adNetwork}`);

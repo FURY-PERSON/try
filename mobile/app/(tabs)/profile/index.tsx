@@ -150,7 +150,7 @@ export default function ProfileScreen() {
           </AnimatedEntrance>
 
           <View style={{ marginTop: spacing.sectionGap }}>
-            <AdBanner placement="profile" />
+            <AdBanner placement="profile" size="MEDIUM_RECTANGLE" />
           </View>
         </View>
       </ScrollView>

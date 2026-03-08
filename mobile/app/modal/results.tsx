@@ -207,7 +207,7 @@ export default function ResultsModal() {
       </AnimatedEntrance>
 
       <View style={[styles.adOverlay, { bottom: insets.bottom + 80 }]} pointerEvents="box-none">
-        <AdBanner placement="results" />
+        <AdBanner placement="results" size="LARGE" />
       </View>
     </Screen>
   );

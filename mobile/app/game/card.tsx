@@ -437,7 +437,7 @@ export default function CardScreen() {
       </LinearGradient>
 
       <View style={[styles.adOverlay, { bottom: insets.bottom, paddingHorizontal: 20 }]}>
-        <AdBanner placement="game" />
+        <AdBanner placement="game" size="LARGE" />
       </View>
 
       <OverlayModal visible={showExitConfirm} onClose={() => setShowExitConfirm(false)}>

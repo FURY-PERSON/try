@@ -427,7 +427,7 @@ export default function HomeScreen() {
         </AnimatedEntrance>
 
         <View style={{ marginTop: spacing.sectionGap, paddingHorizontal: spacing.screenPadding }}>
-            <AdBanner placement="home" />
+            <AdBanner placement="home" size="MEDIUM_RECTANGLE" />
           </View>
       </ScrollView>
 

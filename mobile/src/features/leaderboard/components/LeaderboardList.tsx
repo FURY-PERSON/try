@@ -47,7 +47,7 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
         </View>
       )}
       <View style={styles.adFooter}>
-        <AdBanner placement="leaderboard" />
+        <AdBanner placement="leaderboard" size="MEDIUM_RECTANGLE" />
       </View>
     </View>
   );
