@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, Pressable, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Switch, Platform } from 'react-native';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -21,6 +21,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
+import { showToast } from '@/stores/useToastStore';
 
 export default function CollectionDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -81,8 +82,7 @@ export default function CollectionDetailScreen() {
       });
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error';
-      Alert.alert(t('common.error'), message);
+      showToast(err instanceof Error ? err.message : t('error.generic'));
     } finally {
       setStarting(false);
     }

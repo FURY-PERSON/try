@@ -15,6 +15,7 @@ import { referenceApi } from '@/features/onboarding/api/referenceApi';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
+import { showToast } from '@/stores/useToastStore';
 
 export default function NicknameModal() {
   const insets = useSafeAreaInsets();
@@ -86,6 +87,8 @@ export default function NicknameModal() {
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
       analytics.logEvent('profile_updated');
       router.back();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : t('error.generic'));
     } finally {
       setLoading(false);
     }
@@ -98,8 +101,8 @@ export default function NicknameModal() {
       const user = await profileApi.regenerateNickname();
       setValue(user.nickname ?? '');
       if (user.avatarEmoji) setSelectedEmoji(user.avatarEmoji);
-    } catch {
-      // Silently fail
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : t('error.generic'));
     } finally {
       setRegenerating(false);
     }

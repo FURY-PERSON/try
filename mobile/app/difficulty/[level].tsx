@@ -18,6 +18,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
+import { showToast } from '@/stores/useToastStore';
 import type { HomeFeed } from '@/shared';
 
 const DIFFICULTY_CONFIG: Record<string, { icon: string; colorLight: string; colorDark: string; gradient: [string, string] }> = {
@@ -64,7 +65,7 @@ export default function DifficultyDetailScreen() {
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: level, questionCount: session.questions.length, replay });
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error';
+      showToast(err instanceof Error ? err.message : t('error.generic'));
     } finally {
       setStarting(false);
     }

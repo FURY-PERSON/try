@@ -25,6 +25,7 @@ import { ServiceUnavailableScreen } from '@/components/feedback/ServiceUnavailab
 import { adManager } from '@/services/ads';
 import { initAdProvider } from '@/services/adProvider';
 import { initializeFirebase } from '@/services/firebase';
+import { GlobalToast } from '@/components/feedback/GlobalToast';
 import i18n from '@/i18n';
 
 SplashScreen.preventAutoHideAsync();
@@ -196,6 +197,7 @@ export default function RootLayout() {
           <ThemeProvider>
             <AndroidNavigationBar />
             <AppShell />
+            <GlobalToast />
           </ThemeProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

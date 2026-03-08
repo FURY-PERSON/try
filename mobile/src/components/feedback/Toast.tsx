@@ -1,10 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Text, Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withDelay,
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
@@ -41,7 +40,8 @@ export const Toast: FC<ToastProps> = ({
 }) => {
   const { colors, borderRadius, elevation } = useThemeContext();
   const insets = useSafeAreaInsets();
-  const translateY = useSharedValue(-100);
+  const translateY = useSharedValue(-150);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const variantColor: Record<ToastVariant, string> = {
     success: colors.emerald,
@@ -50,28 +50,33 @@ export const Toast: FC<ToastProps> = ({
     warning: colors.orange,
   };
 
-  const dismiss = useCallback(() => {
-    onDismiss();
-  }, [onDismiss]);
-
   useEffect(() => {
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+
     if (visible) {
       if (variant === 'success') haptics.success();
       else if (variant === 'error') haptics.error();
 
+      // Slide in
       translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-      translateY.value = withDelay(
-        duration,
-        withTiming(-100, { duration: 300 }, (finished) => {
-          if (finished) {
-            runOnJS(dismiss)();
-          }
-        }),
-      );
+
+      // Schedule slide out
+      hideTimer.current = setTimeout(() => {
+        translateY.value = withTiming(-150, { duration: 300 }, (finished) => {
+          if (finished) runOnJS(onDismiss)();
+        });
+      }, duration);
     } else {
-      translateY.value = withTiming(-100, { duration: 200 });
+      translateY.value = withTiming(-150, { duration: 200 });
     }
-  }, [visible, variant, duration, translateY, dismiss]);
+
+    return () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [visible, variant, duration, translateY, onDismiss]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -81,6 +86,7 @@ export const Toast: FC<ToastProps> = ({
 
   return (
     <Animated.View
+      pointerEvents="box-none"
       style={[
         styles.container,
         {

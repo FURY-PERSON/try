@@ -22,6 +22,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
+import { showToast } from '@/stores/useToastStore';
 
 export default function CategoryDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -81,9 +82,9 @@ export default function CategoryDetailScreen() {
         replay,
       });
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
-    } catch {
-      // Refetch category to get fresh availableCount
+    } catch (err) {
       queryClient.invalidateQueries({ queryKey: ['category', id] });
+      showToast(err instanceof Error ? err.message : t('error.generic'));
     } finally {
       setStarting(false);
     }

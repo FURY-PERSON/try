@@ -25,6 +25,7 @@ import { useInterstitialAd } from '@/components/ads/InterstitialManager';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import { showToast } from '@/stores/useToastStore';
 import type { FlipSwipeCardRef } from '@/features/game/components/FlipSwipeCard';
 import type { DailySetQuestion } from '@/shared';
 
@@ -127,7 +128,8 @@ export default function CardScreen() {
         setShowExitConfirm(false);
         router.dismissAll();
       }
-    } catch {
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : t('error.generic'));
       setShowExitConfirm(false);
       router.dismissAll();
     } finally {
