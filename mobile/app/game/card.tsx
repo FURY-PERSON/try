@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Pressable, BackHandler, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -460,11 +460,15 @@ export default function CardScreen() {
             <Pressable
               onPress={handleExitWithSave}
               disabled={exitSaving}
-              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              style={[styles.modalButton, { backgroundColor: colors.primary, opacity: exitSaving ? 0.7 : 1 }]}
             >
-              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                {t('game.exitSave')}
-              </Text>
+              {exitSaving ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                  {t('game.exitSave')}
+                </Text>
+              )}
             </Pressable>
           </View>
         </View>

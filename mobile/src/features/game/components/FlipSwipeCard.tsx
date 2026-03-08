@@ -90,6 +90,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   const phase = useSharedValue<FlipPhase>('front');
   const entranceProgress = useSharedValue(1);
   const isSubmittingShared = useSharedValue(false);
+  const isProgrammatic = useSharedValue(false);
 
   const FLIP_DURATION = 500;
 
@@ -154,13 +155,14 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   // Imperative methods for programmatic swipe/dismiss
   const programmaticSwipe = useCallback((direction: SwipeDirection) => {
     if (isSubmittingShared.value) return;
+    isProgrammatic.value = true;
     const peakX = direction === 'right' ? swipeThreshold * 1.2 : -swipeThreshold * 1.2;
     translateX.value = withSequence(
       withTiming(peakX, { duration: 150, easing: Easing.out(Easing.cubic) }),
       withSpring(0, { damping: 26, stiffness: 200 }),
     );
     onSwipe(direction);
-  }, [swipeThreshold, onSwipe, isSubmittingShared, translateX]);
+  }, [swipeThreshold, onSwipe, isSubmittingShared, isProgrammatic, translateX]);
 
   const programmaticDismiss = useCallback(() => {
     translateX.value = withTiming(
@@ -303,7 +305,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
         borderWidth: 2,
       };
     }
-    if (fp > 0) {
+    if (fp > 0 || isProgrammatic.value) {
       return { borderColor: borderColorDefault, borderWidth: 2 };
     }
     const progress = interpolate(
@@ -327,10 +329,10 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     };
   });
 
-  // FACT overlay opacity (front only)
+  // FACT overlay opacity (front only, hidden during programmatic swipe)
   const factOverlayStyle = useAnimatedStyle(() => {
     'worklet';
-    if (flipProgress.value > 0) return { opacity: 0 };
+    if (flipProgress.value > 0 || isProgrammatic.value) return { opacity: 0 };
     return {
       opacity: interpolate(
         translateX.value,
@@ -341,10 +343,10 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     };
   });
 
-  // FAKE overlay opacity (front only)
+  // FAKE overlay opacity (front only, hidden during programmatic swipe)
   const fakeOverlayStyle = useAnimatedStyle(() => {
     'worklet';
-    if (flipProgress.value > 0) return { opacity: 0 };
+    if (flipProgress.value > 0 || isProgrammatic.value) return { opacity: 0 };
     return {
       opacity: interpolate(
         translateX.value,
