@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { InteractionManager } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGameStore } from '../stores/useGameStore';
 import { gameApi } from '../api/gameApi';
@@ -144,11 +145,15 @@ export const useCardGame = (
         // Update live streak based on answer
         setLiveStreak((prev) => (answeredCorrectly ? prev + 1 : 0));
 
-        analytics.logEvent('card_answered', {
+        // Defer analytics so JS thread is free during flip animation
+        const analyticsData = {
           questionId: currentQuestion.id,
           correct: answeredCorrectly,
           timeSpentMs,
           collectionType,
+        };
+        InteractionManager.runAfterInteractions(() => {
+          analytics.logEvent('card_answered', analyticsData);
         });
       } catch {
         // Offline fallback: compute locally

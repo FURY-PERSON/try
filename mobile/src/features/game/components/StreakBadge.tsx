@@ -324,11 +324,21 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       haptics.light();
     }
 
+    const isAndroid = Platform.OS === 'android';
     const bounceScale = 1.15 + tier * 0.05;
-    tapScale.value = withSequence(
-      withSpring(bounceScale, { damping: 6, stiffness: 400 }),
-      withSpring(1, { damping: 10, stiffness: 200 }),
-    );
+
+    if (isAndroid) {
+      // Android: use withTiming to avoid spring jank
+      tapScale.value = withSequence(
+        withTiming(bounceScale, { duration: 120 }),
+        withTiming(1, { duration: 200 }),
+      );
+    } else {
+      tapScale.value = withSequence(
+        withSpring(bounceScale, { damping: 6, stiffness: 400 }),
+        withSpring(1, { damping: 10, stiffness: 200 }),
+      );
+    }
 
     if (tier >= 2) {
       const amp = rotationAmplitude * 1.5;
@@ -341,17 +351,27 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
     }
 
     if (tier >= 4) {
-      burstScale.value = withSequence(
-        withSpring(1.25, { damping: 8, stiffness: 400 }),
-        withSpring(1, { damping: 12, stiffness: 200 }),
-      );
+      if (isAndroid) {
+        burstScale.value = withSequence(
+          withTiming(1.25, { duration: 150 }),
+          withTiming(1, { duration: 250 }),
+        );
+      } else {
+        burstScale.value = withSequence(
+          withSpring(1.25, { damping: 8, stiffness: 400 }),
+          withSpring(1, { damping: 12, stiffness: 200 }),
+        );
+      }
     }
 
     if (tier >= 7) {
       setTimeout(() => haptics.heavy(), 150);
     }
 
-    setTapBurstKey((k) => k + 1);
+    // Android: skip burst particles (setState re-render causes jank)
+    if (!isAndroid) {
+      setTapBurstKey((k) => k + 1);
+    }
   }, [days, tier, rotationAmplitude, tapScale, tapRotation, burstScale]);
 
   const tapAnimatedStyle = useAnimatedStyle(() => ({
