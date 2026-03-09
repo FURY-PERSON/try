@@ -13,6 +13,10 @@ type AdsState = {
   detectedProvider: AdProvider | null;
   sdkReady: boolean;
   showDisableAdsOnReturn: boolean;
+  /** How many times the "tap icon to disable ads" tooltip has been shown */
+  adTooltipShownCount: number;
+  /** Whether the pulsing dot badge on AdFreeIcon should be visible */
+  adIconBadgeVisible: boolean;
 
   setAdFreeUntil: (until: number) => void;
   addFactsAnswered: (count: number) => void;
@@ -25,6 +29,10 @@ type AdsState = {
   setSdkReady: (ready: boolean) => void;
   setShowDisableAdsOnReturn: (show: boolean) => void;
   resetDailyState: () => void;
+  /** Show tooltip + badge after user closes DisableAdsModal without watching */
+  triggerAdIconOnboarding: () => void;
+  /** Hide badge after user taps the ad icon */
+  dismissAdIconBadge: () => void;
 };
 
 const getToday = () => new Date().toISOString().split('T')[0] ?? '';
@@ -40,6 +48,8 @@ export const useAdsStore = create<AdsState>()(
       detectedProvider: null,
       sdkReady: false,
       showDisableAdsOnReturn: false,
+      adTooltipShownCount: 0,
+      adIconBadgeVisible: false,
 
       setAdFreeUntil: (until) => set({ adFreeUntil: until }),
 
@@ -78,6 +88,18 @@ export const useAdsStore = create<AdsState>()(
 
       setShowDisableAdsOnReturn: (show) => set({ showDisableAdsOnReturn: show }),
 
+      triggerAdIconOnboarding: () => {
+        const { adTooltipShownCount } = get();
+        if (adTooltipShownCount < 2) {
+          set({
+            adTooltipShownCount: adTooltipShownCount + 1,
+            adIconBadgeVisible: true,
+          });
+        }
+      },
+
+      dismissAdIconBadge: () => set({ adIconBadgeVisible: false }),
+
       resetDailyState: () => {
         const today = getToday();
         const { firstGameTodayDate } = get();
@@ -95,6 +117,8 @@ export const useAdsStore = create<AdsState>()(
         lastInterstitialFactCount: state.lastInterstitialFactCount,
         firstGameTodayDate: state.firstGameTodayDate,
         firstGameTodayPlayed: state.firstGameTodayPlayed,
+        adTooltipShownCount: state.adTooltipShownCount,
+        adIconBadgeVisible: state.adIconBadgeVisible,
       }),
     },
   ),

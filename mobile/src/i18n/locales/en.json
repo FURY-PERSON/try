@@ -210,6 +210,7 @@
     "disableDesc": "Watch a sponsor video and ads will disappear for {{minutes}} minutes",
     "watchVideo": "Watch video",
     "disableHint": "Disable ads",
+    "tapToDisable": "Tap to disable ads",
     "adFreeCheer": "Enjoying {{minutes}} min ad-free!"
   }
 }

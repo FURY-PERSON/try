@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useRewardedAd } from './RewardedAdManager';
 import { useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { adManager } from '@/services/ads';
+import { useAdsStore } from '@/stores/useAdsStore';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
 
@@ -19,6 +20,7 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
   const { colors } = useThemeContext();
   const { t } = useTranslation();
   const { showForReward, isReady, getAdNetwork } = useRewardedAd();
+  const triggerAdIconOnboarding = useAdsStore((s) => s.triggerAdIconOnboarding);
 
   const payload = useFeatureFlagPayload<{
     adFreeMinutes?: number;
@@ -45,20 +47,35 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
     if (visible) setWatchedCount(0);
   }, [visible]);
 
+  const [completedAllVideos, setCompletedAllVideos] = useState(false);
+
   const handleWatch = async () => {
     const shown = await showForReward();
     if (shown) {
       const newCount = watchedCount + 1;
       setWatchedCount(newCount);
       if (newCount >= getRequiredViews()) {
+        setCompletedAllVideos(true);
         adManager.activateAdFree();
         onClose();
       }
     }
   };
 
+  const handleClose = useCallback(() => {
+    if (!completedAllVideos) {
+      triggerAdIconOnboarding();
+    }
+    onClose();
+  }, [completedAllVideos, triggerAdIconOnboarding, onClose]);
+
+  // Reset completedAllVideos when modal opens
+  useEffect(() => {
+    if (visible) setCompletedAllVideos(false);
+  }, [visible]);
+
   return (
-    <OverlayModal visible={visible} onClose={onClose}>
+    <OverlayModal visible={visible} onClose={handleClose}>
       <View style={[styles.modal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
         <Pressable onPress={handleWatch} disabled={!isReady}>
           <MaterialCommunityIcons name="television-play" size={48} color={isReady ? colors.gold : colors.textTertiary} />
@@ -83,7 +100,7 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
               : t('common.loading')}
           </Text>
         </Pressable>
-        <Pressable onPress={onClose} style={styles.cancelBtn}>
+        <Pressable onPress={handleClose} style={styles.cancelBtn}>
           <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
             {t('common.close')}
           </Text>

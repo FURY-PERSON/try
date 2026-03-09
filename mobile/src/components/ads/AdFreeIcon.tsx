@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Pressable, Text, StyleSheet, View } from 'react-native';
+import { Pressable, Text, StyleSheet, View, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -30,6 +30,8 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
   const rewardedEnabled = useFeatureFlag('ad_rewarded_video');
   const adsEnabled = useFeatureFlag('ads_enable');
   const adFreeUntil = useAdsStore((s) => s.adFreeUntil);
+  const adIconBadgeVisible = useAdsStore((s) => s.adIconBadgeVisible);
+  const dismissAdIconBadge = useAdsStore((s) => s.dismissAdIconBadge);
   const isAdFree = adFreeUntil > Date.now();
   const [remaining, setRemaining] = useState('');
   const [showCheer, setShowCheer] = useState(false);
@@ -37,6 +39,12 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
   const showHint = !isAdFree && !hideHint;
   const pulseScale = useSharedValue(1);
   const hintOpacity = useSharedValue(0);
+
+  // Onboarding tooltip (shown after modal close)
+  const onboardingTooltipOpacity = useSharedValue(0);
+  const onboardingTooltipTranslateY = useSharedValue(-4);
+  // Dot badge pulse
+  const dotScale = useSharedValue(1);
 
   // Cheer animation values
   const cheerScale = useSharedValue(0);
@@ -72,12 +80,49 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
     }
   }, [hideHint]);
 
+  // Onboarding: show tooltip + start dot pulse when badge becomes visible
+  useEffect(() => {
+    if (adIconBadgeVisible && !isAdFree) {
+      // Animate tooltip in after 300ms (modal close animation)
+      onboardingTooltipTranslateY.value = -4;
+      onboardingTooltipOpacity.value = withDelay(300, withTiming(1, { duration: 250 }));
+      onboardingTooltipTranslateY.value = withDelay(300, withTiming(0, { duration: 250 }));
+      // Auto-hide tooltip after 4 seconds
+      onboardingTooltipOpacity.value = withDelay(4300, withTiming(0, { duration: 300 }));
+
+      // Dot badge pulsing
+      dotScale.value = withDelay(
+        300,
+        withRepeat(
+          withSequence(
+            withTiming(1.3, { duration: 600, easing: Easing.out(Easing.ease) }),
+            withTiming(1, { duration: 600, easing: Easing.in(Easing.ease) }),
+          ),
+          -1,
+          false,
+        ),
+      );
+    } else {
+      onboardingTooltipOpacity.value = withTiming(0, { duration: 200 });
+      dotScale.value = 1;
+    }
+  }, [adIconBadgeVisible, isAdFree]);
+
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
   }));
 
   const hintStyle = useAnimatedStyle(() => ({
     opacity: hintOpacity.value,
+  }));
+
+  const onboardingTooltipStyle = useAnimatedStyle(() => ({
+    opacity: onboardingTooltipOpacity.value,
+    transform: [{ translateY: onboardingTooltipTranslateY.value }],
+  }));
+
+  const dotBadgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dotScale.value }],
   }));
 
   const cheerStyle = useAnimatedStyle(() => ({
@@ -158,6 +203,13 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
     return () => clearInterval(interval);
   }, [isAdFree, adFreeUntil]);
 
+  const handleAdIconPress = useCallback(() => {
+    if (adIconBadgeVisible) {
+      dismissAdIconBadge();
+    }
+    onPress();
+  }, [adIconBadgeVisible, dismissAdIconBadge, onPress]);
+
   if (!rewardedEnabled || !adsEnabled) return null;
 
   if (isAdFree) {
@@ -195,9 +247,13 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={onPress} hitSlop={8}>
+      <Pressable onPress={handleAdIconPress} hitSlop={8}>
         <Animated.View style={[styles.iconBadge, { backgroundColor: colors.gold + '15' }, pulseStyle]}>
           <MaterialCommunityIcons name="television-play" size={18} color={colors.gold} />
+          {/* Pulsing dot badge — visible until user taps icon */}
+          {adIconBadgeVisible && !isAdFree && (
+            <Animated.View style={[styles.dotBadge, { backgroundColor: colors.primary }, dotBadgeStyle]} />
+          )}
         </Animated.View>
       </Pressable>
       {showHint && (
@@ -209,6 +265,18 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
             {t('ads.disableHint')}
           </Text>
           <View style={[styles.hintArrow, { backgroundColor: colors.surface, borderColor: colors.border }]} />
+        </Animated.View>
+      )}
+      {/* Onboarding tooltip — appears after closing DisableAdsModal without watching */}
+      {adIconBadgeVisible && !isAdFree && (
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.onboardingTooltip, onboardingTooltipStyle]}
+        >
+          <Text style={styles.onboardingTooltipText}>
+            {t('ads.tapToDisable')}
+          </Text>
+          <View style={styles.onboardingTooltipArrow} />
         </Animated.View>
       )}
     </View>
@@ -291,5 +359,40 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: 0,
     borderRightWidth: 0,
+  },
+  dotBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  onboardingTooltip: {
+    position: 'absolute',
+    top: 42,
+    right: -8,
+    backgroundColor: '#1F2937',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 140,
+  },
+  onboardingTooltipText: {
+    fontSize: 12,
+    fontFamily: fontFamily.semiBold,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  onboardingTooltipArrow: {
+    position: 'absolute',
+    top: -4,
+    right: 16,
+    width: 8,
+    height: 8,
+    backgroundColor: '#1F2937',
+    transform: [{ rotate: '45deg' }],
   },
 });
