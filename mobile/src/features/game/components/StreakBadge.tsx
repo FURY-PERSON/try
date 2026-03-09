@@ -97,6 +97,92 @@ const BurstParticle: FC<{ color: string; dx: number; dy: number; delay: number }
   );
 };
 
+/**
+ * Android-optimized pre-mounted burst particles.
+ * All 7 particles are always in the tree — no setState/re-render on tap.
+ * Activation is purely via shared values (UI thread only).
+ * Each particle has its own shared values for position, opacity, scale.
+ */
+const PREMOUNT_COUNT = 7;
+
+const PreMountedBurstParticle: FC<{
+  trigger: Animated.SharedValue<number>;
+  dx: number;
+  dy: number;
+  delay: number;
+  color: string;
+}> = React.memo(({ trigger, dx, dy, delay, color }) => {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0);
+  const lastTrigger = useSharedValue(0);
+
+  const style = useAnimatedStyle(() => {
+    'worklet';
+    // Detect trigger change on UI thread — no JS bridge needed
+    if (trigger.value !== lastTrigger.value) {
+      lastTrigger.value = trigger.value;
+      if (trigger.value > 0) {
+        // Reset to center
+        translateX.value = 0;
+        translateY.value = 0;
+        scale.value = 0.5;
+        // Animate outward
+        opacity.value = withDelay(delay, withSequence(
+          withTiming(1, { duration: 80 }),
+          withTiming(0, { duration: 420 }),
+        ));
+        translateX.value = withDelay(delay, withTiming(dx, { duration: 500 }));
+        translateY.value = withDelay(delay, withTiming(dy, { duration: 500 }));
+        scale.value = withDelay(delay, withSequence(
+          withTiming(1.1, { duration: 150 }),
+          withTiming(0.2, { duration: 350 }),
+        ));
+      }
+    }
+    return {
+      opacity: opacity.value,
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      collapsable={false}
+      style={[styles.burstParticle, { backgroundColor: color }, style]}
+    />
+  );
+});
+
+const PreMountedBurst: FC<{
+  trigger: Animated.SharedValue<number>;
+  color: string;
+  tier: number;
+  isInferno: boolean;
+  scale: number;
+}> = React.memo(({ trigger, color, tier, isInferno, scale: tierScale }) => {
+  const count = Math.min(2 + tier, PREMOUNT_COUNT);
+  return (
+    <View style={styles.burstContainer} pointerEvents="none">
+      {BURST_DIRECTIONS.slice(0, count).map((dir, i) => (
+        <PreMountedBurstParticle
+          key={i}
+          trigger={trigger}
+          color={isInferno ? INFERNO_COLORS[i % INFERNO_COLORS.length] : color}
+          dx={dir.x * tierScale}
+          dy={dir.y * tierScale}
+          delay={i * 35}
+        />
+      ))}
+    </View>
+  );
+});
+
 const PlusOneFloat: FC<{ color: string }> = ({ color }) => {
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
@@ -271,6 +357,8 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   const badgeOpacity = useSharedValue(days > 0 ? 1 : 0);
   const tapScale = useSharedValue(1);
   const tapRotation = useSharedValue(0);
+  // Incrementing counter triggers pre-mounted burst particles (UI thread only, no re-render)
+  const burstTrigger = useSharedValue(0);
 
   useEffect(() => {
     const prevDays = prevDaysRef.current;
@@ -368,11 +456,13 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       setTimeout(() => haptics.heavy(), 150);
     }
 
-    // Android: skip burst particles (setState re-render causes jank)
-    if (!isAndroid) {
+    if (isAndroid) {
+      // Android: trigger pre-mounted particles via shared value (no re-render)
+      burstTrigger.value = burstTrigger.value + 1;
+    } else {
       setTapBurstKey((k) => k + 1);
     }
-  }, [days, tier, rotationAmplitude, tapScale, tapRotation, burstScale]);
+  }, [days, tier, rotationAmplitude, tapScale, tapRotation, burstScale, burstTrigger]);
 
   const tapAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -447,19 +537,29 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         />
       )}
 
-      {/* Tap burst particles */}
-      {tapBurstKey > 0 && (
-        <View style={styles.burstContainer} pointerEvents="none" key={tapBurstKey}>
-          {BURST_DIRECTIONS.slice(0, Math.min(2 + tier, 7)).map((dir, i) => (
-            <BurstParticle
-              key={i}
-              color={isInferno ? INFERNO_COLORS[i % INFERNO_COLORS.length] : color}
-              dx={dir.x * (0.8 + tier * 0.1)}
-              dy={dir.y * (0.8 + tier * 0.1)}
-              delay={i * 40}
-            />
-          ))}
-        </View>
+      {/* Tap burst particles — iOS uses setState-mounted, Android uses pre-mounted (zero re-renders) */}
+      {Platform.OS === 'android' ? (
+        <PreMountedBurst
+          trigger={burstTrigger}
+          color={color}
+          tier={tier}
+          isInferno={isInferno}
+          scale={0.8 + tier * 0.1}
+        />
+      ) : (
+        tapBurstKey > 0 && (
+          <View style={styles.burstContainer} pointerEvents="none" key={tapBurstKey}>
+            {BURST_DIRECTIONS.slice(0, Math.min(2 + tier, 7)).map((dir, i) => (
+              <BurstParticle
+                key={i}
+                color={isInferno ? INFERNO_COLORS[i % INFERNO_COLORS.length] : color}
+                dx={dir.x * (0.8 + tier * 0.1)}
+                dy={dir.y * (0.8 + tier * 0.1)}
+                delay={i * 40}
+              />
+            ))}
+          </View>
+        )
       )}
 
       {/* Floating +1 on streak increment */}

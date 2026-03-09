@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -17,6 +18,7 @@ import Animated, {
   withSequence,
   runOnJS,
   interpolate,
+  interpolateColor,
   Extrapolation,
   Easing,
 } from 'react-native-reanimated';
@@ -26,6 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { SwipeDirection } from '../types';
+import { FlipSwipeCardAndroid } from './FlipSwipeCardAndroid';
 
 // Static transform object — avoids per-frame allocation in worklets
 const PERSPECTIVE = { perspective: 1200 } as const;
@@ -48,7 +51,7 @@ export type FlipSwipeCardRef = {
   programmaticDismiss: () => void;
 };
 
-type FlipSwipeCardProps = {
+export type FlipSwipeCardProps = {
   statement: string;
   categoryName: string;
   cardIndex: number;
@@ -91,6 +94,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   const entranceProgress = useSharedValue(1);
   const isSubmittingShared = useSharedValue(false);
   const isProgrammatic = useSharedValue(false);
+  const isCorrectShared = useSharedValue(false);
 
   const FLIP_DURATION = 500;
 
@@ -120,6 +124,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     translateY.value = 0;
     flipProgress.value = 0; // instant snap, no animation
     phase.value = 'front';
+    isProgrammatic.value = false;
+    isCorrectShared.value = false;
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
     // Hide 4th card immediately on transition start
@@ -140,6 +146,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   // Trigger flip when feedback arrives
   useEffect(() => {
     if (activeFeedback && flipProgress.value === 0) {
+      isCorrectShared.value = activeFeedback.userAnsweredCorrectly;
       phase.value = 'flipping';
       flipProgress.value = withTiming(180, {
         duration: FLIP_DURATION,
@@ -293,7 +300,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     };
   });
 
-  // Combined glow + submitting border (replaces separate cardGlowStyle + submittingStyle)
+  // Combined glow + submitting border — smooth interpolateColor transition
   const borderColorDefault = colors.border;
   const cardBorderStyle = useAnimatedStyle(() => {
     'worklet';
@@ -305,28 +312,38 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
         borderWidth: 2,
       };
     }
-    if (fp > 0 || isProgrammatic.value) {
+    // After flip starts: animate border to result color
+    if (fp > 0) {
+      const flipNorm = fp / 180; // 0→1
+      const correctColor = interpolateColor(
+        flipNorm, [0, 0.5, 1],
+        [borderColorDefault, borderColorDefault, 'rgba(16, 185, 68, 0.45)'],
+      );
+      const incorrectColor = interpolateColor(
+        flipNorm, [0, 0.5, 1],
+        [borderColorDefault, borderColorDefault, 'rgba(239, 68, 68, 0.45)'],
+      );
+      return {
+        borderColor: isCorrectShared.value ? correctColor : incorrectColor,
+        borderWidth: 2,
+      };
+    }
+    if (isProgrammatic.value) {
       return { borderColor: borderColorDefault, borderWidth: 2 };
     }
+    // During swipe: smooth gray → green / gray → red
     const progress = interpolate(
       translateX.value,
       [-swipeThreshold, 0, swipeThreshold],
       [-1, 0, 1],
       Extrapolation.CLAMP,
     );
-    const absProgress = progress < 0 ? -progress : progress;
-    if (absProgress < 0.01) {
-      return { borderColor: borderColorDefault, borderWidth: 2 };
-    }
-    const glowOpacity = absProgress * 0.19;
-    const isRight = progress > 0;
-    const r = isRight ? 16 : 239;
-    const g = isRight ? 185 : 68;
-    const b = isRight ? 68 : 68;
-    return {
-      borderColor: `rgba(${r}, ${g}, ${b}, ${glowOpacity})`,
-      borderWidth: 2,
-    };
+    const borderColor = interpolateColor(
+      progress,
+      [-1, 0, 1],
+      ['rgba(239, 68, 68, 0.5)', borderColorDefault, 'rgba(16, 185, 68, 0.5)'],
+    );
+    return { borderColor, borderWidth: 2 };
   });
 
   // FACT overlay opacity (front only, hidden during programmatic swipe)
@@ -363,7 +380,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     return {
       transform: [{ scale: 0.92 + ep * 0.04 }],
       top: 24 - ep * 12,
-      opacity: 0.85,
+      opacity: 1,
     };
   });
 
@@ -509,8 +526,6 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
               <Text
                 style={[styles.frontStatement, { color: colors.textPrimary }]}
                 numberOfLines={8}
-                adjustsFontSizeToFit
-                minimumFontScale={0.65}
               >
                 {stackContent.nextStatement}
               </Text>
@@ -624,8 +639,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
 
           {/* ---- BACK FACE ---- */}
           <Animated.View renderToHardwareTextureAndroid style={[styles.backFaceOuter, backFaceStyle]}>
-            <View
-              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }]}
+            <Animated.View
+              style={[styles.faceInner, { backgroundColor: colors.surface, borderRadius: borderRadius.xxl, ...elevation.lg }, cardBorderStyle]}
             >
             {activeFeedback && (
               <>
@@ -714,7 +729,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                 </ScrollView>
               </>
             )}
-            </View>
+            </Animated.View>
           </Animated.View>
         </Animated.View>
       </GestureDetector>
@@ -722,7 +737,9 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   );
 });
 
-export const FlipSwipeCard = React.memo(FlipSwipeCardInner);
+export const FlipSwipeCard = Platform.OS === 'android'
+  ? React.memo(FlipSwipeCardAndroid)
+  : React.memo(FlipSwipeCardInner);
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -873,3 +890,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
+
