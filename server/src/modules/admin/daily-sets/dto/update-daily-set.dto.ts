@@ -40,6 +40,6 @@ export class UpdateDailySetDto {
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(15)
-  @ArrayMaxSize(15)
+  @ArrayMaxSize(25)
   questionIds?: string[];
 }
