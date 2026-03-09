@@ -567,9 +567,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
               </Animated.View>
 
               <View style={styles.frontContent}>
-                <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
+                {categoryName
+                  ?              <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
                   <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
                 </View>
+                  : null}
+  
                 <Text style={[styles.statementQuote, dynamicStyles.quoteColor]}>&laquo;</Text>
                 <Text
                   style={[styles.frontStatement, dynamicStyles.statementColor]}
@@ -690,14 +693,14 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
     marginBottom: 8,
     marginTop: 12,
   },
   category: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: fontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 1.5,

@@ -597,7 +597,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
             </Animated.View>
 
             <View style={styles.frontContent}>
-              <View
+              {categoryName
+                ?              <View
                 style={[
                   styles.categoryBadge,
                   { backgroundColor: colors.primary + '12' },
@@ -607,6 +608,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                   {categoryName}
                 </Text>
               </View>
+                : null}
+
 
               <Text
                 style={[styles.statementQuote, { color: colors.primary }]}
@@ -802,14 +805,14 @@ const styles = StyleSheet.create({
   },
   categoryBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 9999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
     marginBottom: 8,
     marginTop: 12,
   },
   category: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: fontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 1.5,

@@ -25,7 +25,7 @@ import { showToast } from '@/stores/useToastStore';
 
 export default function CollectionDetailScreen() {
   const insets = useSafeAreaInsets();
-  const { colors, gradients, spacing, borderRadius, elevation } = useThemeContext();
+  const { colors, spacing, borderRadius, elevation, isDark } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,6 +61,8 @@ export default function CollectionDetailScreen() {
       : collection.description
     : '';
 
+  const accentColor = colors.primary;
+
   const doStart = useCallback(async (replay: boolean) => {
     if (!id || starting) return;
     setStarting(true);
@@ -89,16 +91,16 @@ export default function CollectionDetailScreen() {
   }, [id, starting, startCollectionSession, router]);
 
   const handleStart = useCallback(() => {
-    doStart(false);
-  }, [doStart]);
-
-  const handleReplay = useCallback(() => {
-    if (replayWarningDismissed) {
-      doStart(true);
+    if (collection?.completed) {
+      if (replayWarningDismissed) {
+        doStart(true);
+      } else {
+        setShowReplayWarning(true);
+      }
     } else {
-      setShowReplayWarning(true);
+      doStart(false);
     }
-  }, [replayWarningDismissed, doStart]);
+  }, [collection?.completed, replayWarningDismissed, doStart]);
 
   const handleConfirmReplay = useCallback(() => {
     if (dontShowAgain) {
@@ -112,7 +114,7 @@ export default function CollectionDetailScreen() {
     return (
       <Screen style={{ paddingTop: insets.top }}>
         <View style={styles.center}>
-          <Skeleton width={64} height={64} shape="rectangle" />
+          <Skeleton width={80} height={80} shape="rectangle" />
           <Skeleton width="60%" height={28} shape="rectangle" style={{ marginTop: 16 }} />
           <Skeleton width="80%" height={16} shape="rectangle" style={{ marginTop: 8 }} />
         </View>
@@ -138,18 +140,23 @@ export default function CollectionDetailScreen() {
     );
   }
 
+  const totalCount = collection._count.questions;
+  const answeredCount = collection.completed ? totalCount : 0;
+
   return (
-    <Screen padded={false} backgroundColor={gradients.hero[0]}>
+    <Screen padded={false} backgroundColor={isDark ? colors.background : accentColor + '25'}>
       {/* Gradient Hero Header */}
       <AnimatedEntrance delay={0}>
         <LinearGradient
-          colors={gradients.hero}
+          colors={isDark
+            ? [accentColor + '20', accentColor + '08', 'transparent']
+            : [accentColor + '25', accentColor + '08', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
-          <View style={[styles.iconContainer, { ...elevation.md }]}>
-            <IconFromName name={collection.icon} size={44} color={colors.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: accentColor + '20', ...elevation.md }]}>
+            <IconFromName name={collection.icon} size={44} color={accentColor} />
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
           {description ? (
@@ -163,20 +170,19 @@ export default function CollectionDetailScreen() {
       <View style={[styles.content, { paddingHorizontal: spacing.screenPadding }]}>
         {/* Progress */}
         <AnimatedEntrance delay={100}>
-          <Card variant="default" style={styles.progressCard}>
+          <Card variant="default" style={styles.infoCard}>
             <Text style={[styles.progressLabel, { color: colors.textSecondary }]}>
-              {t('category.solvedOf', {
-                solved: collection.completed ? collection._count.questions : 0,
-                total: collection._count.questions,
-              })}
+              {t('category.solvedOf', { solved: answeredCount, total: totalCount })}
             </Text>
             <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
               <View
                 style={[
                   styles.progressBarFill,
                   {
-                    backgroundColor: colors.primary,
-                    width: collection.completed ? '100%' : '0%',
+                    backgroundColor: accentColor,
+                    width: totalCount > 0
+                      ? `${(answeredCount / totalCount) * 100}%`
+                      : '0%',
                   },
                 ]}
               />
@@ -184,8 +190,8 @@ export default function CollectionDetailScreen() {
           </Card>
         </AnimatedEntrance>
 
-        {/* Completed badge */}
-        {collection.completed && collection.lastResult && (
+        {/* Last result */}
+        {collection.lastResult && (
           <AnimatedEntrance delay={200}>
             <Card variant="default" style={styles.completedCard}>
               <View style={styles.completedRow}>
@@ -207,6 +213,22 @@ export default function CollectionDetailScreen() {
             </Card>
           </AnimatedEntrance>
         )}
+
+        {/* All done */}
+        {collection.completed && (
+          <AnimatedEntrance delay={200}>
+            <Card variant="default" style={styles.completedCard}>
+              <View style={styles.completedRow}>
+                <View style={[styles.infoIconBg, { backgroundColor: colors.gold + '15' }]}>
+                  <Feather name="award" size={18} color={colors.gold} />
+                </View>
+                <Text style={[styles.completedTitle, { color: colors.gold }]}>
+                  {t('category.allDone')}
+                </Text>
+              </View>
+            </Card>
+          </AnimatedEntrance>
+        )}
       </View>
 
       {/* Ad Banner above buttons */}
@@ -217,25 +239,14 @@ export default function CollectionDetailScreen() {
       {/* Footer */}
       <AnimatedEntrance delay={300}>
         <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding, paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
-          {collection.completed ? (
-            <Button
-              label={t('collection.playAgain')}
-              variant="primary"
-              size="lg"
-              onPress={handleReplay}
-              loading={starting}
-              iconLeft={<Feather name="rotate-ccw" size={18} color="#FFFFFF" />}
-            />
-          ) : (
-            <Button
-              label={t('common.play')}
-              variant="primary"
-              size="lg"
-              onPress={handleStart}
-              loading={starting}
-              iconLeft={<Feather name="play" size={18} color="#FFFFFF" />}
-            />
-          )}
+          <Button
+            label={collection.completed ? t('category.playAgain') : t('category.start')}
+            variant="primary"
+            size="lg"
+            onPress={handleStart}
+            loading={starting}
+            iconLeft={<Feather name={collection.completed ? 'rotate-ccw' : 'play'} size={18} color="#FFFFFF" />}
+          />
           <Button
             label={t('common.back')}
             variant="secondary"
@@ -304,16 +315,12 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 32,
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-  },
-  icon: {
-    fontSize: 44,
+    alignItems: 'center',
   },
   title: {
     fontSize: 26,
@@ -331,7 +338,7 @@ const styles = StyleSheet.create({
   content: {
     gap: 16,
   },
-  progressCard: {
+  infoCard: {
     paddingVertical: 18,
     paddingHorizontal: 20,
     gap: 10,

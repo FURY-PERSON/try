@@ -2,7 +2,8 @@ import { Redirect } from 'expo-router';
 import { useAppStore } from '@/stores/useAppStore';
 
 export default function IndexScreen() {
-  const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding);
+  // TODO: remove override — temporarily force onboarding for testing
+  const hasCompletedOnboarding = useAppStore((s) => s.hasCompletedOnboarding); 
 
   if (hasCompletedOnboarding) {
     return <Redirect href="/(tabs)/home" />;
