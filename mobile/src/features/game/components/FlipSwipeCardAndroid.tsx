@@ -568,7 +568,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
 
               <View style={styles.frontContent}>
                 {categoryName
-                  ?              <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
+                  ?<View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
                   <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
                 </View>
                   : null}
