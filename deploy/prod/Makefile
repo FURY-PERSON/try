@@ -1,8 +1,8 @@
 ROOT          := ../..
-PROD_HOST     := root@PROD_SERVER_IP
+PROD_HOST     := root@85.239.53.38
 PROD_SSH_KEY  := $(ROOT)/ssh/prod
 PROD_DIR      := /root/app
-DOMAIN        := your-domain.com
+DOMAIN        := factfront.org
 EMAIL         := mikhailhoroshik@gmail.com
 COMPOSE       := docker compose -f deploy/prod/docker-compose.yml --env-file deploy/prod/prod.env
 SSH           := ssh -i $(PROD_SSH_KEY) -o ServerAliveInterval=30 -o ServerAliveCountMax=20
@@ -61,6 +61,9 @@ renew-cert: ## Renew SSL certificate
 			certbot/certbot renew --standalone && \
 		$(COMPOSE) start nginx"
 
+seed-dump: sync ## Apply reference data SQL dump on prod
+	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && docker exec -i \$$($(COMPOSE) ps -q postgres) psql -U factfront factfront < server/prisma/dump.sql"
+
 logs: ## Tail logs of all prod services
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) logs -f"
 
@@ -75,4 +78,4 @@ help: ## Show available commands
 
 .DEFAULT_GOAL := help
 
-.PHONY: sync deploy init certbot renew-cert logs ps xcode help
+.PHONY: sync deploy init certbot renew-cert seed-dump logs ps xcode help
