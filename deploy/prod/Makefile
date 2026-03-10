@@ -19,50 +19,36 @@ sync: ## Sync files to prod server
 deploy: sync ## Deploy to production (sync + rebuild and restart all services)
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) up -d --build"
 
-init: sync ## First-time HTTPS setup: certbot + full deploy (run once on a new server)
-	$(SSH) $(PROD_HOST) "\
-		cd $(PROD_DIR) && \
-		$(COMPOSE) down --remove-orphans && \
-		docker run --rm \
-			-p 80:80 \
-			-v /etc/letsencrypt:/etc/letsencrypt \
-			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
-			certbot/certbot certonly \
-			--standalone \
+init: sync ## First-time setup: deploy (SSL cert must already be obtained via 'make certbot')
+	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) up -d --build"
+
+certbot: ## Obtain SSL cert via DNS challenge (interactive: add TXT record when prompted)
+	$(SSH) -t $(PROD_HOST) "\
+		apt-get install -y certbot 2>/dev/null; \
+		certbot certonly \
+			--manual \
+			--preferred-challenges dns \
+			--email $(EMAIL) \
+			--agree-tos \
+			--no-eff-email \
+			-d $(DOMAIN)"
+
+renew-cert: ## Renew SSL certificate via DNS challenge (interactive: add TXT record when prompted)
+	$(SSH) -t $(PROD_HOST) "\
+		certbot certonly \
+			--manual \
+			--preferred-challenges dns \
 			--email $(EMAIL) \
 			--agree-tos \
 			--no-eff-email \
 			-d $(DOMAIN) && \
-		$(COMPOSE) up -d --build"
-
-certbot: ## Obtain SSL certificate and start nginx (use when rate limit has cleared)
-	$(SSH) $(PROD_HOST) "\
-		cd $(PROD_DIR) && \
-		docker run --rm \
-			-p 80:80 \
-			-v /etc/letsencrypt:/etc/letsencrypt \
-			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
-			certbot/certbot certonly \
-			--standalone \
-			--email $(EMAIL) \
-			--agree-tos \
-			--no-eff-email \
-			-d $(DOMAIN) && \
-		$(COMPOSE) up -d nginx"
-
-renew-cert: ## Renew SSL certificate
-	$(SSH) $(PROD_HOST) "\
-		cd $(PROD_DIR) && \
-		$(COMPOSE) stop nginx && \
-		docker run --rm \
-			-p 80:80 \
-			-v /etc/letsencrypt:/etc/letsencrypt \
-			-v /var/lib/letsencrypt:/var/lib/letsencrypt \
-			certbot/certbot renew --standalone && \
-		$(COMPOSE) start nginx"
+		cd $(PROD_DIR) && $(COMPOSE) restart nginx"
 
 seed-dump: sync ## Apply reference data SQL dump on prod
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && docker exec -i \$$($(COMPOSE) ps -q postgres) psql -U factfront factfront < server/prisma/dump.sql"
+
+seed: ## Run prisma seed on prod (admin, feature flags, all-facts.json)
+	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && docker exec \$$($(COMPOSE) ps -q server) npx prisma db seed"
 
 logs: ## Tail logs of all prod services
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) logs -f"
@@ -78,4 +64,4 @@ help: ## Show available commands
 
 .DEFAULT_GOAL := help
 
-.PHONY: sync deploy init certbot renew-cert seed-dump logs ps xcode help
+.PHONY: sync deploy init certbot renew-cert seed-dump seed logs ps xcode help
