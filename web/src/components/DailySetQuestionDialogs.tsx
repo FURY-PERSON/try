@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { DIFFICULTY_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
+import { DifficultyPicker } from '@/components/DifficultyPicker';
+import { FactFakePicker } from '@/components/FactFakePicker';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -50,9 +51,6 @@ function QuestionForm({
   statementValue,
   excludeId,
   onSubmit,
-  onClose,
-  submitLabel,
-  isSubmitting,
 }: {
   idPrefix: string;
   form: ReturnType<typeof useForm<QuestionFormData>>;
@@ -62,14 +60,12 @@ function QuestionForm({
   statementValue: string;
   excludeId?: string;
   onSubmit: (data: QuestionFormData) => void;
-  onClose: () => void;
-  submitLabel: string;
-  isSubmitting: boolean;
 }) {
-  const { register, handleSubmit, formState: { errors } } = form;
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = form;
 
   return (
     <form
+      id={`${idPrefix}-form`}
       onSubmit={(e) => {
         e.stopPropagation();
         void handleSubmit(onSubmit)(e);
@@ -95,13 +91,14 @@ function QuestionForm({
           {...register('statementEn')}
         />
       </div>
-      <Select
-        id={`${idPrefix}-isTrue`}
-        label="Факт или Фейк?"
-        options={IS_TRUE_OPTIONS}
-        error={errors.isTrue?.message}
-        {...register('isTrue')}
-      />
+      <div>
+        <label className="block text-sm font-medium text-text-primary mb-2">Факт или Фейк?</label>
+        <FactFakePicker
+          value={watch('isTrue')}
+          onChange={(v) => setValue('isTrue', v, { shouldDirty: true })}
+        />
+        {errors.isTrue && <p className="mt-1 text-xs text-red">{errors.isTrue.message}</p>}
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Textarea
           id={`${idPrefix}-explanation`}
@@ -144,13 +141,14 @@ function QuestionForm({
           {...register('sourceUrlEn')}
         />
       </div>
-      <Select
-        id={`${idPrefix}-difficulty`}
-        label="Сложность"
-        options={DIFFICULTY_OPTIONS}
-        error={errors.difficulty?.message}
-        {...register('difficulty')}
-      />
+      <div>
+        <label className="block text-sm font-medium text-text-primary mb-2">Сложность</label>
+        <DifficultyPicker
+          value={watch('difficulty')}
+          onChange={(v) => setValue('difficulty', v, { shouldDirty: true })}
+        />
+        {errors.difficulty && <p className="mt-1 text-xs text-red">{errors.difficulty.message}</p>}
+      </div>
       <Select
         id={`${idPrefix}-categoryId`}
         label="Основная категория"
@@ -184,14 +182,6 @@ function QuestionForm({
           </div>
         </div>
       )}
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="ghost" onClick={onClose}>
-          Отмена
-        </Button>
-        <Button type="submit" loading={isSubmitting}>
-          {submitLabel}
-        </Button>
-      </div>
     </form>
   );
 }
@@ -301,13 +291,21 @@ export function DailySetCreateQuestionDialog({ open, onClose, onCreated }: Daily
         >
           <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <h2 className="text-base font-semibold text-text-primary">Создать утверждение</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Отмена
+              </Button>
+              <Button type="submit" form="ds-create-form" loading={createMutation.isPending}>
+                Создать и одобрить
+              </Button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <QuestionForm
             idPrefix="ds-create"
@@ -317,9 +315,6 @@ export function DailySetCreateQuestionDialog({ open, onClose, onCreated }: Daily
             onToggleCategory={toggleAdditionalCategory}
             statementValue={form.watch('statement') ?? ''}
             onSubmit={(data) => createMutation.mutate(data)}
-            onClose={onClose}
-            submitLabel="Создать и одобрить"
-            isSubmitting={createMutation.isPending}
           />
         </div>
       </div>
@@ -427,13 +422,25 @@ export function DailySetEditQuestionDialog({ open, onClose, questionId, onSaved 
         >
           <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <h2 className="text-base font-semibold text-text-primary">Редактировать утверждение</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {question && (
+                <>
+                  <Button type="button" variant="ghost" onClick={onClose}>
+                    Отмена
+                  </Button>
+                  <Button type="submit" form="ds-edit-form" loading={updateMutation.isPending}>
+                    Сохранить
+                  </Button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -452,9 +459,6 @@ export function DailySetEditQuestionDialog({ open, onClose, questionId, onSaved 
               statementValue={form.watch('statement') ?? ''}
               excludeId={questionId}
               onSubmit={(data) => updateMutation.mutate(data)}
-              onClose={onClose}
-              submitLabel="Сохранить"
-              isSubmitting={updateMutation.isPending}
             />
           )}
         </div>

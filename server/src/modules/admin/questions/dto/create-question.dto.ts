@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsArray,
   IsUrl,
+  IsIn,
   Min,
   Max,
   MinLength,
@@ -101,4 +102,12 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   illustrationPrompt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Question status',
+    enum: ['moderation', 'approved', 'rejected'],
+  })
+  @IsOptional()
+  @IsIn(['moderation', 'approved', 'rejected'])
+  status?: string;
 }

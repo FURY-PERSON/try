@@ -9,9 +9,10 @@ type DialogProps = {
   description?: string;
   children: React.ReactNode;
   className?: string;
+  headerActions?: React.ReactNode;
 };
 
-export function Dialog({ open, onClose, title, description, children, className }: DialogProps) {
+export function Dialog({ open, onClose, title, description, children, className, headerActions }: DialogProps) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -52,12 +53,15 @@ export function Dialog({ open, onClose, title, description, children, className 
                 <p className="text-sm text-text-secondary mt-0.5">{description}</p>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {headerActions}
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           {children}
         </div>

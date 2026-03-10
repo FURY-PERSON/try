@@ -5,8 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
-import { DIFFICULTY_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
 import { StatusPicker } from '@/components/StatusPicker';
+import { DifficultyPicker } from '@/components/DifficultyPicker';
+import { FactFakePicker } from '@/components/FactFakePicker';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -136,8 +137,30 @@ export function QuestionEditDialog({ questionId, open, onClose, onSaved, onDelet
     );
   };
 
+  const headerActions = question ? (
+    <>
+      <Button
+        type="button"
+        variant="danger"
+        loading={deleteMutation.isPending}
+        onClick={() => {
+          if (confirm('Удалить утверждение?')) deleteMutation.mutate();
+        }}
+      >
+        <Trash2 className="w-4 h-4" />
+        Удалить
+      </Button>
+      <Button type="button" variant="ghost" onClick={onClose}>
+        Отмена
+      </Button>
+      <Button type="submit" form="question-edit-form" loading={updateMutation.isPending}>
+        Сохранить
+      </Button>
+    </>
+  ) : undefined;
+
   return (
-    <Dialog open={open} onClose={onClose} title="Редактировать утверждение" className="max-w-4xl">
+    <Dialog open={open} onClose={onClose} title="Редактировать утверждение" className="max-w-4xl" headerActions={headerActions}>
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -146,6 +169,7 @@ export function QuestionEditDialog({ questionId, open, onClose, onSaved, onDelet
         <p className="text-sm text-text-secondary py-8 text-center">Не удалось загрузить утверждение</p>
       ) : (
         <form
+          id="question-edit-form"
           onSubmit={handleSubmit((data) => updateMutation.mutate(data))}
           className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
         >
@@ -170,13 +194,14 @@ export function QuestionEditDialog({ questionId, open, onClose, onSaved, onDelet
             />
           </div>
           <SimilarQuestions statement={watch('statement') ?? ''} excludeId={questionId ?? undefined} />
-          <Select
-            id="qed-isTrue"
-            label="Факт или Фейк?"
-            options={IS_TRUE_OPTIONS}
-            error={errors.isTrue?.message}
-            {...register('isTrue')}
-          />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">Факт или Фейк?</label>
+            <FactFakePicker
+              value={watch('isTrue')}
+              onChange={(v) => setValue('isTrue', v, { shouldDirty: true })}
+            />
+            {errors.isTrue && <p className="mt-1 text-xs text-red">{errors.isTrue.message}</p>}
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Textarea
               id="qed-explanation"
@@ -219,13 +244,14 @@ export function QuestionEditDialog({ questionId, open, onClose, onSaved, onDelet
               {...register('sourceUrlEn')}
             />
           </div>
-          <Select
-            id="qed-difficulty"
-            label="Сложность"
-            options={DIFFICULTY_OPTIONS}
-            error={errors.difficulty?.message}
-            {...register('difficulty')}
-          />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">Сложность</label>
+            <DifficultyPicker
+              value={watch('difficulty')}
+              onChange={(v) => setValue('difficulty', v, { shouldDirty: true })}
+            />
+            {errors.difficulty && <p className="mt-1 text-xs text-red">{errors.difficulty.message}</p>}
+          </div>
           <Select
             id="qed-categoryId"
             label="Основная категория"
@@ -259,27 +285,6 @@ export function QuestionEditDialog({ questionId, open, onClose, onSaved, onDelet
               </div>
             </div>
           )}
-          <div className="flex items-center justify-between pt-2">
-            <Button
-              type="button"
-              variant="danger"
-              loading={deleteMutation.isPending}
-              onClick={() => {
-                if (confirm('Удалить утверждение?')) deleteMutation.mutate();
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-              Удалить
-            </Button>
-            <div className="flex gap-3">
-              <Button type="button" variant="ghost" onClick={onClose}>
-                Отмена
-              </Button>
-              <Button type="submit" loading={updateMutation.isPending}>
-                Сохранить
-              </Button>
-            </div>
-          </div>
         </form>
       )}
     </Dialog>

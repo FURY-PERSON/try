@@ -164,6 +164,7 @@ export class AdminQuestionsService {
         difficulty: dto.difficulty,
         illustrationUrl: dto.illustrationUrl,
         illustrationPrompt: dto.illustrationPrompt,
+        status: dto.status,
       },
     });
 

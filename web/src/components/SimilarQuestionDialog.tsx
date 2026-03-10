@@ -6,8 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { DIFFICULTY_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
 import { StatusPicker } from '@/components/StatusPicker';
+import { DifficultyPicker } from '@/components/DifficultyPicker';
+import { FactFakePicker } from '@/components/FactFakePicker';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -206,13 +207,36 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
         >
           <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <h2 className="text-base font-semibold text-text-primary">Редактировать утверждение</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {question && (
+                <>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    loading={deleteMutation.isPending}
+                    onClick={() => {
+                      if (confirm('Удалить утверждение?')) deleteMutation.mutate();
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Удалить
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={onClose}>
+                    Отмена
+                  </Button>
+                  <Button type="submit" form="sim-edit-form" loading={updateMutation.isPending}>
+                    Сохранить
+                  </Button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -223,6 +247,7 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
             <p className="text-sm text-text-secondary py-8 text-center">Не удалось загрузить утверждение</p>
           ) : (
             <form
+              id="sim-edit-form"
               onSubmit={(e) => {
                 e.stopPropagation();
                 void handleSubmit((data) => updateMutation.mutate(data))(e);
@@ -249,13 +274,14 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
                   {...register('statementEn')}
                 />
               </div>
-              <Select
-                id="sim-edit-isTrue"
-                label="Факт или Фейк?"
-                options={IS_TRUE_OPTIONS}
-                error={errors.isTrue?.message}
-                {...register('isTrue')}
-              />
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Факт или Фейк?</label>
+                <FactFakePicker
+                  value={watch('isTrue')}
+                  onChange={(v) => setValue('isTrue', v, { shouldDirty: true })}
+                />
+                {errors.isTrue && <p className="mt-1 text-xs text-red">{errors.isTrue.message}</p>}
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Textarea
                   id="sim-edit-explanation"
@@ -298,13 +324,14 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
                   {...register('sourceUrlEn')}
                 />
               </div>
-              <Select
-                id="sim-edit-difficulty"
-                label="Сложность"
-                options={DIFFICULTY_OPTIONS}
-                error={errors.difficulty?.message}
-                {...register('difficulty')}
-              />
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Сложность</label>
+                <DifficultyPicker
+                  value={watch('difficulty')}
+                  onChange={(v) => setValue('difficulty', v, { shouldDirty: true })}
+                />
+                {errors.difficulty && <p className="mt-1 text-xs text-red">{errors.difficulty.message}</p>}
+              </div>
               <Select
                 id="sim-edit-categoryId"
                 label="Основная категория"
@@ -338,27 +365,6 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-between pt-2">
-                <Button
-                  type="button"
-                  variant="danger"
-                  loading={deleteMutation.isPending}
-                  onClick={() => {
-                    if (confirm('Удалить утверждение?')) deleteMutation.mutate();
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Удалить
-                </Button>
-                <div className="flex gap-3">
-                  <Button type="button" variant="ghost" onClick={onClose}>
-                    Отмена
-                  </Button>
-                  <Button type="submit" loading={updateMutation.isPending}>
-                    Сохранить
-                  </Button>
-                </div>
-              </div>
             </form>
           )}
         </div>
