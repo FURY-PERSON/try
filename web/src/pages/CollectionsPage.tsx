@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Collection, CollectionWithItems } from '@/shared';
-import type { CreateCollectionItemDto } from '@/api-client/types';
+import type { CreateCollectionItemDto, CreateQuestionDto } from '@/api-client/types';
 import { api } from '@/services/api';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -62,6 +62,7 @@ const questionSchema = z.object({
   sourceUrl: z.string().url('Введите корректный URL').optional().or(z.literal('')),
   sourceUrlEn: z.string().url('Введите корректный URL').optional().or(z.literal('')),
   difficulty: z.coerce.number().min(1).max(5),
+  categoryId: z.string().optional(),
 });
 
 type QuestionFormData = z.infer<typeof questionSchema>;
@@ -106,9 +107,11 @@ const TYPE_LABELS: Record<string, string> = {
 function QuestionEditor({
   items,
   onChange,
+  onSaveAndAddToPool,
 }: {
   items: CreateCollectionItemDto[];
   onChange: (items: CreateCollectionItemDto[]) => void;
+  onSaveAndAddToPool: (data: QuestionFormData, saveToCollection: (data: QuestionFormData) => void) => void;
 }) {
   const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -179,7 +182,7 @@ function QuestionEditor({
           Вопросов пока нет — нажмите «Добавить вопрос»
         </p>
       ) : (
-        <div className="border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+        <div className="border border-border rounded-lg divide-y divide-border">
           {items.map((item, i) => (
             <div key={i} className="px-3 py-2">
               <div className="flex items-start gap-2">
@@ -231,6 +234,7 @@ function QuestionEditor({
         editingItem={editingIndex !== null ? (items[editingIndex] ?? null) : null}
         onClose={closeDialog}
         onSave={handleSave}
+        onSaveAndAddToPool={onSaveAndAddToPool}
       />
     </div>
   );
@@ -243,23 +247,35 @@ function QuestionDialogControlled({
   editingItem,
   onClose,
   onSave,
+  onSaveAndAddToPool,
 }: {
   open: boolean;
   editingIndex: number | null;
   editingItem: CreateCollectionItemDto | null;
   onClose: () => void;
   onSave: (data: QuestionFormData) => void;
+  onSaveAndAddToPool: (data: QuestionFormData, saveToCollection: (data: QuestionFormData) => void) => void;
 }) {
+  const { data: categoriesData } = useQuery({
+    queryKey: ['admin', 'categories'],
+    queryFn: () => api.admin.categories.list(),
+  });
+  const categories = categoriesData?.data.data ?? [];
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
+    setValue: setQuestionValue,
     formState: { errors },
   } = useForm<QuestionFormData>({
     resolver: zodResolver(questionSchema),
     defaultValues: { difficulty: 3, isTrue: 'false' },
   });
+
+  const isTrueValue = watch('isTrue');
+  const difficultyValue = watch('difficulty');
 
   useEffect(() => {
     if (!open) return;
@@ -329,23 +345,47 @@ function QuestionDialogControlled({
             <SimilarQuestions statement={watch('statement') ?? ''} />
 
             <div className="grid grid-cols-2 gap-3">
-              <Select
-                id="q-isTrue"
-                label="Ответ"
-                options={[
-                  { value: 'false', label: '✗ Ложь' },
-                  { value: 'true', label: '✓ Правда' },
-                ]}
-                error={errors.isTrue?.message}
-                {...register('isTrue')}
-              />
-              <Select
-                id="q-difficulty"
-                label="Сложность"
-                options={DIFFICULTY_OPTIONS}
-                error={errors.difficulty?.message}
-                {...register('difficulty')}
-              />
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-text-primary">Тип</label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'false', label: 'Фейк', activeClass: 'bg-red/10 text-red border-red/40' },
+                    { value: 'true', label: 'Факт', activeClass: 'bg-green-100 text-green-700 border-green-300' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setQuestionValue('isTrue', opt.value as 'true' | 'false')}
+                      className={`flex-1 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                        isTrueValue === opt.value
+                          ? opt.activeClass
+                          : 'border-border text-text-secondary hover:border-border/60'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-text-primary">Сложность</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setQuestionValue('difficulty', d)}
+                      className={`flex-1 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                        Number(difficultyValue) === d
+                          ? 'bg-primary/10 text-primary border-primary/40'
+                          : 'border-border text-text-secondary hover:border-border/60'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -396,12 +436,31 @@ function QuestionDialogControlled({
               />
             </div>
 
-            <div className="flex gap-2 justify-end pt-1">
+            {editingIndex === null && (
+              <Select
+                id="q-categoryId"
+                label="Категория (для общего пула)"
+                placeholder="Выберите категорию"
+                options={categories.map(c => ({ value: c.id, label: `${c.icon} ${c.name}` }))}
+                {...register('categoryId')}
+              />
+            )}
+
+            <div className="flex gap-2 justify-end pt-1 flex-wrap">
               <Button type="button" variant="ghost" onClick={onClose}>
                 Отмена
               </Button>
+              {editingIndex === null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSubmit((data) => onSaveAndAddToPool(data, onSave))}
+                >
+                  Добавить в подборку и в общий пул
+                </Button>
+              )}
               <Button type="submit">
-                {editingIndex !== null ? 'Сохранить' : 'Добавить'}
+                {editingIndex !== null ? 'Сохранить' : 'Добавить в подборку'}
               </Button>
             </div>
           </form>
@@ -495,6 +554,32 @@ export function CollectionsPage() {
     },
     onError: () => toast.error('Ошибка удаления'),
   });
+
+  const createInPoolMutation = useMutation({
+    mutationFn: (dto: CreateQuestionDto) => api.admin.questions.create(dto),
+    onSuccess: () => toast.success('Вопрос добавлен в общий пул'),
+    onError: () => toast.error('Ошибка добавления в пул'),
+  });
+
+  const handleSaveAndAddToPool = (data: QuestionFormData, saveToCollection: (data: QuestionFormData) => void) => {
+    saveToCollection(data);
+    if (data.categoryId) {
+      createInPoolMutation.mutate({
+        statement: data.statement,
+        statementEn: data.statementEn || undefined,
+        isTrue: data.isTrue === 'true',
+        explanation: data.explanation,
+        explanationEn: data.explanationEn || undefined,
+        source: data.source || '',
+        sourceEn: data.sourceEn || undefined,
+        sourceUrl: data.sourceUrl || undefined,
+        sourceUrlEn: data.sourceUrlEn || undefined,
+        difficulty: data.difficulty,
+        language: 'ru',
+        categoryId: data.categoryId,
+      });
+    }
+  };
 
   const togglePublish = useMutation({
     mutationFn: ({ id, status }: { id: string; status: 'draft' | 'published' }) =>
@@ -781,74 +866,80 @@ export function CollectionsPage() {
         open={dialogOpen}
         onClose={closeDialog}
         title={editingCollection ? 'Редактировать подборку' : 'Новая подборка'}
+        className="max-w-5xl"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              id="title"
-              label="Название (RU)"
-              placeholder="Мифы о здоровье"
-              error={errors.title?.message}
-              {...register('title')}
-            />
-            <Input
-              id="titleEn"
-              label="Название (EN)"
-              placeholder="Health Myths"
-              error={errors.titleEn?.message}
-              {...register('titleEn')}
-            />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col" style={{ height: '72vh' }}>
+          <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+            {/* Left column - fields */}
+            <div className="overflow-y-auto space-y-4 pr-2">
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  id="title"
+                  label="Название (RU)"
+                  placeholder="Мифы о здоровье"
+                  error={errors.title?.message}
+                  {...register('title')}
+                />
+                <Input
+                  id="titleEn"
+                  label="Название (EN)"
+                  placeholder="Health Myths"
+                  error={errors.titleEn?.message}
+                  {...register('titleEn')}
+                />
+              </div>
+
+              <Textarea
+                id="description"
+                label="Описание (RU)"
+                placeholder="Опишите подборку..."
+                {...register('description')}
+              />
+              <Textarea
+                id="descriptionEn"
+                label="Описание (EN)"
+                placeholder="Describe the collection..."
+                {...register('descriptionEn')}
+              />
+
+              <div className="grid grid-cols-3 gap-4">
+                <EmojiPickerInput
+                  value={iconValue ?? ''}
+                  onChange={(emoji) => setValue('icon', emoji, { shouldValidate: true })}
+                  label="Иконка"
+                  error={errors.icon?.message}
+                  placeholder="💊"
+                />
+                <Select
+                  id="type"
+                  label="Тип"
+                  options={TYPE_OPTIONS}
+                  error={errors.type?.message}
+                  {...register('type')}
+                />
+                <Input
+                  id="sortOrder"
+                  label="Порядок"
+                  type="number"
+                  min={0}
+                  error={errors.sortOrder?.message}
+                  {...register('sortOrder')}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Input id="startDate" label="Дата начала" type="date" {...register('startDate')} />
+                <Input id="endDate" label="Дата окончания" type="date" {...register('endDate')} />
+              </div>
+            </div>
+
+            {/* Right column - questions */}
+            <div className="overflow-y-auto pr-2">
+              <QuestionEditor items={collectionItems} onChange={setCollectionItems} onSaveAndAddToPool={handleSaveAndAddToPool} />
+            </div>
           </div>
 
-          <Textarea
-            id="description"
-            label="Описание (RU)"
-            placeholder="Опишите подборку..."
-            {...register('description')}
-          />
-          <Textarea
-            id="descriptionEn"
-            label="Описание (EN)"
-            placeholder="Describe the collection..."
-            {...register('descriptionEn')}
-          />
-
-          <div className="grid grid-cols-3 gap-4">
-            <EmojiPickerInput
-              value={iconValue ?? ''}
-              onChange={(emoji) => setValue('icon', emoji, { shouldValidate: true })}
-              label="Иконка"
-              error={errors.icon?.message}
-              placeholder="💊"
-            />
-            <Select
-              id="type"
-              label="Тип"
-              options={TYPE_OPTIONS}
-              error={errors.type?.message}
-              {...register('type')}
-            />
-            <Input
-              id="sortOrder"
-              label="Порядок"
-              type="number"
-              min={0}
-              error={errors.sortOrder?.message}
-              {...register('sortOrder')}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input id="startDate" label="Дата начала" type="date" {...register('startDate')} />
-            <Input id="endDate" label="Дата окончания" type="date" {...register('endDate')} />
-          </div>
-
-          {/* Inline Question Editor */}
-          <div className="border-t border-border pt-4">
-            <QuestionEditor items={collectionItems} onChange={setCollectionItems} />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-4 flex-shrink-0">
             <Button type="button" variant="ghost" onClick={closeDialog}>
               Отмена
             </Button>
