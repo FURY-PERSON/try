@@ -1,6 +1,7 @@
 import firebase from '@react-native-firebase/app';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
+import { APP_ENV } from '@/constants/config';
 
 
 export { firebase, analytics, crashlytics };
@@ -25,17 +26,20 @@ export async function initializeFirebase(): Promise<void> {
   //await crashlyticsInstance.setCrashlyticsCollectionEnabled(!__DEV__);
   await crashlyticsInstance.setCrashlyticsCollectionEnabled(true);
 
-  const analyticsInstance = analytics();
-  //await analyticsInstance.setAnalyticsCollectionEnabled(!__DEV__);
-  await analyticsInstance.setAnalyticsCollectionEnabled(true);
-  await analyticsInstance.setConsent({
-    analytics_storage: true,
-    ad_storage: true,
-    ad_user_data: true,
-    ad_personalization: true,
-  });
+  const isProduction = APP_ENV === 'production';
 
-  if (__DEV__) {
-    console.log('[Firebase] Analytics & Crashlytics enabled (dev mode)');
+  const analyticsInstance = analytics();
+  await analyticsInstance.setAnalyticsCollectionEnabled(isProduction);
+  if (isProduction) {
+    await analyticsInstance.setConsent({
+      analytics_storage: true,
+      ad_storage: true,
+      ad_user_data: true,
+      ad_personalization: true,
+    });
+  }
+
+  if (!isProduction) {
+    console.log(`[Firebase] Analytics disabled (env: ${APP_ENV})`);
   }
 }
