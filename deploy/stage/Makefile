@@ -30,7 +30,18 @@ build: ## Build Docker images locally (fast — uses your machine's CPU/RAM)
 	docker build --no-cache --platform linux/amd64 -t $(IMAGE_SERVER) $(ROOT)/server
 	docker build --no-cache --platform linux/amd64 -t $(IMAGE_WEB) --build-arg VITE_API_URL=$(VITE_API_URL) $(ROOT)/web
 
-push-images: ## Stream locally-built images to stage server via SSH pipe
+prune: ## Remove unused Docker images and build cache on stage server
+	$(SSH) $(STAGE_HOST) "docker image prune -af && docker builder prune -af"
+
+clean: ## Free disk space: unused Docker data, orphaned volumes, apt cache, old journal logs
+	$(SSH) $(STAGE_HOST) "\
+		docker image prune -af && \
+		docker volume prune -f && \
+		docker builder prune -af && \
+		apt-get clean && \
+		journalctl --vacuum-size=50M"
+
+push-images: prune ## Stream locally-built images to stage server via SSH pipe
 	docker save $(IMAGE_SERVER) | gzip | $(SSH) $(STAGE_HOST) docker load
 	docker save $(IMAGE_WEB)    | gzip | $(SSH) $(STAGE_HOST) docker load
 
@@ -100,4 +111,4 @@ help: ## Show available commands
 
 .DEFAULT_GOAL := help
 
-.PHONY: sync build push-images deploy init certbot renew-cert seed-dump logs ps xcode help
+.PHONY: sync build prune clean push-images deploy init certbot renew-cert seed-dump logs ps xcode help

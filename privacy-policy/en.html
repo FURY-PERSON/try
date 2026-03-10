@@ -78,7 +78,7 @@
 
     <h1>Privacy Policy</h1>
     <p class="subtitle">Fact Front — Mobile Application</p>
-    <div class="effective-date">Effective date: February 28, 2026 &nbsp;|&nbsp; Last updated: March 5, 2026</div>
+    <div class="effective-date">Effective date: February 28, 2026 &nbsp;|&nbsp; Last updated: March 10, 2026</div>
 
     <p>This Privacy Policy describes how the <strong>Fact Front</strong> mobile application ("App", "we", "our", "us") collects, uses, and shares information when you use our service. By installing or using the App, you agree to the practices described in this policy.</p>
 
@@ -143,14 +143,20 @@
     <table>
         <tr><th>Service</th><th>Purpose</th><th>Data Collected</th><th>Privacy Policy</th></tr>
         <tr>
-            <td><strong>Google AdMob</strong></td>
-            <td>Advertising (banner, interstitial, and rewarded video ads) — for users outside CIS</td>
+            <td><strong>Unity LevelPlay (IronSource)</strong></td>
+            <td>Ad mediation — manages ad delivery across multiple ad networks</td>
             <td>Advertising ID, device info, ad interaction data</td>
-            <td><a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a></td>
+            <td><a href="https://unity.com/legal/privacy-policy" target="_blank">Unity Privacy Policy</a></td>
+        </tr>
+        <tr>
+            <td><strong>Unity Ads</strong></td>
+            <td>Advertising (banner, interstitial, and rewarded video ads)</td>
+            <td>Advertising ID, device info, ad interaction data</td>
+            <td><a href="https://unity.com/legal/privacy-policy" target="_blank">Unity Privacy Policy</a></td>
         </tr>
         <tr>
             <td><strong>Yandex Mobile Ads</strong></td>
-            <td>Advertising (banner, interstitial, and rewarded video ads) — for users in CIS countries</td>
+            <td>Advertising (banner, interstitial, and rewarded video ads) — one of the ad networks within the mediation stack</td>
             <td>Advertising ID, device info, ad interaction data</td>
             <td><a href="https://yandex.com/legal/confidential/" target="_blank">Yandex Privacy Policy</a></td>
         </tr>
@@ -176,26 +182,21 @@
 
     <h2>5. Advertising and Tracking</h2>
     <h3>5.1 Ad Providers</h3>
-    <p>The App displays advertisements (banner, interstitial, and rewarded video) through two ad services depending on the user's region:</p>
-    <ul>
-        <li><strong>Yandex Mobile Ads</strong> — for users in CIS countries (Russia, Belarus, Kazakhstan, Uzbekistan, Tajikistan, Kyrgyzstan, Armenia, Azerbaijan, Moldova, Ukraine, Georgia, Turkmenistan).</li>
-        <li><strong>Google AdMob</strong> — for users in Europe, Americas, and other regions.</li>
-    </ul>
-    <p>Region detection is automatic based on your device settings.</p>
+    <p>The App displays advertisements (banner, interstitial, and rewarded video) through the <strong>Unity LevelPlay</strong> mediation platform. The platform automatically selects the best ad network for each impression from the connected networks — <strong>Unity Ads</strong> and <strong>Yandex Mobile Ads</strong> — based on availability and performance.</p>
 
     <h3>5.2 Tracking and Personalization</h3>
     <p>On iOS, we request your consent via the App Tracking Transparency (ATT) framework before accessing your device's advertising identifier (IDFA) for personalized ads. If you decline, ads will still be shown but they will not be personalized.</p>
     <p>On Android, the Google Advertising ID (GAID) may be used for ad personalization. You can reset or opt out of ad personalization through your device's settings (<em>Settings &rarr; Google &rarr; Ads</em>).</p>
 
     <h3>5.3 Ad Frequency and Controls</h3>
-    <p>Ad frequency is limited: interstitial ads are shown no more than 10 times per day with a minimum interval of 2 minutes between them. The first game each day is always ad-free.</p>
-    <p>You can temporarily disable all ads by watching a sponsor video. After watching, ads are disabled for 30 minutes (duration may vary).</p>
+    <p>Interstitial ads are shown based on gameplay activity — approximately once every several dozen facts viewed. There is no fixed daily cap on the number of ad impressions. The first game each day is always free of interstitial ads.</p>
+    <p>You can temporarily disable all ads by watching a rewarded sponsor video. After watching, ads are disabled for a set period of time (duration is configurable and may vary).</p>
 
     <h2>6. Data Sharing</h2>
     <p>We do <strong>not</strong> sell your personal data. Information may be shared only in the following cases:</p>
     <ul>
         <li><strong>Leaderboards:</strong> Your nickname, avatar emoji, score, and streaks are visible to other App users on the leaderboard.</li>
-        <li><strong>Third-party service providers:</strong> As described in Section 4, data is processed by Google (AdMob, Firebase), Yandex (Mobile Ads), and Expo for their respective purposes.</li>
+        <li><strong>Third-party service providers:</strong> As described in Section 4, data is processed by Unity (LevelPlay, Unity Ads), Yandex (Mobile Ads), Google (Firebase), and Expo for their respective purposes.</li>
         <li><strong>Legal requirements:</strong> If required by law, regulation, or legal process.</li>
     </ul>
 
@@ -216,7 +217,7 @@
     <h3>For EEA (European) Residents</h3>
     <p>If you are a resident of the European Economic Area (EEA), you have additional rights under the GDPR, including the right to access, rectification, erasure, restriction of processing, and data portability. The legal basis for processing is legitimate interest (providing game functionality) and your consent (for advertising and analytics). Contact us to exercise these rights.</p>
     <h3>For CIS Residents</h3>
-    <p>If you are a resident of the Russian Federation, your personal data is processed in accordance with Federal Law No. 152-FZ "On Personal Data". For users from other CIS countries, the applicable national legislation applies. Ads for CIS users are served through Yandex Mobile Ads. Contact us to exercise your rights.</p>
+    <p>If you are a resident of the Russian Federation, your personal data is processed in accordance with Federal Law No. 152-FZ "On Personal Data". For users from other CIS countries, the applicable national legislation applies. Contact us to exercise your rights.</p>
 
     <h2>9. Children's Privacy</h2>
     <p>The App is not directed at children under the age of 13 (or the applicable age of digital consent in your jurisdiction). We do not knowingly collect personal information from children. If you believe that a child has provided us with personal data, please contact us and we will take steps to delete such information.</p>

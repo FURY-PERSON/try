@@ -4,6 +4,10 @@ apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
+def getGitVersionCode = {
+    return new Date().format("yyMMddHH").toInteger()
+}
+
 def keystorePropsFile = rootProject.file("keystore.properties")
 def keystoreProps = new Properties()
 if (keystorePropsFile.exists()) {
@@ -76,7 +80,7 @@ android {
         applicationId 'com.factfront.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode project.env.get("VERSION_CODE")?.toInteger() ?: 1
+        versionCode getGitVersionCode()
         versionName project.env.get("VERSION_NAME") ?: "1.0.0"
         resValue "string", "build_config_package", "com.factfront.app"
     }

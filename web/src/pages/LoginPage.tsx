@@ -58,7 +58,6 @@ export function LoginPage() {
             id="email"
             label="Email"
             type="email"
-            placeholder="admin@factfront.app"
             error={errors.email?.message}
             {...register('email')}
           />

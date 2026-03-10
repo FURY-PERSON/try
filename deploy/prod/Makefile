@@ -50,6 +50,14 @@ seed-dump: sync ## Apply reference data SQL dump on prod
 seed: ## Run prisma seed on prod (admin, feature flags, all-facts.json)
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && docker exec \$$($(COMPOSE) ps -q server) npx prisma db seed"
 
+clean: ## Free disk space: unused Docker data, orphaned volumes, apt cache, old journal logs
+	$(SSH) $(PROD_HOST) "\
+		docker image prune -af && \
+		docker volume prune -f && \
+		docker builder prune -af && \
+		apt-get clean && \
+		journalctl --vacuum-size=50M"
+
 logs: ## Tail logs of all prod services
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) logs -f"
 
@@ -64,4 +72,4 @@ help: ## Show available commands
 
 .DEFAULT_GOAL := help
 
-.PHONY: sync deploy init certbot renew-cert seed-dump seed logs ps xcode help
+.PHONY: sync deploy init certbot renew-cert seed-dump seed clean logs ps xcode help
