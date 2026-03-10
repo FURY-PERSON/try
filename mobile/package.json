@@ -16,15 +16,16 @@
     "ios:stage-release": "ENVFILE=.env.stage npx expo run:ios --scheme 'Frontfaktov (Stage)' --configuration Release",
     "ios:production-debug": "ENVFILE=.env.production npx expo run:ios --scheme 'Frontfaktov (Production)' --configuration Debug",
     "ios:production-release": "ENVFILE=.env.production npx expo run:ios --scheme 'Frontfaktov (Production)' --configuration Release",
-    "aab:development": "cd android && ENVFILE=.env.development ./gradlew bundleDevelopmentRelease",
-    "aab:stage": "cd android && ENVFILE=.env.stage ./gradlew bundleStageRelease",
-    "aab:production": "cd android && ENVFILE=.env.production ./gradlew bundleProductionRelease",
+    "aab:development": "cd android && ENVFILE=.env.development ./gradlew :app:clean bundleDevelopmentRelease && V=$(grep VERSION_NAME ../.env.development | cut -d= -f2) && D=$(date +%Y%m%d) && mv app/build/outputs/bundle/developmentRelease/app-development-release.aab app/build/outputs/bundle/developmentRelease/factfront-development-${V}-${D}.aab",
+    "aab:stage": "cd android && ENVFILE=.env.stage ./gradlew :app:clean bundleStageRelease && V=$(grep VERSION_NAME ../.env.stage | cut -d= -f2) && D=$(date +%Y%m%d) && mv app/build/outputs/bundle/stageRelease/app-stage-release.aab app/build/outputs/bundle/stageRelease/factfront-stage-${V}-${D}.aab",
+    "aab:production": "cd android && ENVFILE=.env.production ./gradlew :app:clean bundleProductionRelease && V=$(grep VERSION_NAME ../.env.production | cut -d= -f2) && D=$(date +%Y%m%d) && mv app/build/outputs/bundle/productionRelease/app-production-release.aab app/build/outputs/bundle/productionRelease/factfront-production-${V}-${D}.aab",
     "start": "expo start --reset-cache",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "jest",
     "postinstall": "node scripts/postinstall.js",
-    "clean": "react-native-clean-project"
+    "clean": "react-native-clean-project",
+    "clean:android": "cd android && ./gradlew :app:clean"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.2.3",

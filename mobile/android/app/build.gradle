@@ -132,30 +132,12 @@ android {
     }
 }
 
-// Custom artifact naming: factfront-{env}-{version}-{date}.{apk|aab}
+// Custom APK naming: factfront-{env}-{version}-{date}.apk
 def buildDate = new Date().format("yyyyMMdd")
 
 android.applicationVariants.configureEach { variant ->
     variant.outputs.configureEach {
         outputFileName = "factfront-${variant.flavorName}-${variant.versionName}-${buildDate}.apk"
-    }
-}
-
-tasks.configureEach { task ->
-    if (task.name =~ /^bundle.+Release$/) {
-        task.doLast {
-            android.applicationVariants.each { variant ->
-                if (task.name == "bundle${variant.name.capitalize()}") {
-                    def aabDir = new File("${buildDir}/outputs/bundle/${variant.name}")
-                    if (aabDir.exists()) {
-                        aabDir.eachFileMatch(~/.*\.aab/) { file ->
-                            def newName = "factfront-${variant.flavorName}-${variant.versionName}-${buildDate}.aab"
-                            file.renameTo(new File(aabDir, newName))
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
