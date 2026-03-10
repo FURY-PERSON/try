@@ -9,6 +9,7 @@ SSH           := ssh -i $(STAGE_SSH_KEY) -o ServerAliveInterval=30 -o ServerAliv
 RSYNC_SSH     := ssh -i $(STAGE_SSH_KEY) -o ServerAliveInterval=30 -o ServerAliveCountMax=20
 
 VITE_API_URL  := $(shell grep ^VITE_API_URL $(ROOT)/deploy/stage/stage.env | cut -d= -f2-)
+VITE_ENV      := $(shell grep ^VITE_ENV $(ROOT)/deploy/stage/stage.env | cut -d= -f2-)
 
 IMAGE_SERVER  := factfront-server:stage
 IMAGE_WEB     := factfront-web:stage
@@ -28,7 +29,7 @@ sync: ## Sync only deploy configs to stage (docker-compose, nginx, prisma, priva
 
 build: ## Build Docker images locally (fast — uses your machine's CPU/RAM)
 	docker build --no-cache --platform linux/amd64 -t $(IMAGE_SERVER) $(ROOT)/server
-	docker build --no-cache --platform linux/amd64 -t $(IMAGE_WEB) --build-arg VITE_API_URL=$(VITE_API_URL) $(ROOT)/web
+	docker build --no-cache --platform linux/amd64 -t $(IMAGE_WEB) --build-arg VITE_API_URL=$(VITE_API_URL) --build-arg VITE_ENV=$(VITE_ENV) $(ROOT)/web
 
 prune: ## Remove unused Docker images and build cache on stage server
 	$(SSH) $(STAGE_HOST) "docker image prune -af && docker builder prune -af"

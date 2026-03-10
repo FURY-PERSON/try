@@ -63,6 +63,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_ENV: ${VITE_ENV}
     restart: unless-stopped
     expose:
       - "80"

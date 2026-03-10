@@ -19,7 +19,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG VITE_API_URL=""
+ARG VITE_ENV="production"
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_ENV=${VITE_ENV}
 RUN npm run build
 
 # ───────────────────────────────────────
