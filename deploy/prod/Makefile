@@ -17,7 +17,7 @@ sync: ## Sync files to prod server
 		$(ROOT)/ $(PROD_HOST):$(PROD_DIR)
 
 deploy: sync ## Deploy to production (sync + rebuild and restart all services)
-	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) up -d --build"
+	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) up -d --build --force-recreate --remove-orphans"
 
 init: sync ## First-time setup: deploy (SSL cert must already be obtained via 'make certbot')
 	$(SSH) $(PROD_HOST) "cd $(PROD_DIR) && $(COMPOSE) up -d --build"
