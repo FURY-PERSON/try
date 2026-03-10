@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DIFFICULTY_OPTIONS, IS_TRUE_OPTIONS } from '@/shared';
+import { StatusPicker } from '@/components/StatusPicker';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -27,6 +28,7 @@ const editSchema = z.object({
   sourceUrlEn: z.union([z.string().url('Некорректный URL'), z.literal('')]).optional(),
   categoryId: z.string().min(1, 'Выберите категорию'),
   difficulty: z.coerce.number().min(1).max(5),
+  status: z.enum(['draft', 'moderation', 'approved', 'rejected']),
 });
 
 type EditFormData = z.infer<typeof editSchema>;
@@ -59,6 +61,8 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EditFormData>({
     resolver: zodResolver(editSchema),
@@ -84,8 +88,21 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
       sourceUrlEn: question.sourceUrlEn ?? '',
       categoryId: question.categoryId,
       difficulty: question.difficulty,
+      status: question.status as 'draft' | 'moderation' | 'approved' | 'rejected',
     });
   }, [open, question, item?.type, reset]);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.admin.questions.delete(item!.id),
+    onSuccess: () => {
+      toast.success('Утверждение удалено');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'questions', 'similar'] });
+      onSaved?.();
+      onClose();
+    },
+    onError: () => toast.error('Ошибка удаления'),
+  });
 
   const updateMutation = useMutation({
     mutationFn: (dto: EditFormData) =>
@@ -102,6 +119,7 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
         language: 'ru',
         categoryId: dto.categoryId,
         difficulty: dto.difficulty,
+        status: dto.status,
         categoryIds: additionalCategoryIds.length > 0 ? additionalCategoryIds : undefined,
       }),
     onSuccess: () => {
@@ -211,6 +229,10 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
               }}
               className="space-y-4 overflow-y-auto pr-1 flex-1"
             >
+              <StatusPicker
+                value={watch('status')}
+                onChange={(s) => setValue('status', s, { shouldDirty: true })}
+              />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Textarea
                   id="sim-edit-statement"
@@ -238,14 +260,14 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
                 <Textarea
                   id="sim-edit-explanation"
                   label="Объяснение (RU)"
-                  rows={4}
+                  rows={9}
                   error={errors.explanation?.message}
                   {...register('explanation')}
                 />
                 <Textarea
                   id="sim-edit-explanationEn"
                   label="Explanation (EN)"
-                  rows={4}
+                  rows={9}
                   error={errors.explanationEn?.message}
                   {...register('explanationEn')}
                 />
@@ -316,13 +338,26 @@ export function SimilarQuestionDialog({ open, onClose, item, onSaved }: SimilarQ
                   </div>
                 </div>
               )}
-              <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="ghost" onClick={onClose}>
-                  Отмена
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  type="button"
+                  variant="danger"
+                  loading={deleteMutation.isPending}
+                  onClick={() => {
+                    if (confirm('Удалить утверждение?')) deleteMutation.mutate();
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Удалить
                 </Button>
-                <Button type="submit" loading={updateMutation.isPending}>
-                  Сохранить
-                </Button>
+                <div className="flex gap-3">
+                  <Button type="button" variant="ghost" onClick={onClose}>
+                    Отмена
+                  </Button>
+                  <Button type="submit" loading={updateMutation.isPending}>
+                    Сохранить
+                  </Button>
+                </div>
               </div>
             </form>
           )}

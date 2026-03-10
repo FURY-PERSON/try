@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react';
+import { Plus, Search, CheckCircle, XCircle, Trash2, Filter, Pencil, Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
 import { QUESTION_STATUS_LABELS, DIFFICULTY_LABELS, IS_TRUE_FILTER_OPTIONS, QUESTION_STATUS_OPTIONS, DIFFICULTY_FILTER_OPTIONS, STATUS_BADGE_VARIANT } from '@/shared';
 import type { QuestionStatus } from '@/shared';
@@ -15,6 +15,8 @@ import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageSizeSelect } from '@/components/ui/PageSizeSelect';
+import { QuestionEditDialog } from '@/components/QuestionEditDialog';
+import { RandomModerationModal } from '@/components/RandomModerationModal';
 
 
 interface QuestionRowProps {
@@ -23,6 +25,7 @@ interface QuestionRowProps {
   onToggleSelect: (id: string) => void;
   onNavigate: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
 const QuestionRow = React.memo(function QuestionRow({
@@ -31,6 +34,7 @@ const QuestionRow = React.memo(function QuestionRow({
   onToggleSelect,
   onNavigate,
   onDelete,
+  onEdit,
 }: QuestionRowProps) {
   const additionalCategories = q.categories?.filter(
     (qc: any) => qc.categoryId !== q.categoryId,
@@ -88,16 +92,24 @@ const QuestionRow = React.memo(function QuestionRow({
           : '—'}
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
-        <button
-          onClick={() => {
-            if (confirm('Удалить утверждение?')) {
-              onDelete(q.id);
-            }
-          }}
-          className="p-1.5 rounded-lg text-text-secondary hover:text-red hover:bg-red/10 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEdit(q.id)}
+            className="p-1.5 rounded-lg text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              if (confirm('Удалить утверждение?')) {
+                onDelete(q.id);
+              }
+            }}
+            className="p-1.5 rounded-lg text-text-secondary hover:text-red hover:bg-red/10 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -115,6 +127,8 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 export function QuestionsListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [moderationOpen, setModerationOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
@@ -251,6 +265,10 @@ export function QuestionsListPage() {
                 </Button>
               </>
             )}
+            <Button variant="secondary" size="sm" onClick={() => setModerationOpen(true)}>
+              <Shuffle className="w-4 h-4" />
+              Рандомная модерация
+            </Button>
             <Button variant="secondary" size="sm" onClick={() => navigate('/questions/create')}>
               <Plus className="w-4 h-4" />
               Добавить
@@ -356,6 +374,7 @@ export function QuestionsListPage() {
                     onToggleSelect={toggleSelect}
                     onNavigate={(id) => navigate(`/questions/${id}`)}
                     onDelete={(id) => deleteOneMutation.mutate(id)}
+                    onEdit={(id) => setEditingQuestionId(id)}
                   />
                 ))}
               </TableBody>
@@ -397,6 +416,18 @@ export function QuestionsListPage() {
           </>
         )}
       </Card>
+
+      <QuestionEditDialog
+        questionId={editingQuestionId}
+        open={editingQuestionId !== null}
+        onClose={() => setEditingQuestionId(null)}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] })}
+      />
+
+      <RandomModerationModal
+        open={moderationOpen}
+        onClose={() => setModerationOpen(false)}
+      />
     </div>
   );
 }

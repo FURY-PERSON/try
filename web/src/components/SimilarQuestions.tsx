@@ -25,7 +25,7 @@ export function SimilarQuestions({ statement, excludeId }: SimilarQuestionsProps
   const debouncedStatement = useDebouncedValue(trimmed, 300);
   const [selectedItem, setSelectedItem] = useState<SimilarQuestion | null>(null);
 
-  const { data } = useQuery({
+  const { data, isFetching } = useQuery({
     queryKey: ['admin', 'questions', 'similar', debouncedStatement, excludeId],
     queryFn: () =>
       api.admin.questions.similar({
@@ -38,9 +38,27 @@ export function SimilarQuestions({ statement, excludeId }: SimilarQuestionsProps
   });
 
   const results: SimilarQuestion[] = data?.data.data ?? [];
+  const isEnabled = trimmed.length >= 10;
+  // True while debounce hasn't fired yet or a network request is in flight
+  const isSearching = trimmed !== debouncedStatement || isFetching;
 
-  if (debouncedStatement.length < 10 || results.length === 0) {
-    return null;
+  if (!isEnabled) return null;
+
+  if (isSearching) {
+    return (
+      <div className="mt-3 rounded-lg border border-border bg-surface-secondary p-3 flex items-center gap-2">
+        <div className="animate-spin h-3.5 w-3.5 border-b-2 border-text-secondary rounded-full flex-shrink-0" />
+        <p className="text-xs text-text-secondary">Поиск похожих утверждений...</p>
+      </div>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <div className="mt-3 rounded-lg border border-border bg-surface-secondary p-3">
+        <p className="text-xs text-text-secondary">Совпадения не найдены</p>
+      </div>
+    );
   }
 
   return (
