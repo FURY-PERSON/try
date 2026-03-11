@@ -588,16 +588,18 @@
     /* Подсказка под телефоном */
     .phone-hint {
       text-align: center;
-      font-size: 12px; font-weight: 700;
+      font-size: 18px; font-weight: 800;
       color: #6366F1;
-      margin-top: 10px;
-      animation: hint-float 2s ease-in-out infinite;
+      margin-top: 14px;
+      letter-spacing: 0.3px;
+      text-shadow: 0 0 16px rgba(99,102,241,0.55);
+      animation: hint-float 1.6s ease-in-out infinite;
       transition: opacity 0.5s;
     }
     .phone-hint.hidden { opacity: 0 !important; pointer-events: none; animation: none; }
     @keyframes hint-float {
-      0%, 100% { transform: translateY(0); opacity: 0.8; }
-      50%       { transform: translateY(-4px); opacity: 1; }
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
+      50%       { transform: translateY(-6px) scale(1.04); opacity: 1; }
     }
     .phone-card-category {
       background: var(--ph-cat-bg);
@@ -1224,6 +1226,11 @@
         width: 100%;
         display: flex;
         justify-content: center;
+      }
+      .phone-wrap > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     }
 

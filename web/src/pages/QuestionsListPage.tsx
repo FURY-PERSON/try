@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Search, CheckCircle, XCircle, Trash2, Filter, Pencil, Shuffle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, Search, CheckCircle, XCircle, Trash2, Filter, Info, Shuffle } from 'lucide-react';
 import { toast } from 'sonner';
 import { QUESTION_STATUS_LABELS, DIFFICULTY_LABELS, IS_TRUE_FILTER_OPTIONS, QUESTION_STATUS_OPTIONS, DIFFICULTY_FILTER_OPTIONS, STATUS_BADGE_VARIANT } from '@/shared';
 import type { QuestionStatus } from '@/shared';
@@ -43,7 +43,7 @@ const QuestionRow = React.memo(function QuestionRow({
   return (
     <TableRow
       className="cursor-pointer"
-      onClick={() => onNavigate(q.id)}
+      onClick={() => onEdit(q.id)}
     >
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="py-2.5 px-2.5 -my-2 -mx-2">
@@ -94,10 +94,10 @@ const QuestionRow = React.memo(function QuestionRow({
       <TableCell onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => onEdit(q.id)}
+            onClick={() => onNavigate(q.id)}
             className="p-1.5 rounded-lg text-text-secondary hover:text-primary hover:bg-primary/10 transition-colors"
           >
-            <Pencil className="w-4 h-4" />
+            <Info className="w-4 h-4" />
           </button>
           <button
             onClick={() => {
@@ -126,18 +126,31 @@ function useDebouncedValue<T>(value: T, delay: number): T {
 
 export function QuestionsListPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [moderationOpen, setModerationOpen] = useState(false);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(() => Number(searchParams.get('page') || '1'));
+  const [limit, setLimit] = useState(() => Number(searchParams.get('limit') || '20'));
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const debouncedSearch = useDebouncedValue(search, 300);
-  const [isTrueFilter, setIsTrueFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
+  const [isTrueFilter, setIsTrueFilter] = useState(() => searchParams.get('isTrue') || '');
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '');
+  const [difficultyFilter, setDifficultyFilter] = useState(() => searchParams.get('difficulty') || '');
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get('categoryId') || '');
   const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (page !== 1) params.page = String(page);
+    if (limit !== 20) params.limit = String(limit);
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (isTrueFilter) params.isTrue = isTrueFilter;
+    if (statusFilter) params.status = statusFilter;
+    if (difficultyFilter) params.difficulty = difficultyFilter;
+    if (categoryFilter) params.categoryId = categoryFilter;
+    setSearchParams(params, { replace: true });
+  }, [page, limit, debouncedSearch, isTrueFilter, statusFilter, difficultyFilter, categoryFilter]);
 
   const { data: categoriesData } = useQuery({
     queryKey: ['admin', 'categories'],

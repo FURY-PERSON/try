@@ -442,6 +442,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     card: { width: cardWidth },
   }), [cardWidth]);
 
+
   return (
     <View style={styles.wrapper}>
       {/* Fourth card in stack (opacity 0, pre-rendered after entrance animation) */}
@@ -619,11 +620,11 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
               <Text
                 style={[
                   styles.frontStatement,
-                  { color: colors.textPrimary },
+                  {
+                    color: colors.textPrimary,
+                    fontSize: statement.length > 200 ? 15 : statement.length > 150 ? 17 : statement.length > 100 ? 19 : 22,
+                  },
                 ]}
-                numberOfLines={8}
-                adjustsFontSizeToFit
-                minimumFontScale={0.65}
               >
                 {statement}
               </Text>
