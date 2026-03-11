@@ -177,7 +177,7 @@ export function QuestionGeneratePage() {
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => {
-                        if (typeof q.id === 'string') navigate(`/questions/${q.id}`);
+                        if (typeof q.id === 'string') navigate(`/admin/questions/${q.id}`);
                       }}
                       className="text-xs text-blue hover:underline flex items-center gap-1"
                     >

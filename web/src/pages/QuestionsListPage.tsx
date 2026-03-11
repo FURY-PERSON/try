@@ -269,11 +269,11 @@ export function QuestionsListPage() {
               <Shuffle className="w-4 h-4" />
               Рандомная модерация
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => navigate('/questions/create')}>
+            <Button variant="secondary" size="sm" onClick={() => navigate('/admin/questions/create')}>
               <Plus className="w-4 h-4" />
               Добавить
             </Button>
-            <Button size="sm" onClick={() => navigate('/questions/generate')}>
+            <Button size="sm" onClick={() => navigate('/admin/questions/generate')}>
               <Plus className="w-4 h-4" />
               Генерировать
             </Button>
@@ -335,7 +335,7 @@ export function QuestionsListPage() {
             title="Нет утверждений"
             description="Попробуйте изменить фильтры или сгенерировать новые утверждения с помощью AI"
             action={
-              <Button size="sm" onClick={() => navigate('/questions/generate')}>
+              <Button size="sm" onClick={() => navigate('/admin/questions/generate')}>
                 Генерировать утверждения
               </Button>
             }
@@ -372,7 +372,7 @@ export function QuestionsListPage() {
                     q={q}
                     selected={selected.includes(q.id)}
                     onToggleSelect={toggleSelect}
-                    onNavigate={(id) => navigate(`/questions/${id}`)}
+                    onNavigate={(id) => navigate(`/admin/questions/${id}`)}
                     onDelete={(id) => deleteOneMutation.mutate(id)}
                     onEdit={(id) => setEditingQuestionId(id)}
                   />

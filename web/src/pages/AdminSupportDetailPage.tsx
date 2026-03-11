@@ -48,7 +48,7 @@ export function AdminSupportDetailPage() {
     <div>
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate('/support-requests')}
+          onClick={() => navigate('/admin/support-requests')}
           className="p-1.5 rounded-lg text-text-secondary hover:bg-surface-secondary transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

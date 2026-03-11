@@ -56,7 +56,7 @@ export function DailySetsPage() {
         title="Ежедневные наборы"
         description={meta ? `Всего: ${meta.total}` : undefined}
         actions={
-          <Button size="sm" onClick={() => navigate('/daily-sets/create')}>
+          <Button size="sm" onClick={() => navigate('/admin/daily-sets/create')}>
             <Plus className="w-4 h-4" />
             Создать набор
           </Button>
@@ -76,7 +76,7 @@ export function DailySetsPage() {
             title="Нет наборов"
             description="Создайте первый ежедневный набор вопросов"
             action={
-              <Button size="sm" onClick={() => navigate('/daily-sets/create')}>
+              <Button size="sm" onClick={() => navigate('/admin/daily-sets/create')}>
                 Создать набор
               </Button>
             }
@@ -113,7 +113,7 @@ export function DailySetsPage() {
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => navigate(`/daily-sets/${s.id}/edit`)}
+                          onClick={() => navigate(`/admin/daily-sets/${s.id}/edit`)}
                           className="p-1.5 rounded-lg text-text-secondary hover:text-blue hover:bg-blue/10 transition-colors"
                         >
                           <Pencil className="w-4 h-4" />

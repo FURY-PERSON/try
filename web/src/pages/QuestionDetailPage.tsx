@@ -45,7 +45,7 @@ export function QuestionDetailPage() {
     mutationFn: () => api.admin.questions.delete(id!),
     onSuccess: () => {
       toast.success('Утверждение удалено');
-      navigate('/questions');
+      navigate('/admin/questions');
     },
   });
 
@@ -78,7 +78,7 @@ export function QuestionDetailPage() {
     return (
       <div className="text-center py-16">
         <p className="text-text-secondary">Утверждение не найдено</p>
-        <Button variant="secondary" className="mt-4" onClick={() => navigate('/questions')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate('/admin/questions')}>
           К списку утверждений
         </Button>
       </div>
@@ -89,7 +89,7 @@ export function QuestionDetailPage() {
     <div>
       <div className="mb-4">
         <button
-          onClick={() => navigate('/questions')}
+          onClick={() => navigate('/admin/questions')}
           className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

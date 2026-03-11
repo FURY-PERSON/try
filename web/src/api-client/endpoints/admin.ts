@@ -70,22 +70,22 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<PaginatedResponse<QuestionWithCategory>>('/api/admin/questions', { params });
       },
       getById(id: string) {
-        return http.get<ApiResponse<QuestionWithCategory>>(`/admin/questions/${id}`);
+        return http.get<ApiResponse<QuestionWithCategory>>(`/api/admin/questions/${id}`);
       },
       create(dto: CreateQuestionDto) {
         return http.post<ApiResponse<Question>>('/api/admin/questions', dto);
       },
       update(id: string, dto: UpdateQuestionDto) {
-        return http.patch<ApiResponse<Question>>(`/admin/questions/${id}`, dto);
+        return http.patch<ApiResponse<Question>>(`/api/admin/questions/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/questions/${id}`);
+        return http.delete(`/api/admin/questions/${id}`);
       },
       approve(id: string) {
-        return http.patch<ApiResponse<Question>>(`/admin/questions/${id}/approve`);
+        return http.patch<ApiResponse<Question>>(`/api/admin/questions/${id}/approve`);
       },
       reject(id: string) {
-        return http.patch<ApiResponse<Question>>(`/admin/questions/${id}/reject`);
+        return http.patch<ApiResponse<Question>>(`/api/admin/questions/${id}/reject`);
       },
       bulkApprove(ids: string[]) {
         return http.post<ApiResponse<{ approved: number }>>('/api/admin/questions/bulk-approve', {
@@ -113,16 +113,16 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<PaginatedResponse<DailySet>>('/api/admin/daily-sets', { params });
       },
       getById(id: string) {
-        return http.get<ApiResponse<DailySetWithQuestions>>(`/admin/daily-sets/${id}`);
+        return http.get<ApiResponse<DailySetWithQuestions>>(`/api/admin/daily-sets/${id}`);
       },
       create(dto: CreateDailySetDto) {
         return http.post<ApiResponse<DailySet>>('/api/admin/daily-sets', dto);
       },
       update(id: string, dto: UpdateDailySetDto) {
-        return http.patch<ApiResponse<DailySet>>(`/admin/daily-sets/${id}`, dto);
+        return http.patch<ApiResponse<DailySet>>(`/api/admin/daily-sets/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/daily-sets/${id}`);
+        return http.delete(`/api/admin/daily-sets/${id}`);
       },
     },
 
@@ -135,10 +135,10 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<Category>>('/api/admin/categories', dto);
       },
       update(id: string, dto: UpdateCategoryDto) {
-        return http.patch<ApiResponse<Category>>(`/admin/categories/${id}`, dto);
+        return http.patch<ApiResponse<Category>>(`/api/admin/categories/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/categories/${id}`);
+        return http.delete(`/api/admin/categories/${id}`);
       },
     },
 
@@ -148,16 +148,16 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<PaginatedResponse<Collection>>('/api/admin/collections', { params });
       },
       getById(id: string) {
-        return http.get<ApiResponse<CollectionWithItems>>(`/admin/collections/${id}`);
+        return http.get<ApiResponse<CollectionWithItems>>(`/api/admin/collections/${id}`);
       },
       create(dto: CreateCollectionDto) {
         return http.post<ApiResponse<Collection>>('/api/admin/collections', dto);
       },
       update(id: string, dto: UpdateCollectionDto) {
-        return http.patch<ApiResponse<Collection>>(`/admin/collections/${id}`, dto);
+        return http.patch<ApiResponse<Collection>>(`/api/admin/collections/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/collections/${id}`);
+        return http.delete(`/api/admin/collections/${id}`);
       },
     },
 
@@ -199,10 +199,10 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<NicknameAdjective>>('/api/admin/reference/adjectives', dto);
       },
       update(id: string, dto: UpdateAdjectiveDto) {
-        return http.patch<ApiResponse<NicknameAdjective>>(`/admin/reference/adjectives/${id}`, dto);
+        return http.patch<ApiResponse<NicknameAdjective>>(`/api/admin/reference/adjectives/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/reference/adjectives/${id}`);
+        return http.delete(`/api/admin/reference/adjectives/${id}`);
       },
     },
 
@@ -215,10 +215,10 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<NicknameAnimal>>('/api/admin/reference/animals', dto);
       },
       update(id: string, dto: UpdateAnimalDto) {
-        return http.patch<ApiResponse<NicknameAnimal>>(`/admin/reference/animals/${id}`, dto);
+        return http.patch<ApiResponse<NicknameAnimal>>(`/api/admin/reference/animals/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/reference/animals/${id}`);
+        return http.delete(`/api/admin/reference/animals/${id}`);
       },
     },
 
@@ -231,10 +231,10 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<AvatarEmojiItem>>('/api/admin/reference/emojis', dto);
       },
       update(id: string, dto: UpdateEmojiDto) {
-        return http.patch<ApiResponse<AvatarEmojiItem>>(`/admin/reference/emojis/${id}`, dto);
+        return http.patch<ApiResponse<AvatarEmojiItem>>(`/api/admin/reference/emojis/${id}`, dto);
       },
       delete(id: string) {
-        return http.delete(`/admin/reference/emojis/${id}`);
+        return http.delete(`/api/admin/reference/emojis/${id}`);
       },
     },
 
@@ -271,10 +271,10 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<PaginatedResponse<SupportTicket>>('/api/admin/support', { params });
       },
       getById(id: string) {
-        return http.get<ApiResponse<SupportTicket>>(`/admin/support/${id}`);
+        return http.get<ApiResponse<SupportTicket>>(`/api/admin/support/${id}`);
       },
       update(id: string, dto: { status: 'open' | 'closed' }) {
-        return http.patch<ApiResponse<SupportTicket>>(`/admin/support/${id}`, dto);
+        return http.patch<ApiResponse<SupportTicket>>(`/api/admin/support/${id}`, dto);
       },
     },
 
@@ -284,19 +284,19 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.get<ApiResponse<FeatureFlag[]>>('/api/admin/feature-flags');
       },
       getByKey(key: string) {
-        return http.get<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}`);
+        return http.get<ApiResponse<FeatureFlag>>(`/api/admin/feature-flags/${key}`);
       },
       create(dto: CreateFeatureFlagDto) {
         return http.post<ApiResponse<FeatureFlag>>('/api/admin/feature-flags', dto);
       },
       update(key: string, dto: UpdateFeatureFlagDto) {
-        return http.patch<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}`, dto);
+        return http.patch<ApiResponse<FeatureFlag>>(`/api/admin/feature-flags/${key}`, dto);
       },
       toggle(key: string) {
-        return http.patch<ApiResponse<FeatureFlag>>(`/admin/feature-flags/${key}/toggle`);
+        return http.patch<ApiResponse<FeatureFlag>>(`/api/admin/feature-flags/${key}/toggle`);
       },
       delete(key: string) {
-        return http.delete<void>(`/admin/feature-flags/${key}`);
+        return http.delete<void>(`/api/admin/feature-flags/${key}`);
       },
     },
   };

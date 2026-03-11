@@ -133,7 +133,7 @@ export function AdminSupportPage() {
                   <TableRow
                     key={ticket.id}
                     className="cursor-pointer hover:bg-surface-secondary"
-                    onClick={() => navigate(`/support-requests/${ticket.id}`)}
+                    onClick={() => navigate(`/admin/support-requests/${ticket.id}`)}
                   >
                     <TableCell>
                       <span className="text-sm text-text-primary">{ticket.email}</span>

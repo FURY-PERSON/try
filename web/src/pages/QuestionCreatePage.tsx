@@ -71,7 +71,7 @@ export function QuestionCreatePage() {
     onSuccess: () => {
       toast.success('Утверждение создано');
       queryClient.invalidateQueries({ queryKey: ['admin', 'questions'] });
-      navigate('/questions');
+      navigate('/admin/questions');
     },
     onError: () => toast.error('Ошибка создания утверждения'),
   });
@@ -103,7 +103,7 @@ export function QuestionCreatePage() {
   return (
     <div>
       <button
-        onClick={() => navigate('/questions')}
+        onClick={() => navigate('/admin/questions')}
         className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />

@@ -116,7 +116,7 @@ export function DailySetEditPage() {
     onSuccess: () => {
       toast.success('Набор обновлён');
       queryClient.invalidateQueries({ queryKey: ['admin', 'daily-sets'] });
-      navigate('/daily-sets');
+      navigate('/admin/daily-sets');
     },
     onError: () => toast.error('Ошибка обновления набора'),
   });
@@ -155,7 +155,7 @@ export function DailySetEditPage() {
     return (
       <div className="text-center py-16">
         <p className="text-text-secondary">Набор не найден</p>
-        <Button variant="secondary" className="mt-4" onClick={() => navigate('/daily-sets')}>
+        <Button variant="secondary" className="mt-4" onClick={() => navigate('/admin/daily-sets')}>
           К списку наборов
         </Button>
       </div>
@@ -165,7 +165,7 @@ export function DailySetEditPage() {
   return (
     <div>
       <button
-        onClick={() => navigate('/daily-sets')}
+        onClick={() => navigate('/admin/daily-sets')}
         className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />

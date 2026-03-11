@@ -85,7 +85,7 @@ export function DailySetCreatePage() {
     onSuccess: () => {
       toast.success('Набор создан');
       queryClient.invalidateQueries({ queryKey: ['admin', 'daily-sets'] });
-      navigate('/daily-sets');
+      navigate('/admin/daily-sets');
     },
     onError: () => toast.error('Ошибка создания набора'),
   });
@@ -115,7 +115,7 @@ export function DailySetCreatePage() {
   return (
     <div>
       <button
-        onClick={() => navigate('/daily-sets')}
+        onClick={() => navigate('/admin/daily-sets')}
         className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
