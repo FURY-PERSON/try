@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6366F1">
-  <title>Фронт Фактов — Разоблачай мифы! Квиз-игра для iOS и Android</title>
-  <meta name="description" content="Ежедневные утверждения: отличай факты от мифов. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.">
-  <meta name="keywords" content="факты мифы квиз, разоблачение мифов, викторина факты, ежедневная игра знания, свайп факты, fact or myth app, trivia quiz game">
+  <title>Фронт Фактов — Разоблачай фейки! Квиз-игра для iOS и Android</title>
+  <meta name="description" content="Ежедневные утверждения: отличай факты от фейков. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.">
+  <meta name="keywords" content="факты фейки квиз, разоблачение фейков, викторина факты, ежедневная игра знания, свайп факты, fact or fake app, trivia quiz game">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://factfront.org/">
   <link rel="alternate" hreflang="ru" href="https://factfront.org/">
@@ -14,8 +14,8 @@
   <link rel="alternate" hreflang="x-default" href="https://factfront.org/">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Фронт Фактов — Разоблачай мифы! Квиз-игра для iOS и Android">
-  <meta property="og:description" content="Ежедневные утверждения: отличай факты от мифов. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.">
+  <meta property="og:title" content="Фронт Фактов — Разоблачай фейки! Квиз-игра для iOS и Android">
+  <meta property="og:description" content="Ежедневные утверждения: отличай факты от фейков. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://factfront.org/">
   <meta property="og:image" content="https://factfront.org/og-image.png">
@@ -24,8 +24,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Фронт Фактов — Разоблачай мифы! Квиз-игра для iOS и Android">
-  <meta name="twitter:description" content="Ежедневные утверждения: отличай факты от мифов. Бесплатно для iOS и Android.">
+  <meta name="twitter:title" content="Фронт Фактов — Разоблачай фейки! Квиз-игра для iOS и Android">
+  <meta name="twitter:description" content="Ежедневные утверждения: отличай факты от фейков. Бесплатно для iOS и Android.">
   <meta name="twitter:image" content="https://factfront.org/og-image.png">
 
   <!-- JSON-LD: MobileApplication -->
@@ -35,7 +35,7 @@
     "@type": "MobileApplication",
     "name": "Фронт Фактов",
     "alternateName": "Fact Front",
-    "description": "Ежедневные утверждения: отличай факты от мифов. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге.",
+    "description": "Ежедневные утверждения: отличай факты от фейков. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге.",
     "operatingSystem": "iOS, Android",
     "applicationCategory": "GameApplication",
     "offers": {
@@ -519,6 +519,7 @@
       flex-shrink: 0;
       position: relative;
       width: 100%;
+      perspective: 700px;
     }
     /* Карточки в стеке */
     .phone-deck-card {
@@ -526,28 +527,78 @@
       top: 0; left: 0; right: 0;
       height: 212px;
       border-radius: 16px;
-      background: var(--ph-card-bg);
-      padding: 12px 12px 10px;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease, opacity 0.35s ease;
+      cursor: default;
+    }
+    .phone-deck-card:nth-child(1) { transform: translateY(0); z-index: 5; background: var(--ph-card-bg); box-shadow: var(--ph-card-shadow); }
+    .phone-deck-card:nth-child(2) { transform: translateY(4px); z-index: 4; opacity: 1; background: var(--ph-card-bg2); }
+    .phone-deck-card:nth-child(3) { transform: translateY(8px); z-index: 3; opacity: 0.8; background: var(--ph-card-bg3); }
+    .phone-deck-card.flipped { transform: translateY(0) rotateY(180deg) !important; z-index: 5; }
+    .phone-deck-card.answered-correct { transform: translateX(130px) rotateY(180deg) !important; opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
+    .phone-deck-card.answered-wrong   { transform: translateX(-130px) rotateY(180deg) !important; opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
+    /* Лицо и изнанка карточки */
+    .phone-card-front,
+    .phone-card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: transform 0.35s ease, opacity 0.35s ease;
-      cursor: default;
-      overflow: hidden;
+      padding: 12px 12px 10px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
-    .phone-deck-card::before {
+    .phone-card-front { background: inherit; }
+    .phone-card-front::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0; height: 3px;
       background: linear-gradient(90deg, #6366F1, #A78BFA);
     }
-    .phone-deck-card:nth-child(1) { transform: translateY(0); z-index: 5; box-shadow: var(--ph-card-shadow); }
-    .phone-deck-card:nth-child(2) { transform: translateY(4px); z-index: 4; opacity: 1; background: var(--ph-card-bg2); }
-    .phone-deck-card:nth-child(3) { transform: translateY(8px); z-index: 3; opacity: 0.8; background: var(--ph-card-bg3); }
-    .phone-deck-card.answered-correct { transform: translateX(110px) rotate(18deg); opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
-    .phone-deck-card.answered-wrong { transform: translateX(-110px) rotate(-18deg); opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
+    .phone-card-back {
+      transform: rotateY(180deg);
+      background: var(--ph-result-bg);
+      gap: 8px;
+    }
+    .phone-card-back::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+    .phone-card-back.correct::before { background: linear-gradient(90deg, #10B981, #34D399); }
+    .phone-card-back.wrong::before   { background: linear-gradient(90deg, #EF4444, #F87171); }
+    .phone-flip-badge { font-size: 12px; font-weight: 900; }
+    .phone-flip-badge.correct { color: var(--ph-result-correct); }
+    .phone-flip-badge.wrong   { color: var(--ph-result-wrong); }
+    .phone-flip-text {
+      font-size: 9px; color: var(--ph-result-text);
+      line-height: 1.5; text-align: center;
+      overflow-y: auto; max-height: 88px;
+    }
+    .phone-btn-next {
+      background: #6366F1;
+      border: 1.5px solid #4F46E5;
+      color: white;
+    }
+    /* Подсказка под телефоном */
+    .phone-hint {
+      text-align: center;
+      font-size: 12px; font-weight: 700;
+      color: #6366F1;
+      margin-top: 10px;
+      animation: hint-float 2s ease-in-out infinite;
+      transition: opacity 0.5s;
+    }
+    .phone-hint.hidden { opacity: 0 !important; pointer-events: none; animation: none; }
+    @keyframes hint-float {
+      0%, 100% { transform: translateY(0); opacity: 0.8; }
+      50%       { transform: translateY(-4px); opacity: 1; }
+    }
     .phone-card-category {
       background: var(--ph-cat-bg);
       border: 1px solid var(--ph-cat-border);
@@ -1277,11 +1328,11 @@
     <div class="hero-inner">
       <div class="hero-content">
         <div class="hero-overline" data-ru="МОБИЛЬНАЯ КВИЗ-ИГРА" data-en="MOBILE QUIZ GAME">МОБИЛЬНАЯ КВИЗ-ИГРА</div>
-        <h1 data-ru="Фронт Фактов — Разоблачай мифы!" data-en="Fact Front — Bust the Myths!">Фронт Фактов — Разоблачай мифы!</h1>
+        <h1 data-ru="Фронт Фактов — Разоблачай фейки!" data-en="Fact Front — Bust the Fakes!">Фронт Фактов — Разоблачай фейки!</h1>
         <p class="hero-subtitle" data-ru="Ежедневные утверждения — отличай правду от вымысла. Свайпай, узнавай, побеждай!" data-en="Daily statements — tell fact from fiction. Swipe, learn, win!">Ежедневные утверждения — отличай правду от вымысла. Свайпай, узнавай, побеждай!</p>
         <div class="hero-fact-card">
           <span class="fact-icon">💡</span>
-          <span data-ru='"Великая Китайская стена видна из космоса" — факт или миф?' data-en='"The Great Wall of China is visible from space" — fact or myth?'>"Великая Китайская стена видна из космоса" — факт или миф?</span>
+          <span data-ru='"Великая Китайская стена видна из космоса" — факт или фейк?' data-en='"The Great Wall of China is visible from space" — fact or fake?'>"Великая Китайская стена видна из космоса" — факт или фейк?</span>
         </div>
         <div class="hero-cta">
           <a id="hero-ios" href="#download-ios" class="btn-primary">
@@ -1302,6 +1353,7 @@
 
       <!-- Phone mockup -->
       <div class="phone-wrap" aria-hidden="true">
+        <div>
         <div class="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen">
@@ -1344,6 +1396,8 @@
               </div>
             </div>
           </div>
+        </div>
+        <p class="phone-hint" id="phone-hint" data-ru="👆 Нажми Факт или Фейк!" data-en="👆 Tap Fact or Fake!">👆 Нажми Факт или Фейк!</p>
         </div>
       </div>
     </div>
@@ -1412,7 +1466,7 @@
         <div class="feature-card">
           <span class="feature-icon">⭐</span>
           <h3 data-ru="Тематические подборки" data-en="Thematic Collections">Тематические подборки</h3>
-          <p data-ru="Специальные коллекции: Мифы о здоровье, Факты о космосе, История в фактах" data-en="Special collections: Health Myths, Space Facts, History in Facts">Специальные коллекции: Мифы о здоровье, Факты о космосе, История в фактах</p>
+          <p data-ru="Специальные коллекции: Фейки о здоровье, Факты о космосе, История в фактах" data-en="Special collections: Health Fakes, Space Facts, History in Facts">Специальные коллекции: Фейки о здоровье, Факты о космосе, История в фактах</p>
         </div>
       </div>
     </div>
@@ -1440,22 +1494,19 @@
       <!-- Interactive fact preview -->
       <div class="preview-wrap" id="fact-preview" aria-label="Interactive fact preview">
         <div class="preview-card">
-          <div class="preview-label" data-ru="Факт или миф?" data-en="Fact or myth?">Факт или миф?</div>
+          <div class="preview-label" data-ru="Факт или фейк?" data-en="Fact or fake?">Факт или фейк?</div>
           <div class="preview-statement" data-ru="Люди используют только 10% своего мозга" data-en="Humans only use 10% of their brain">Люди используют только 10% своего мозга</div>
         </div>
         <div class="preview-actions" id="preview-actions" role="group" aria-label="Answer buttons">
+          <button class="fact-answer-btn btn-myth" data-answer="fake" data-ru="❌ Фейк" data-en="❌ Fake">❌ Фейк</button>
           <button class="fact-answer-btn btn-fact" data-answer="fact" data-ru="✅ Факт" data-en="✅ Fact">✅ Факт</button>
-          <button class="fact-answer-btn btn-myth" data-answer="myth" data-ru="❌ Миф" data-en="❌ Myth">❌ Миф</button>
         </div>
         <div class="preview-reveal-wrap" id="preview-reveal-wrap">
           <div class="fact-reveal" id="fact-reveal" role="status" aria-live="polite">
             <div class="fact-reveal-header" id="fact-reveal-header"></div>
             <div class="fact-reveal-text">
-              <span data-ru="МРТ-сканирование показывает активность во всех областях мозга в течение дня. Это устойчивый миф — мозг работает полностью." data-en="MRI scans show activity in all brain regions throughout the day. This is a persistent myth — the brain works fully.">МРТ-сканирование показывает активность во всех областях мозга в течение дня. Это устойчивый миф — мозг работает полностью.</span>
+              <span data-ru="МРТ-сканирование показывает активность во всех областях мозга в течение дня. Мозг работает полностью." data-en="MRI scans show activity in all brain regions throughout the day. The brain works fully.">МРТ-сканирование показывает активность во всех областях мозга в течение дня. Мозг работает полностью.</span>
             </div>
-            <button class="fact-reset-btn" id="fact-reset-btn" type="button">
-              <span data-ru="Попробовать ещё" data-en="Try another">Попробовать ещё</span>
-            </button>
           </div>
         </div>
       </div>
@@ -1466,7 +1517,7 @@
   <section class="download-section" id="download" aria-labelledby="download-title">
     <div class="container">
       <div class="section-overline" data-ru="СКАЧИВАЙ БЕСПЛАТНО" data-en="FREE DOWNLOAD">СКАЧИВАЙ БЕСПЛАТНО</div>
-      <h2 id="download-title" data-ru="Начни разоблачать мифы прямо сейчас" data-en="Start busting myths right now">Начни разоблачать мифы прямо сейчас</h2>
+      <h2 id="download-title" data-ru="Начни разоблачать фейки прямо сейчас" data-en="Start busting fakes right now">Начни разоблачать фейки прямо сейчас</h2>
       <p class="dl-subtitle" data-ru="Новый набор фактов каждый день. Бесплатно, навсегда." data-en="New facts every day. Free, forever.">Новый набор фактов каждый день. Бесплатно, навсегда.</p>
       <div class="store-btns">
         <!-- iOS -->
@@ -1544,7 +1595,7 @@
             <span class="logo-icon">⚡</span>
             <span data-ru="Фронт Фактов" data-en="Fact Front">Фронт Фактов</span>
           </a>
-          <p class="footer-tagline" data-ru="Разоблачай мифы каждый день" data-en="Bust myths every day">Разоблачай мифы каждый день</p>
+          <p class="footer-tagline" data-ru="Разоблачай фейки каждый день" data-en="Bust fakes every day">Разоблачай фейки каждый день</p>
           <a href="/privacy-policy/" class="footer-link" data-ru="Политика конфиденциальности" data-en="Privacy Policy">Политика конфиденциальности</a>
         </div>
         <div class="footer-right">
@@ -1581,12 +1632,12 @@
     function updateMeta(lang) {
       var isRu = lang === 'ru';
       document.title = isRu
-        ? 'Фронт Фактов — Разоблачай мифы! Квиз-игра для iOS и Android'
-        : 'Fact Front — Bust the Myths! Daily Trivia Quiz for iOS & Android';
+        ? 'Фронт Фактов — Разоблачай фейки! Квиз-игра для iOS и Android'
+        : 'Fact Front — Bust the Fakes! Daily Trivia Quiz for iOS & Android';
       var desc = document.querySelector('meta[name=description]');
       if (desc) {
         desc.content = isRu
-          ? 'Ежедневные утверждения: отличай факты от мифов. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.'
+          ? 'Ежедневные утверждения: отличай факты от фейков. Свайпай карточки, узнавай объяснения из проверенных источников, соревнуйся в рейтинге. Бесплатно для iOS и Android.'
           : 'Daily statements: tell fact from fiction with a swipe. Learn explanations from verified sources, compete on the leaderboard. Free for iOS & Android.';
       }
       document.documentElement.lang = lang;
@@ -1658,7 +1709,7 @@
       }
 
       // ===== INTERACTIVE FACT CARD =====
-      var CORRECT_ANSWER = 'myth';
+      var CORRECT_ANSWER = 'fake';
       var factReveal = document.getElementById('fact-reveal');
       var factRevealHeader = document.getElementById('fact-reveal-header');
       var previewRevealWrap = document.getElementById('preview-reveal-wrap');
@@ -1816,20 +1867,20 @@
       // ===== PHONE DECK GAME =====
       var DEMO_CARDS = [
         {
-          ru: { text: 'Великая Китайская стена видна из космоса', category: 'ИСТОРИЯ', explanation: 'Это миф! Стена слишком узкая (около 5–8 м) и невидима с орбиты невооружённым глазом. Это подтвердили китайские космонавты.', isTrue: false },
-          en: { text: 'The Great Wall of China is visible from space', category: 'HISTORY', explanation: "It's a myth! The wall is too narrow (about 5–8 m wide) and invisible from orbit with the naked eye. Chinese astronauts confirmed this.", isTrue: false }
+          ru: { text: 'Великая Китайская стена видна из космоса', category: 'ИСТОРИЯ', explanation: 'Это фейк! Стена слишком узкая (около 5–8 м) и невидима с орбиты невооружённым глазом. Это подтвердили китайские космонавты.', isTrue: false },
+          en: { text: 'The Great Wall of China is visible from space', category: 'HISTORY', explanation: "It's a fake! The wall is too narrow (about 5–8 m wide) and invisible from orbit with the naked eye. Chinese astronauts confirmed this.", isTrue: false }
         },
         {
-          ru: { text: 'Молния никогда не бьёт дважды в одно место', category: 'ФИЗИКА', explanation: 'Миф! Молния часто бьёт в одно место многократно. Высокие здания и башни получают удары молнии сотни раз в год.', isTrue: false },
-          en: { text: 'Lightning never strikes the same place twice', category: 'PHYSICS', explanation: "Myth! Lightning frequently strikes the same spot multiple times. Tall buildings and towers get struck hundreds of times per year.", isTrue: false }
+          ru: { text: 'Молния никогда не бьёт дважды в одно место', category: 'ФИЗИКА', explanation: 'Фейк! Молния часто бьёт в одно место многократно. Высокие здания и башни получают удары молнии сотни раз в год.', isTrue: false },
+          en: { text: 'Lightning never strikes the same place twice', category: 'PHYSICS', explanation: "Fake! Lightning frequently strikes the same spot multiple times. Tall buildings and towers get struck hundreds of times per year.", isTrue: false }
         },
         {
-          ru: { text: 'Мы используем только 10% своего мозга', category: 'НАУКА', explanation: 'Миф! МРТ-исследования показывают, что мы используем практически все области мозга, хотя и не одновременно.', isTrue: false },
-          en: { text: 'We only use 10% of our brain', category: 'SCIENCE', explanation: "Myth! MRI studies show we use virtually all brain regions, just not all simultaneously.", isTrue: false }
+          ru: { text: 'Мы используем только 10% своего мозга', category: 'НАУКА', explanation: 'Фейк! МРТ-исследования показывают, что мы используем практически все области мозга, хотя и не одновременно.', isTrue: false },
+          en: { text: 'We only use 10% of our brain', category: 'SCIENCE', explanation: "Fake! MRI studies show we use virtually all brain regions, just not all simultaneously.", isTrue: false }
         },
         {
-          ru: { text: 'Кровь в венах синяя', category: 'БИОЛОГИЯ', explanation: 'Миф! Кровь всегда красная. Синий цвет вен — оптическая иллюзия из-за особенностей поглощения света кожей.', isTrue: false },
-          en: { text: 'Blood in veins is blue', category: 'BIOLOGY', explanation: "Myth! Blood is always red. The blue color of veins is an optical illusion caused by how skin absorbs light.", isTrue: false }
+          ru: { text: 'Кровь в венах синяя', category: 'БИОЛОГИЯ', explanation: 'Фейк! Кровь всегда красная. Синий цвет вен — оптическая иллюзия из-за особенностей поглощения света кожей.', isTrue: false },
+          en: { text: 'Blood in veins is blue', category: 'BIOLOGY', explanation: "Fake! Blood is always red. The blue color of veins is an optical illusion caused by how skin absorbs light.", isTrue: false }
         },
         {
           ru: { text: 'Золото нельзя растворить в воде', category: 'ХИМИЯ', explanation: 'Факт! Чистая вода не растворяет золото. Оно растворяется только в царской водке — смеси соляной и азотной кислот.', isTrue: true },
@@ -1853,6 +1904,7 @@
       var phoneCurrentCard = 0;
       var phoneAnswered = false;
       var phoneStreak = 0;
+      var phoneLastCorrect = false;
 
       function phoneUpdateStreak(isCorrect) {
         if (isCorrect) {
@@ -1892,6 +1944,15 @@
         }
       }
 
+      function phoneRestoreBtns() {
+        if (!phoneBtnsEl) return;
+        var lng = phoneGetLang();
+        phoneBtnsEl.innerHTML =
+          '<button class="phone-btn phone-btn-no" id="phone-btn-fake"><span>✕</span><span>' + (lng === 'ru' ? 'Фейк' : 'Fake') + '</span></button>' +
+          '<button class="phone-btn phone-btn-yes" id="phone-btn-fact"><span>✓</span><span>' + (lng === 'ru' ? 'Факт' : 'Fact') + '</span></button>';
+        phoneBtnsEl.style.display = '';
+      }
+
       function phoneBuildDeck() {
         phoneDeck.innerHTML = '';
         for (var i = phoneCurrentCard; i < DEMO_CARDS.length; i++) {
@@ -1901,19 +1962,23 @@
           var cardEl = document.createElement('div');
           cardEl.className = 'phone-deck-card';
           cardEl.dataset.index = i;
-          cardEl.innerHTML =
+          var frontContent =
             '<div class="phone-card-category">' + d.category + '</div>' +
             '<div class="phone-card-quote">«</div>' +
             '<div class="phone-card-text">' + d.text + '</div>' +
             '<div class="phone-card-quote">»</div>';
+          if (i === phoneCurrentCard) {
+            cardEl.innerHTML =
+              '<div class="phone-card-front">' + frontContent + '</div>' +
+              '<div class="phone-card-back" id="phone-card-back"></div>';
+          } else {
+            cardEl.innerHTML = '<div class="phone-card-front">' + frontContent + '</div>';
+          }
           phoneDeck.appendChild(cardEl);
         }
         phoneAnswered = false;
         phoneUpdateHeader();
-        if (phoneBtnsEl) {
-          phoneBtnsEl.querySelectorAll('.phone-btn').forEach(function(b) { b.disabled = false; });
-          phoneBtnsEl.style.display = '';
-        }
+        phoneRestoreBtns();
       }
 
       function phoneUpdateProgress() {
@@ -1928,51 +1993,73 @@
         var card = DEMO_CARDS[phoneCurrentCard];
         var d = card[lng] || card.ru;
         var isCorrect = (userSaidTrue === d.isTrue);
+        phoneLastCorrect = isCorrect;
 
+        // Fill back face
+        var backEl = document.getElementById('phone-card-back');
+        if (backEl) {
+          var badgeText = lng === 'ru'
+            ? (isCorrect ? '✅ Правильно!' : '❌ Неправильно')
+            : (isCorrect ? '✅ Correct!' : '❌ Incorrect');
+          backEl.className = 'phone-card-back ' + (isCorrect ? 'correct' : 'wrong');
+          backEl.innerHTML =
+            '<div class="phone-flip-badge ' + (isCorrect ? 'correct' : 'wrong') + '">' + badgeText + '</div>' +
+            '<div class="phone-flip-text">' + d.explanation + '</div>';
+        }
+
+        // Flip top card
         var topCard = phoneDeck.querySelector('.phone-deck-card:first-child');
-        if (topCard) {
-          topCard.classList.add(userSaidTrue ? 'answered-correct' : 'answered-wrong');
-        }
+        if (topCard) topCard.classList.add('flipped');
 
+        // Replace Fake/Fact with Next button
         if (phoneBtnsEl) {
-          phoneBtnsEl.querySelectorAll('.phone-btn').forEach(function(b) { b.disabled = true; });
+          var nextText = lng === 'ru' ? 'Далее →' : 'Next →';
+          phoneBtnsEl.innerHTML = '<button class="phone-btn phone-btn-next">' + nextText + '</button>';
         }
 
-        setTimeout(function() {
-          phoneResultBadge.textContent = lng === 'ru'
-            ? (isCorrect ? 'Правильно! ✅' : 'Неправильно ❌')
-            : (isCorrect ? 'Correct! ✅' : 'Incorrect ❌');
-          phoneResultBadge.className = 'phone-result-badge ' + (isCorrect ? 'correct' : 'wrong');
-          phoneResultText.textContent = d.explanation;
-          phoneUpdateStreak(isCorrect);
-          phoneResult.style.display = 'flex';
-        }, 350);
+        // Hide hint
+        var hintEl = document.getElementById('phone-hint');
+        if (hintEl) hintEl.classList.add('hidden');
+
+        phoneUpdateStreak(isCorrect);
       }
 
       function phoneNext() {
-        phoneResult.style.display = 'none';
+        // Slide flipped card off
+        var topCard = phoneDeck.querySelector('.phone-deck-card:first-child');
+        if (topCard) topCard.classList.add(phoneLastCorrect ? 'answered-correct' : 'answered-wrong');
+
+        if (phoneBtnsEl) phoneBtnsEl.style.display = 'none';
         phoneCurrentCard++;
         phoneUpdateProgress();
 
-        if (phoneCurrentCard >= DEMO_CARDS.length) {
-          phoneDeck.innerHTML = '';
-          if (phoneBtnsEl) phoneBtnsEl.style.display = 'none';
-          phoneModal.style.display = 'flex';
-          var lng = phoneGetLang();
-          document.querySelectorAll('#phone-modal [data-ru][data-en]').forEach(function(el) {
-            el.textContent = el.dataset[lng] || el.dataset.ru;
-          });
-        } else {
-          phoneBuildDeck();
-        }
+        setTimeout(function() {
+          if (phoneCurrentCard >= DEMO_CARDS.length) {
+            phoneDeck.innerHTML = '';
+            phoneModal.style.display = 'flex';
+            var lng = phoneGetLang();
+            document.querySelectorAll('#phone-modal [data-ru][data-en]').forEach(function(el) {
+              el.textContent = el.dataset[lng] || el.dataset.ru;
+            });
+          } else {
+            phoneBuildDeck();
+          }
+        }, 400);
       }
 
       if (phoneDeck) {
         phoneBuildDeck();
 
-        if (phoneBtnFact) phoneBtnFact.addEventListener('click', function() { phoneAnswer(true); });
-        if (phoneBtnFake) phoneBtnFake.addEventListener('click', function() { phoneAnswer(false); });
-        if (phoneNextBtn) phoneNextBtn.addEventListener('click', phoneNext);
+        // Event delegation — handles dynamic Fake/Fact/Next buttons
+        if (phoneBtnsEl) {
+          phoneBtnsEl.addEventListener('click', function(e) {
+            var btn = e.target.closest('button');
+            if (!btn) return;
+            if (btn.classList.contains('phone-btn-next')) phoneNext();
+            else if (btn.classList.contains('phone-btn-yes')) phoneAnswer(true);
+            else if (btn.classList.contains('phone-btn-no')) phoneAnswer(false);
+          });
+        }
 
         // Обновлять карточки при смене языка
         document.querySelectorAll('.lang-btn').forEach(function(btn) {
