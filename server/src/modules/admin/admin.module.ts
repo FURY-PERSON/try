@@ -33,6 +33,8 @@ import { AdminFeatureFlagsService } from './feature-flags/admin-feature-flags.se
 
 import { UploadController } from './upload/upload.controller';
 import { UploadService } from './upload/upload.service';
+import { AdminSupportController } from './support/admin-support.controller';
+import { AdminSupportService } from './support/admin-support.service';
 
 @Module({
   imports: [
@@ -59,6 +61,7 @@ import { UploadService } from './upload/upload.service';
     AdminNotificationsController,
     AdminFeatureFlagsController,
     UploadController,
+    AdminSupportController,
   ],
   providers: [
     AdminAuthService,
@@ -72,6 +75,7 @@ import { UploadService } from './upload/upload.service';
     AdminNotificationsService,
     AdminFeatureFlagsService,
     UploadService,
+    AdminSupportService,
   ],
   exports: [UploadService],
 })

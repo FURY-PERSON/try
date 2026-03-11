@@ -9,6 +9,7 @@ import type {
   CollectionWithItems,
   ApiResponse,
   PaginatedResponse,
+  SupportTicket,
 } from '../../shared';
 import type {
   LoginDto,
@@ -261,6 +262,19 @@ export function createAdminEndpoints(http: AxiosInstance) {
         return http.post<ApiResponse<UploadResult>>('/admin/upload/image', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+      },
+    },
+
+    // ── Support ──
+    support: {
+      list(params?: { page?: number; limit?: number; status?: string }) {
+        return http.get<PaginatedResponse<SupportTicket>>('/admin/support', { params });
+      },
+      getById(id: string) {
+        return http.get<ApiResponse<SupportTicket>>(`/admin/support/${id}`);
+      },
+      update(id: string, dto: { status: 'open' | 'closed' }) {
+        return http.patch<ApiResponse<SupportTicket>>(`/admin/support/${id}`, dto);
       },
     },
 

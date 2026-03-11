@@ -19,6 +19,9 @@ const ReferencePage = lazy(() => import('@/pages/ReferencePage').then((m) => ({ 
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const FeatureFlagsPage = lazy(() => import('@/pages/FeatureFlagsPage').then((m) => ({ default: m.FeatureFlagsPage })));
+const SupportPage = lazy(() => import('@/pages/SupportPage').then((m) => ({ default: m.SupportPage })));
+const AdminSupportPage = lazy(() => import('@/pages/AdminSupportPage').then((m) => ({ default: m.AdminSupportPage })));
+const AdminSupportDetailPage = lazy(() => import('@/pages/AdminSupportDetailPage').then((m) => ({ default: m.AdminSupportDetailPage })));
 
 function PageFallback() {
   return (
@@ -38,6 +41,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export function App() {
   return (
     <Routes>
+      <Route path="/support" element={<Suspense fallback={<PageFallback />}><SupportPage /></Suspense>} />
       <Route path="/login" element={<Suspense fallback={<PageFallback />}><LoginPage /></Suspense>} />
       <Route
         path="/"
@@ -60,6 +64,8 @@ export function App() {
         <Route path="notifications" element={<Suspense fallback={<PageFallback />}><NotificationsPage /></Suspense>} />
         <Route path="reference" element={<Suspense fallback={<PageFallback />}><ReferencePage /></Suspense>} />
         <Route path="feature-flags" element={<Suspense fallback={<PageFallback />}><FeatureFlagsPage /></Suspense>} />
+        <Route path="support-requests" element={<Suspense fallback={<PageFallback />}><AdminSupportPage /></Suspense>} />
+        <Route path="support-requests/:id" element={<Suspense fallback={<PageFallback />}><AdminSupportDetailPage /></Suspense>} />
       </Route>
       <Route path="*" element={<Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense>} />
     </Routes>

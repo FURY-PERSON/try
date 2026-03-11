@@ -16,6 +16,7 @@ import { ReferenceModule } from './modules/reference/reference.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { SupportModule } from './modules/support/support.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module
     AdminModule,
     AiModule,
     FeatureFlagsModule,
+    SupportModule,
   ],
   providers: [
     // Apply throttler guard globally

@@ -5,3 +5,4 @@ export * from './leaderboard';
 export * from './category';
 export * from './collection';
 export * from './api';
+export * from './support';

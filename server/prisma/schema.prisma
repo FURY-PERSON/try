@@ -289,3 +289,15 @@ model FeatureFlag {
   @@map("feature_flags")
   @@index([isEnabled])
 }
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  email       String
+  description String
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("support_tickets")
+  @@index([status])
+}
