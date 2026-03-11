@@ -37,7 +37,7 @@ export function LoginPage() {
       const tokens = response.data.data;
       setTokens(tokens.accessToken, tokens.refreshToken);
       toast.success('Успешный вход');
-      navigate('/');
+      navigate('/admin');
     } catch {
       toast.error('Неверный email или пароль');
     } finally {

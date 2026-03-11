@@ -34,7 +34,7 @@ function PageFallback() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
   return <>{children}</>;
 }
 
@@ -42,9 +42,9 @@ export function App() {
   return (
     <Routes>
       <Route path="/support" element={<Suspense fallback={<PageFallback />}><SupportPage /></Suspense>} />
-      <Route path="/login" element={<Suspense fallback={<PageFallback />}><LoginPage /></Suspense>} />
+      <Route path="/admin/login" element={<Suspense fallback={<PageFallback />}><LoginPage /></Suspense>} />
       <Route
-        path="/"
+        path="/admin"
         element={
           <ProtectedRoute>
             <AppLayout />

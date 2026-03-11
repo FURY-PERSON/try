@@ -15,15 +15,15 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Дашборд' },
-  { to: '/questions', icon: HelpCircle, label: 'Утверждения' },
-  { to: '/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
-  { to: '/categories', icon: FolderTree, label: 'Категории' },
-  { to: '/collections', icon: Library, label: 'Подборки' },
-  { to: '/notifications', icon: Bell, label: 'Уведомления' },
-  { to: '/feature-flags', icon: Flag, label: 'Feature Flags' },
-  { to: '/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
-  { to: '/support-requests', icon: MessageSquare, label: 'Поддержка' },
+  { to: '/admin', icon: LayoutDashboard, label: 'Дашборд' },
+  { to: '/admin/questions', icon: HelpCircle, label: 'Утверждения' },
+  { to: '/admin/daily-sets', icon: Calendar, label: 'Ежедневные наборы' },
+  { to: '/admin/categories', icon: FolderTree, label: 'Категории' },
+  { to: '/admin/collections', icon: Library, label: 'Подборки' },
+  { to: '/admin/notifications', icon: Bell, label: 'Уведомления' },
+  { to: '/admin/feature-flags', icon: Flag, label: 'Feature Flags' },
+  { to: '/admin/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
+  { to: '/admin/support-requests', icon: MessageSquare, label: 'Поддержка' },
 ];
 
 export function AppLayout() {
@@ -32,7 +32,7 @@ export function AppLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/admin/login');
   };
 
   return (
@@ -48,7 +48,7 @@ export function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === '/admin'}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors',

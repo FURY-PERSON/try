@@ -94,7 +94,7 @@ export function createApiClient(baseUrl: string, options: ApiClientOptions = {})
       isRefreshing = true;
 
       try {
-        const res = await refreshInstance.post('/admin/auth/refresh', {
+        const res = await refreshInstance.post('/api/admin/auth/refresh', {
           refreshToken: options.refreshToken,
         });
 

@@ -18,6 +18,6 @@ export const api = createApiClient(baseUrl, {
   },
   onTokenExpired() {
     useAuthStore.getState().logout();
-    window.location.href = '/login';
+    window.location.href = '/admin/login';
   },
 });
