@@ -11,6 +11,12 @@ import { DailySetQueryDto } from './dto/daily-set-query.dto';
 import { createPaginatedResponse } from '@/common/dto/pagination.dto';
 import { Prisma } from '@prisma/client';
 
+/** Normalize any date input to UTC midnight so comparisons are day-accurate. */
+function toUtcMidnight(dateInput: string | Date): Date {
+  const d = new Date(dateInput);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
 @Injectable()
 export class AdminDailySetsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -64,7 +70,7 @@ export class AdminDailySetsService {
   }
 
   async create(dto: CreateDailySetDto) {
-    const dateValue = new Date(dto.date);
+    const dateValue = toUtcMidnight(dto.date);
 
     const existingSet = await this.prisma.dailySet.findUnique({
       where: { date: dateValue },
@@ -95,7 +101,7 @@ export class AdminDailySetsService {
 
     return this.prisma.dailySet.create({
       data: {
-        date: dateValue,
+        date: dateValue, // already UTC midnight
         theme: dto.theme,
         themeEn: dto.themeEn,
         status: dto.status ?? 'draft',
@@ -125,7 +131,7 @@ export class AdminDailySetsService {
     }
 
     if (dto.date) {
-      const dateValue = new Date(dto.date);
+      const dateValue = toUtcMidnight(dto.date);
       const conflicting = await this.prisma.dailySet.findFirst({
         where: { date: dateValue, id: { not: id } },
       });
@@ -170,7 +176,7 @@ export class AdminDailySetsService {
     const updateData: Prisma.DailySetUpdateInput = {};
     if (dto.theme !== undefined) updateData.theme = dto.theme;
     if (dto.themeEn !== undefined) updateData.themeEn = dto.themeEn;
-    if (dto.date !== undefined) updateData.date = new Date(dto.date);
+    if (dto.date !== undefined) updateData.date = toUtcMidnight(dto.date);
     if (dto.status !== undefined) updateData.status = dto.status;
 
     return this.prisma.dailySet.update({
