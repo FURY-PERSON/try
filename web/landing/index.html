@@ -92,6 +92,34 @@
       --grad-primary: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
       --radius-card: 20px;
       --radius-btn: 14px;
+      /* Phone light theme */
+      --ph-bg: #ECEEF8;
+      --ph-border: #CDD0E8;
+      --ph-notch: #D4D6EC;
+      --ph-screen: #ECEEF8;
+      --ph-x-bg: #FFFFFF;
+      --ph-x-color: #94A3B8;
+      --ph-bar-track: rgba(99,102,241,0.15);
+      --ph-counter: #94A3B8;
+      --ph-card-bg: #FFFFFF;
+      --ph-card-shadow: 0 4px 20px rgba(99,102,241,0.14);
+      --ph-card-bg2: #F5F6FF;
+      --ph-card-bg3: #EFF0FA;
+      --ph-card-text: #1E1B4B;
+      --ph-cat-bg: rgba(99,102,241,0.08);
+      --ph-cat-border: rgba(99,102,241,0.18);
+      --ph-cat-text: #5B5FC7;
+      --ph-quote: #6366F1;
+      --ph-btn-fake-bg: rgba(239,68,68,0.09);
+      --ph-btn-fake-border: rgba(239,68,68,0.28);
+      --ph-btn-fake-text: #DC2626;
+      --ph-btn-fact-bg: rgba(16,185,129,0.09);
+      --ph-btn-fact-border: rgba(16,185,129,0.28);
+      --ph-btn-fact-text: #059669;
+      --ph-result-bg: #FFFFFF;
+      --ph-result-text: #64748B;
+      --ph-result-correct: #10B981;
+      --ph-result-wrong: #EF4444;
     }
     [data-theme="dark"] {
       --bg: #0F172A;
@@ -111,6 +139,34 @@
       --shadow: 0 4px 24px rgba(0,0,0,0.40);
       --grad-hero: linear-gradient(135deg, #1E1B4B 0%, #0F172A 100%);
       --grad-primary: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      /* Phone dark theme */
+      --ph-bg: #0D1117;
+      --ph-border: #2D3748;
+      --ph-notch: #1E293B;
+      --ph-screen: #0D1117;
+      --ph-x-bg: #1E293B;
+      --ph-x-color: #64748B;
+      --ph-bar-track: #1E293B;
+      --ph-counter: #475569;
+      --ph-card-bg: #1A2234;
+      --ph-card-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      --ph-card-bg2: #1e2b40;
+      --ph-card-bg3: #21304a;
+      --ph-card-text: #E2E8F0;
+      --ph-cat-bg: rgba(99,102,241,0.15);
+      --ph-cat-border: rgba(99,102,241,0.3);
+      --ph-cat-text: #818CF8;
+      --ph-quote: #4F46E5;
+      --ph-btn-fake-bg: rgba(239,68,68,0.1);
+      --ph-btn-fake-border: rgba(239,68,68,0.4);
+      --ph-btn-fake-text: #F87171;
+      --ph-btn-fact-bg: rgba(16,185,129,0.1);
+      --ph-btn-fact-border: rgba(16,185,129,0.45);
+      --ph-btn-fact-text: #34D399;
+      --ph-result-bg: #0D1117;
+      --ph-result-text: #94A3B8;
+      --ph-result-correct: #34D399;
+      --ph-result-wrong: #F87171;
     }
 
     /* ===== RESET & BASE ===== */
@@ -380,11 +436,11 @@
     }
     .phone {
       width: 240px;
-      height: 500px;
+      height: 446px;
       border-radius: 36px;
-      border: 3px solid var(--border);
-      background: var(--surface);
-      box-shadow: 0 20px 60px rgba(99,102,241,0.18), 0 4px 16px rgba(0,0,0,0.08);
+      border: 2px solid var(--ph-border);
+      background: var(--ph-bg);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(99,102,241,0.15), 0 8px 32px rgba(99,102,241,0.12);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -397,11 +453,11 @@
       50% { transform: translateY(-10px); }
     }
     .phone-notch {
-      width: 80px;
-      height: 8px;
-      background: var(--border);
-      border-radius: 4px;
-      margin: 16px 0 8px;
+      width: 70px;
+      height: 6px;
+      background: var(--ph-notch);
+      border-radius: 3px;
+      margin: 10px 0 6px;
       flex-shrink: 0;
     }
     .phone-screen {
@@ -409,87 +465,144 @@
       width: 100%;
       display: flex;
       flex-direction: column;
-      padding: 8px 14px 14px;
+      padding: 4px 12px 12px;
       position: relative;
       overflow: hidden;
+      background: var(--ph-screen);
+    }
+    /* Шапка: × + прогресс + счёт */
+    .phone-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      padding-bottom: 6px;
+    }
+    .phone-header-x {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--ph-x-bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--ph-x-color);
+      flex-shrink: 0; font-weight: 900;
+    }
+    .phone-header-bar {
+      flex: 1; height: 4px;
+      background: var(--ph-bar-track);
+      border-radius: 2px; overflow: hidden;
+    }
+    .phone-header-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366F1, #8B5CF6);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .phone-header-score {
+      display: flex; align-items: center; gap: 2px;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.28);
+      border-radius: 10px;
+      padding: 2px 6px;
+      font-size: 8px; font-weight: 700; color: #34D399;
+      flex-shrink: 0;
+    }
+    /* Счётчик карточек */
+    .phone-counter {
+      text-align: center;
+      font-size: 9px; font-weight: 600;
+      color: var(--ph-counter);
+      padding-bottom: 6px;
+      flex-shrink: 0;
     }
     .phone-deck {
-      flex: 1;
+      height: 224px;
+      flex-shrink: 0;
       position: relative;
+      width: 100%;
     }
     /* Карточки в стеке */
     .phone-deck-card {
       position: absolute;
-      inset: 0;
-      border-radius: 20px;
-      background: var(--grad-primary);
-      padding: 14px 12px;
+      top: 0; left: 0; right: 0;
+      height: 212px;
+      border-radius: 16px;
+      background: var(--ph-card-bg);
+      padding: 12px 12px 10px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       transition: transform 0.35s ease, opacity 0.35s ease;
       cursor: default;
+      overflow: hidden;
     }
-    .phone-deck-card:nth-child(1) { transform: scale(1) translateY(0); z-index: 5; }
-    .phone-deck-card:nth-child(2) { transform: scale(0.95) translateY(8px); z-index: 4; opacity: 0.85; }
-    .phone-deck-card:nth-child(3) { transform: scale(0.90) translateY(16px); z-index: 3; opacity: 0.7; }
-    .phone-deck-card.answered-correct { transform: translateX(80px) rotate(15deg) scale(0.9); opacity: 0; pointer-events: none; }
-    .phone-deck-card.answered-wrong { transform: translateX(-80px) rotate(-15deg) scale(0.9); opacity: 0; pointer-events: none; }
-    .phone-card-counter {
-      font-size: 10px;
-      font-weight: 700;
-      color: rgba(255,255,255,0.6);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .phone-deck-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #6366F1, #A78BFA);
     }
-    .phone-card-label {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 4px;
+    .phone-deck-card:nth-child(1) { transform: translateY(0); z-index: 5; box-shadow: var(--ph-card-shadow); }
+    .phone-deck-card:nth-child(2) { transform: translateY(4px); z-index: 4; opacity: 1; background: var(--ph-card-bg2); }
+    .phone-deck-card:nth-child(3) { transform: translateY(8px); z-index: 3; opacity: 0.8; background: var(--ph-card-bg3); }
+    .phone-deck-card.answered-correct { transform: translateX(110px) rotate(18deg); opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
+    .phone-deck-card.answered-wrong { transform: translateX(-110px) rotate(-18deg); opacity: 0; pointer-events: none; transition: transform 0.4s ease, opacity 0.4s ease; }
+    .phone-card-category {
+      background: var(--ph-cat-bg);
+      border: 1px solid var(--ph-cat-border);
+      border-radius: 8px;
+      padding: 2px 8px;
+      font-size: 7px; font-weight: 800;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--ph-cat-text);
+    }
+    .phone-card-quote {
+      font-size: 18px; font-weight: 900;
+      color: var(--ph-quote); line-height: 1;
+      user-select: none;
     }
     .phone-card-text {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      color: white;
-      line-height: 1.4;
-      flex: 1;
-      display: flex;
-      align-items: center;
-    }
-    .phone-card-emoji {
-      font-size: 24px;
-      text-align: right;
+      color: var(--ph-card-text);
+      line-height: 1.45;
+      text-align: center;
     }
     .phone-btns {
       display: flex;
-      gap: 8px;
-      padding-top: 10px;
+      gap: 7px;
+      padding-top: 8px;
       flex-shrink: 0;
     }
     .phone-btn {
       flex: 1;
       padding: 9px 4px;
-      border-radius: 12px;
-      border: none;
+      border-radius: 14px;
       font-size: 11px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       font-family: inherit;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 2px;
+      justify-content: center;
+      gap: 4px;
       transition: transform 0.15s, opacity 0.15s;
+      letter-spacing: 0.3px;
     }
-    .phone-btn:hover { transform: scale(1.05); }
+    .phone-btn:hover { transform: scale(1.04); }
     .phone-btn:active { transform: scale(0.97); }
-    .phone-btn-yes { background: #DCFCE7; color: #16A34A; }
-    .phone-btn-no { background: #FEE2E2; color: #DC2626; }
-    .phone-btn-icon { font-size: 16px; }
-    .phone-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+    .phone-btn-yes {
+      background: var(--ph-btn-fact-bg);
+      border: 1.5px solid var(--ph-btn-fact-border);
+      color: var(--ph-btn-fact-text);
+    }
+    .phone-btn-no {
+      background: var(--ph-btn-fake-bg);
+      border: 1.5px solid var(--ph-btn-fake-border);
+      color: var(--ph-btn-fake-text);
+    }
+    .phone-btn:disabled { opacity: 0.4; cursor: default; transform: none; }
     /* Результат */
     .phone-result {
       position: absolute;
@@ -499,53 +612,53 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px 14px;
-      background: var(--surface);
+      padding: 16px 12px;
+      background: var(--ph-result-bg);
       text-align: center;
       gap: 10px;
       animation: result-in 0.3s ease;
     }
     @keyframes result-in {
-      from { opacity: 0; transform: scale(0.95); }
+      from { opacity: 0; transform: scale(0.96); }
       to { opacity: 1; transform: scale(1); }
     }
     .phone-result-badge {
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 900;
       line-height: 1;
     }
-    .phone-result-badge.correct { color: #10B981; }
-    .phone-result-badge.wrong { color: #EF4444; }
+    .phone-result-badge.correct { color: var(--ph-result-correct); }
+    .phone-result-badge.wrong { color: var(--ph-result-wrong); }
     .phone-result-text {
-      font-size: 11px;
-      color: var(--text-2);
-      line-height: 1.5;
+      font-size: 10px;
+      color: var(--ph-result-text);
+      line-height: 1.55;
       max-height: 120px;
       overflow-y: auto;
     }
     .phone-next-btn {
-      background: var(--primary);
+      background: #6366F1;
       color: white;
       border: none;
-      border-radius: 10px;
-      padding: 8px 20px;
-      font-size: 12px;
+      border-radius: 12px;
+      padding: 8px 22px;
+      font-size: 11px;
       font-weight: 800;
       cursor: pointer;
       font-family: inherit;
       transition: opacity 0.15s;
     }
-    .phone-next-btn:hover { opacity: 0.9; }
+    .phone-next-btn:hover { opacity: 0.85; }
     /* Модалка */
     .phone-modal {
       position: absolute;
       inset: 0;
       z-index: 20;
-      background: linear-gradient(160deg, #6366F1 0%, #8B5CF6 100%);
+      background: linear-gradient(160deg, #1E1B4B 0%, #312E81 50%, #1E1B4B 100%);
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 16px 14px;
+      padding: 16px 12px;
       animation: result-in 0.4s ease;
     }
     .phone-modal-inner {
@@ -555,38 +668,25 @@
       gap: 10px;
       text-align: center;
     }
-    .phone-modal-emoji { font-size: 40px; }
-    .phone-modal-title { font-size: 18px; font-weight: 900; color: white; }
-    .phone-modal-text { font-size: 11px; color: rgba(255,255,255,0.85); line-height: 1.5; }
+    .phone-modal-emoji { font-size: 38px; }
+    .phone-modal-title { font-size: 17px; font-weight: 900; color: white; }
+    .phone-modal-text { font-size: 10px; color: rgba(255,255,255,0.75); line-height: 1.55; }
     .phone-modal-btn {
-      background: white;
-      color: #6366F1;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 12px;
-      font-weight: 900;
+      background: rgba(255,255,255,0.12);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      color: white;
+      border-radius: 14px;
+      padding: 9px 18px;
+      font-size: 11px;
+      font-weight: 800;
       text-decoration: none;
       display: block;
       transition: opacity 0.15s;
     }
-    .phone-modal-btn:hover { opacity: 0.9; }
-    /* Прогресс-точки */
-    .phone-progress {
-      display: flex;
-      gap: 5px;
-      justify-content: center;
-      padding: 6px 0 2px;
-      flex-shrink: 0;
-    }
-    .phone-progress-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--border);
-      transition: background 0.3s, transform 0.3s;
-    }
-    .phone-progress-dot.done { background: var(--primary); }
-    .phone-progress-dot.active { background: var(--accent); transform: scale(1.3); }
+    .phone-modal-btn:hover { opacity: 0.85; }
+    /* Прогресс-точки (оставляем для совместимости, но скрыты) */
+    .phone-progress { display: none; }
+    .phone-progress-dot { display: none; }
 
     /* ===== SECTION TITLES ===== */
     .section-title {
@@ -1205,16 +1305,26 @@
         <div class="phone">
           <div class="phone-notch"></div>
           <div class="phone-screen">
+            <!-- Шапка -->
+            <div class="phone-header">
+              <div class="phone-header-x">✕</div>
+              <div class="phone-header-bar">
+                <div class="phone-header-fill" id="phone-progress-fill" style="width:0%"></div>
+              </div>
+              <div class="phone-header-score">🔥 0</div>
+            </div>
+            <!-- Счётчик -->
+            <div class="phone-counter" id="phone-counter">1 / 5</div>
             <!-- Стек карточек -->
             <div class="phone-deck" id="phone-deck"></div>
             <!-- Кнопки ответа -->
             <div class="phone-btns" id="phone-btns">
               <button class="phone-btn phone-btn-no" id="phone-btn-fake">
-                <span class="phone-btn-icon">❌</span>
+                <span>✕</span>
                 <span data-ru="Фейк" data-en="Fake">Фейк</span>
               </button>
               <button class="phone-btn phone-btn-yes" id="phone-btn-fact">
-                <span class="phone-btn-icon">✅</span>
+                <span>✓</span>
                 <span data-ru="Факт" data-en="Fact">Факт</span>
               </button>
             </div>
@@ -1706,24 +1816,24 @@
       // ===== PHONE DECK GAME =====
       var DEMO_CARDS = [
         {
-          ru: { text: '"Великая Китайская стена видна из космоса"', explanation: 'Это миф! Стена слишком узкая (около 5–8 м) и невидима с орбиты невооружённым глазом. Это подтвердили китайские космонавты.', isTrue: false, emoji: '🚀' },
-          en: { text: '"The Great Wall of China is visible from space"', explanation: "It's a myth! The wall is too narrow (about 5–8 m wide) and invisible from orbit with the naked eye. Chinese astronauts confirmed this.", isTrue: false, emoji: '🚀' }
+          ru: { text: 'Великая Китайская стена видна из космоса', category: 'ИСТОРИЯ', explanation: 'Это миф! Стена слишком узкая (около 5–8 м) и невидима с орбиты невооружённым глазом. Это подтвердили китайские космонавты.', isTrue: false },
+          en: { text: 'The Great Wall of China is visible from space', category: 'HISTORY', explanation: "It's a myth! The wall is too narrow (about 5–8 m wide) and invisible from orbit with the naked eye. Chinese astronauts confirmed this.", isTrue: false }
         },
         {
-          ru: { text: '"Молния никогда не бьёт дважды в одно место"', explanation: 'Миф! Молния часто бьёт в одно место многократно. Высокие здания и башни получают удары молнии сотни раз в год.', isTrue: false, emoji: '⚡' },
-          en: { text: '"Lightning never strikes the same place twice"', explanation: "Myth! Lightning frequently strikes the same spot multiple times. Tall buildings and towers get struck hundreds of times per year.", isTrue: false, emoji: '⚡' }
+          ru: { text: 'Молния никогда не бьёт дважды в одно место', category: 'ФИЗИКА', explanation: 'Миф! Молния часто бьёт в одно место многократно. Высокие здания и башни получают удары молнии сотни раз в год.', isTrue: false },
+          en: { text: 'Lightning never strikes the same place twice', category: 'PHYSICS', explanation: "Myth! Lightning frequently strikes the same spot multiple times. Tall buildings and towers get struck hundreds of times per year.", isTrue: false }
         },
         {
-          ru: { text: '"Мы используем только 10% мозга"', explanation: 'Миф! МРТ-исследования показывают, что мы используем практически все области мозга, хотя и не одновременно.', isTrue: false, emoji: '🧠' },
-          en: { text: '"We only use 10% of our brain"', explanation: "Myth! MRI studies show we use virtually all brain regions, just not all simultaneously.", isTrue: false, emoji: '🧠' }
+          ru: { text: 'Мы используем только 10% своего мозга', category: 'НАУКА', explanation: 'Миф! МРТ-исследования показывают, что мы используем практически все области мозга, хотя и не одновременно.', isTrue: false },
+          en: { text: 'We only use 10% of our brain', category: 'SCIENCE', explanation: "Myth! MRI studies show we use virtually all brain regions, just not all simultaneously.", isTrue: false }
         },
         {
-          ru: { text: '"Кровь в венах синяя"', explanation: 'Миф! Кровь всегда красная — в артериях ярко-красная, в венах тёмно-красная. Синий цвет вен — оптическая иллюзия из-за особенностей поглощения света кожей.', isTrue: false, emoji: '🩸' },
-          en: { text: '"Blood in veins is blue"', explanation: "Myth! Blood is always red — bright red in arteries, dark red in veins. The blue color of veins is an optical illusion caused by how skin absorbs light.", isTrue: false, emoji: '🩸' }
+          ru: { text: 'Кровь в венах синяя', category: 'БИОЛОГИЯ', explanation: 'Миф! Кровь всегда красная. Синий цвет вен — оптическая иллюзия из-за особенностей поглощения света кожей.', isTrue: false },
+          en: { text: 'Blood in veins is blue', category: 'BIOLOGY', explanation: "Myth! Blood is always red. The blue color of veins is an optical illusion caused by how skin absorbs light.", isTrue: false }
         },
         {
-          ru: { text: '"Золото нельзя растворить в воде"', explanation: 'Факт! Чистая вода не растворяет золото. Оно растворяется только в царской водке — смеси соляной и азотной кислот.', isTrue: true, emoji: '🥇' },
-          en: { text: '"Gold cannot be dissolved in water"', explanation: "Fact! Pure water cannot dissolve gold. It only dissolves in aqua regia — a mixture of hydrochloric and nitric acids.", isTrue: true, emoji: '🥇' }
+          ru: { text: 'Золото нельзя растворить в воде', category: 'ХИМИЯ', explanation: 'Факт! Чистая вода не растворяет золото. Оно растворяется только в царской водке — смеси соляной и азотной кислот.', isTrue: true },
+          en: { text: 'Gold cannot be dissolved in water', category: 'CHEMISTRY', explanation: "Fact! Pure water cannot dissolve gold. It only dissolves in aqua regia — a mixture of hydrochloric and nitric acids.", isTrue: true }
         }
       ];
 
@@ -1736,12 +1846,50 @@
       var phoneResultBadge = document.getElementById('phone-result-badge');
       var phoneResultText = document.getElementById('phone-result-text');
       var phoneBtnsEl = document.getElementById('phone-btns');
+      var phoneProgressFill = document.getElementById('phone-progress-fill');
+      var phoneCounterEl = document.getElementById('phone-counter');
+      var phoneScoreBadge = document.querySelector('.phone-header-score');
 
       var phoneCurrentCard = 0;
       var phoneAnswered = false;
+      var phoneStreak = 0;
+
+      function phoneUpdateStreak(isCorrect) {
+        if (isCorrect) {
+          phoneStreak++;
+          if (phoneScoreBadge) {
+            phoneScoreBadge.textContent = '🔥 ' + phoneStreak;
+            phoneScoreBadge.style.background = 'rgba(16,185,129,0.2)';
+            phoneScoreBadge.style.borderColor = 'rgba(16,185,129,0.5)';
+            phoneScoreBadge.style.color = '#34D399';
+          }
+        } else {
+          phoneStreak = 0;
+          if (phoneScoreBadge) {
+            phoneScoreBadge.textContent = '🔥 0';
+            phoneScoreBadge.style.background = 'rgba(239,68,68,0.15)';
+            phoneScoreBadge.style.borderColor = 'rgba(239,68,68,0.4)';
+            phoneScoreBadge.style.color = '#F87171';
+            setTimeout(function() {
+              phoneScoreBadge.style.background = '';
+              phoneScoreBadge.style.borderColor = '';
+              phoneScoreBadge.style.color = '';
+            }, 1200);
+          }
+        }
+      }
 
       function phoneGetLang() {
         return localStorage.getItem('ff_lang') || window.__ffLang || 'ru';
+      }
+
+      function phoneUpdateHeader() {
+        if (phoneProgressFill) {
+          phoneProgressFill.style.width = (phoneCurrentCard / DEMO_CARDS.length * 100) + '%';
+        }
+        if (phoneCounterEl) {
+          phoneCounterEl.textContent = (phoneCurrentCard + 1) + ' / ' + DEMO_CARDS.length;
+        }
       }
 
       function phoneBuildDeck() {
@@ -1754,17 +1902,14 @@
           cardEl.className = 'phone-deck-card';
           cardEl.dataset.index = i;
           cardEl.innerHTML =
-            '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<div class="phone-card-counter">' + (i + 1) + ' / ' + DEMO_CARDS.length + '</div>' +
-              '<span style="font-size:20px">' + d.emoji + '</span>' +
-            '</div>' +
-            '<div style="flex:1;display:flex;align-items:center">' +
-              '<div class="phone-card-text">' + d.text + '</div>' +
-            '</div>' +
-            '<div class="phone-card-label" data-ru="Факт или миф?" data-en="Fact or myth?">Факт или миф?</div>';
+            '<div class="phone-card-category">' + d.category + '</div>' +
+            '<div class="phone-card-quote">«</div>' +
+            '<div class="phone-card-text">' + d.text + '</div>' +
+            '<div class="phone-card-quote">»</div>';
           phoneDeck.appendChild(cardEl);
         }
         phoneAnswered = false;
+        phoneUpdateHeader();
         if (phoneBtnsEl) {
           phoneBtnsEl.querySelectorAll('.phone-btn').forEach(function(b) { b.disabled = false; });
           phoneBtnsEl.style.display = '';
@@ -1772,12 +1917,7 @@
       }
 
       function phoneUpdateProgress() {
-        var dots = document.querySelectorAll('.phone-progress-dot');
-        dots.forEach(function(d, i) {
-          d.classList.remove('done', 'active');
-          if (i < phoneCurrentCard) d.classList.add('done');
-          else if (i === phoneCurrentCard) d.classList.add('active');
-        });
+        phoneUpdateHeader();
       }
 
       function phoneAnswer(userSaidTrue) {
@@ -1804,6 +1944,7 @@
             : (isCorrect ? 'Correct! ✅' : 'Incorrect ❌');
           phoneResultBadge.className = 'phone-result-badge ' + (isCorrect ? 'correct' : 'wrong');
           phoneResultText.textContent = d.explanation;
+          phoneUpdateStreak(isCorrect);
           phoneResult.style.display = 'flex';
         }, 350);
       }
@@ -1827,18 +1968,6 @@
       }
 
       if (phoneDeck) {
-        // Добавить прогресс-точки перед .phone-btns
-        var progressEl = document.createElement('div');
-        progressEl.className = 'phone-progress';
-        DEMO_CARDS.forEach(function(_, i) {
-          var dot = document.createElement('div');
-          dot.className = 'phone-progress-dot' + (i === 0 ? ' active' : '');
-          progressEl.appendChild(dot);
-        });
-        if (phoneBtnsEl && phoneBtnsEl.parentNode) {
-          phoneBtnsEl.parentNode.insertBefore(progressEl, phoneBtnsEl);
-        }
-
         phoneBuildDeck();
 
         if (phoneBtnFact) phoneBtnFact.addEventListener('click', function() { phoneAnswer(true); });
