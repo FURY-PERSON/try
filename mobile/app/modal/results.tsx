@@ -28,6 +28,7 @@ import { fontFamily } from '@/theme/typography';
 import { shareResult } from '@/utils/share';
 import { getResultMessage } from '@/features/game/utils';
 import { analytics } from '@/services/analytics';
+import { s } from '@/utils/scale';
 
 export default function ResultsModal() {
   const insets = useSafeAreaInsets();
@@ -222,59 +223,59 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 300,
+    height: s(300),
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 32,
+    gap: s(16),
+    paddingHorizontal: s(32),
   },
   scoreContainer: {
     alignItems: 'center',
   },
   score: {
-    fontSize: 56,
+    fontSize: s(56),
     fontFamily: fontFamily.black,
-    lineHeight: 64,
+    lineHeight: s(64),
     letterSpacing: -1,
   },
   message: {
-    fontSize: 22,
+    fontSize: s(22),
     fontFamily: fontFamily.bold,
-    lineHeight: 28,
+    lineHeight: s(28),
     textAlign: 'center',
   },
   percentText: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
   },
   positionCard: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: s(10),
+    paddingHorizontal: s(20),
   },
   positionText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.medium,
     textAlign: 'center',
   },
   replayBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    gap: s(8),
+    paddingVertical: s(10),
+    paddingHorizontal: s(16),
+    borderRadius: s(12),
   },
   replayBannerText: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.semiBold,
   },
   footer: {
-    paddingHorizontal: 20,
-    gap: 12,
+    paddingHorizontal: s(20),
+    gap: s(12),
   },
   adOverlay: {
     position: 'absolute',

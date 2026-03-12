@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type DailyResultCardProps = {
   results: boolean[];
@@ -66,11 +67,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: s(6),
     justifyContent: 'center',
   },
   square: {
-    width: 22,
-    height: 22,
+    width: s(22),
+    height: s(22),
   },
 });

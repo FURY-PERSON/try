@@ -29,9 +29,16 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { SwipeDirection } from '../types';
 import { FlipSwipeCardAndroid } from './FlipSwipeCardAndroid';
+import { s, isTablet } from '@/utils/scale';
 
 // Static transform object — avoids per-frame allocation in worklets
 const PERSPECTIVE = { perspective: 1200 } as const;
+
+function getStatementFontSize(text: string): number {
+  const len = text.length;
+  const base = len > 200 ? 14 : len > 150 ? 16 : len > 100 ? 18 : len > 60 ? 20 : 22;
+  return s(base);
+}
 
 // Static LinearGradient point objects
 const GRADIENT_START = { x: 0, y: 0 } as const;
@@ -85,7 +92,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
 
   const swipeThreshold = useMemo(() => screenWidth * 0.25, [screenWidth]);
   const dismissThreshold = useMemo(() => screenWidth * 0.20 / 1.1, [screenWidth]);
-  const cardWidth = useMemo(() => screenWidth - 48, [screenWidth]);
+  const cardWidth = useMemo(() => isTablet ? screenWidth * 0.6 : screenWidth - 48, [screenWidth]);
+  const cardHeight = isTablet ? cardWidth : undefined;
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -374,12 +382,18 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     };
   });
 
+  // Peek offsets — scaled up on iPad so the stack is visible on larger cards
+  const peekInit = s(12);
+  const peek2Start = s(24);
+  const peek3Start = s(36);
+  const peek4Start = s(48);
+
   const secondStackStyle = useAnimatedStyle(() => {
     'worklet';
     const ep = entranceProgress.value;
     return {
       transform: [{ scale: 0.92 + ep * 0.04 }],
-      top: 24 - ep * 12,
+      top: peek2Start - ep * peekInit,
       opacity: 1,
     };
   });
@@ -389,7 +403,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     const ep = entranceProgress.value;
     return {
       transform: [{ scale: 0.88 + ep * 0.04 }],
-      top: 36 - ep * 12,
+      top: peek3Start - ep * peekInit,
       opacity: 0.5,
     };
   });
@@ -399,7 +413,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     const ep = entranceProgress.value;
     return {
       transform: [{ scale: 0.84 + ep * 0.04 }],
-      top: 48 - ep * 12,
+      top: peek4Start - ep * peekInit,
       opacity: 0,
     };
   });
@@ -438,13 +452,14 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
 
   // Dynamic styles for dimension-dependent widths
   const dynamicStyles = useMemo(() => ({
-    stackCard: { width: cardWidth },
-    card: { width: cardWidth },
-  }), [cardWidth]);
+    wrapper: isTablet ? { width: cardWidth, alignSelf: 'center' as const } : undefined,
+    stackCard: { width: cardWidth, ...(cardHeight ? { height: cardHeight } : {}) },
+    card: { width: cardWidth, ...(cardHeight ? { height: cardHeight } : {}) },
+  }), [cardWidth, cardHeight]);
 
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, dynamicStyles.wrapper]}>
       {/* Fourth card in stack (opacity 0, pre-rendered after entrance animation) */}
       {remainingCards > 3 && fourthCardReady && (
         <Animated.View
@@ -525,7 +540,13 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                 &laquo;
               </Text>
               <Text
-                style={[styles.frontStatement, { color: colors.textPrimary }]}
+                style={[
+                  styles.frontStatement,
+                  {
+                    color: colors.textPrimary,
+                    fontSize: getStatementFontSize(stackContent.nextStatement ?? ''),
+                  },
+                ]}
                 numberOfLines={8}
               >
                 {stackContent.nextStatement}
@@ -622,7 +643,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                   styles.frontStatement,
                   {
                     color: colors.textPrimary,
-                    fontSize: statement.length > 200 ? 15 : statement.length > 150 ? 17 : statement.length > 100 ? 19 : 22,
+                    fontSize: getStatementFontSize(statement),
                   },
                 ]}
               >
@@ -751,17 +772,17 @@ const styles = StyleSheet.create({
   },
   stackCard: {
     position: 'absolute',
-    left: 0,
-    bottom: 0,
+    top: 0,
     height: '100%',
   },
   card: {
-    minHeight: 300,
+    minHeight: s(300),
     overflow: 'visible',
   },
   faceOuter: {
     width: '100%',
-    minHeight: 300,
+    minHeight: s(300),
+    flex: 1,
     overflow: 'visible',
   },
   backFaceOuter: {
@@ -777,20 +798,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   topAccent: {
-    height: 3,
+    height: s(3),
     width: '100%',
   },
   frontContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: s(24),
+    paddingVertical: s(32),
     flex: 1,
     justifyContent: 'center',
   },
   overlay: {
     position: 'absolute',
-    top: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    top: s(24),
+    paddingHorizontal: s(16),
+    paddingVertical: s(8),
     zIndex: 10,
   },
   factOverlay: {
@@ -800,37 +821,36 @@ const styles = StyleSheet.create({
     left: 20,
   },
   overlayText: {
-    fontSize: 18,
+    fontSize: s(18),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   categoryBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 8,
-    marginTop: 12,
+    paddingHorizontal: s(14),
+    paddingVertical: s(6),
+    borderRadius: s(12),
+    marginBottom: s(8),
+    marginTop: s(12),
   },
   category: {
-    fontSize: 12,
+    fontSize: s(12),
     fontFamily: fontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
   statementQuote: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.black,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
   quoteEnd: {
     textAlign: 'center',
   },
   frontStatement: {
-    fontSize: 22,
     fontFamily: fontFamily.bold,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
   // Back face styles
@@ -838,56 +858,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    gap: s(8),
+    paddingVertical: s(14),
+    paddingHorizontal: s(24),
   },
   resultText: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   resultChevron: {
-    marginLeft: 4,
+    marginLeft: s(4),
   },
   backBody: {
     flex: 1,
   },
   backBodyContent: {
-    padding: 24,
+    padding: s(24),
   },
   backStatement: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.medium,
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 12,
+    lineHeight: s(22),
+    marginBottom: s(12),
   },
   truthBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 16,
-    marginBottom: 16,
+    paddingHorizontal: s(14),
+    paddingVertical: s(5),
+    borderRadius: s(16),
+    marginBottom: s(16),
   },
   truthText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
   },
   explanation: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
-    lineHeight: 22,
+    lineHeight: s(22),
   },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
+    gap: s(4),
+    marginTop: s(8),
   },
   sourceText: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.medium,
   },
   sourceLink: {

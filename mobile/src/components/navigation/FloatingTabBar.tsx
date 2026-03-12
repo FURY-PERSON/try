@@ -11,10 +11,11 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import type { FC } from 'react';
+import { s, isTablet } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const TAB_BAR_HEIGHT = 56;
+const TAB_BAR_HEIGHT = isTablet ? 72 : 56;
 const TAB_BAR_MARGIN_H = 20;
 const TAB_BAR_MARGIN_BOTTOM = 12;
 const TAB_BAR_RADIUS = 22;
@@ -149,7 +150,7 @@ export const FloatingTabBar: FC<BottomTabBarProps> = ({
             const icon = options.tabBarIcon?.({
               focused: isFocused,
               color,
-              size: 22,
+              size: isTablet ? 30 : 22,
             });
 
             return (
@@ -197,8 +198,8 @@ const styles = StyleSheet.create({
   },
   barWrapper: {
     position: 'absolute',
-    left: TAB_BAR_MARGIN_H,
-    right: TAB_BAR_MARGIN_H,
+    left: isTablet ? '20%' : TAB_BAR_MARGIN_H,
+    right: isTablet ? '20%' : TAB_BAR_MARGIN_H,
     alignItems: 'center',
   },
   barContainer: {
@@ -214,11 +215,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: isTablet ? 10 : s(6),
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: isTablet ? 14 : s(10),
     fontFamily: fontFamily.semiBold,
-    marginTop: 2,
+    marginTop: isTablet ? 4 : s(2),
   },
 });

@@ -13,6 +13,7 @@ import { referenceApi } from '@/features/onboarding/api/referenceApi';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import { s } from '@/utils/scale';
 
 export default function OnboardingStep4() {
   const insets = useSafeAreaInsets();
@@ -221,89 +222,89 @@ export default function OnboardingStep4() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  skipButton: { alignSelf: 'flex-end', padding: 16 },
-  skipText: { fontSize: 15, fontFamily: fontFamily.bold },
+  skipButton: { alignSelf: 'flex-end', padding: s(16) },
+  skipText: { fontSize: s(15), fontFamily: fontFamily.bold },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 12,
+    paddingHorizontal: s(32),
+    gap: s(12),
   },
   title: {
-    fontSize: 28,
+    fontSize: s(28),
     fontFamily: fontFamily.extraBold,
-    lineHeight: 36,
+    lineHeight: s(36),
     textAlign: 'center',
     letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 22,
+    lineHeight: s(22),
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   avatarCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: s(100),
+    height: s(100),
+    borderRadius: s(50),
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 52,
+    fontSize: s(52),
   },
   tapHint: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.medium,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: s(4),
   },
   emojiPicker: {
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: s(16),
+    padding: s(12),
     width: '100%',
   },
   emojiScroll: {
-    maxHeight: 160,
+    maxHeight: s(160),
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 4,
+    gap: s(4),
   },
   emojiItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: s(44),
+    height: s(44),
+    borderRadius: s(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   emojiText: {
-    fontSize: 28,
+    fontSize: s(28),
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: s(10),
   },
   regenerateBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: s(44),
+    height: s(44),
+    borderRadius: s(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   errorText: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.medium,
     textAlign: 'center',
   },
-  footer: { paddingHorizontal: 16, paddingBottom: 32, gap: 16 },
-  buttonPadded: { paddingHorizontal: 4 },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { width: 24, borderRadius: 4 },
+  footer: { paddingHorizontal: s(16), paddingBottom: s(32), gap: s(16) },
+  buttonPadded: { paddingHorizontal: s(4) },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: s(8) },
+  dot: { width: s(8), height: s(8), borderRadius: s(4) },
+  dotActive: { width: s(24), borderRadius: s(4) },
 });

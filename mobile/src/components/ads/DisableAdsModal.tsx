@@ -10,6 +10,7 @@ import { adManager } from '@/services/ads';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type DisableAdsModalProps = {
   visible: boolean;
@@ -113,37 +114,37 @@ export const DisableAdsModal: FC<DisableAdsModalProps> = ({ visible, onClose }) 
 const styles = StyleSheet.create({
   modal: {
     width: '100%',
-    padding: 24,
+    padding: s(24),
     alignItems: 'center',
-    gap: 12,
+    gap: s(12),
   },
   title: {
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.bold,
     textAlign: 'center',
   },
   desc: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: s(22),
   },
   watchBtn: {
     width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: s(14),
+    borderRadius: s(12),
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: s(8),
   },
   watchBtnText: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.semiBold,
   },
   cancelBtn: {
-    paddingVertical: 8,
+    paddingVertical: s(8),
   },
   cancelText: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.regular,
   },
 });

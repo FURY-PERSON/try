@@ -16,6 +16,7 @@ import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardMode, LeaderboardPeriod } from '@/shared';
+import { s } from '@/utils/scale';
 
 const MODES: LeaderboardMode[] = ['score', 'streak'];
 const PERIODS: LeaderboardPeriod[] = ['weekly', 'monthly', 'yearly', 'alltime'];
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: s(44),
     zIndex: 10,
   },
   headerRight: {
@@ -150,27 +151,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   largeTitle: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.bold,
     letterSpacing: -0.5,
   },
   segmentedControl: {
     flexDirection: 'row',
-    padding: 4,
-    marginTop: 12,
-    marginBottom: 16,
+    padding: s(4),
+    marginTop: s(12),
+    marginBottom: s(16),
   },
   segment: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: s(8),
     alignItems: 'center',
     justifyContent: 'center',
   },
   segmentText: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.semiBold,
   },
   skeletons: {
-    marginTop: 8,
+    marginTop: s(8),
   },
 });

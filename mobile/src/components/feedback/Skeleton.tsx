@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
 import type { ViewStyle } from 'react-native';
+import { s } from '@/utils/scale';
 
 type SkeletonShape = 'rectangle' | 'circle' | 'card';
 
@@ -91,6 +92,6 @@ const styles = StyleSheet.create({
   },
   shimmerGradient: {
     flex: 1,
-    width: 200,
+    width: s(200),
   },
 });

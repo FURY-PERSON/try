@@ -7,6 +7,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type Props = {
   status: 'checking' | 'unavailable';
@@ -67,29 +68,29 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 48,
+    paddingHorizontal: s(48),
   },
   iconContainer: {
-    width: 88,
-    height: 88,
+    width: s(88),
+    height: s(88),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: s(24),
   },
   title: {
-    fontSize: 22,
+    fontSize: s(22),
     fontFamily: fontFamily.bold,
-    lineHeight: 30,
+    lineHeight: s(30),
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
-    lineHeight: 22,
+    lineHeight: s(22),
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: s(10),
   },
   action: {
-    marginTop: 32,
+    marginTop: s(32),
   },
 });

@@ -16,6 +16,7 @@ import { fontFamily } from '@/theme/typography';
 import { useTranslation } from 'react-i18next';
 import type { FC } from 'react';
 import type { SwipeDirection } from '../types';
+import { s } from '@/utils/scale';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
@@ -280,33 +281,33 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    minHeight: 300,
+    minHeight: s(300),
     ...Platform.select({
       ios: { overflow: 'hidden' as const },
       android: {  overflow: 'hidden' as const},
     }),
   },
   topAccent: {
-    height: 3,
+    height: s(3),
     width: '100%',
   },
   cardContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: s(24),
+    paddingVertical: s(32),
     flex: 1,
     justifyContent: 'center',
   },
   stackContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: s(24),
+    paddingVertical: s(24),
     flex: 1,
     justifyContent: 'center',
   },
   overlay: {
     position: 'absolute',
-    top: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    top: s(24),
+    paddingHorizontal: s(16),
+    paddingVertical: s(8),
     zIndex: 10,
   },
   factOverlay: {
@@ -316,37 +317,37 @@ const styles = StyleSheet.create({
     left: 20,
   },
   overlayText: {
-    fontSize: 18,
+    fontSize: s(18),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   categoryBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 8,
-    marginTop: 12,
+    paddingHorizontal: s(14),
+    paddingVertical: s(6),
+    borderRadius: s(12),
+    marginBottom: s(8),
+    marginTop: s(12),
   },
   category: {
-    fontSize: 12,
+    fontSize: s(12),
     fontFamily: fontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
   statementQuote: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.black,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
   quoteEnd: {
     textAlign: 'center',
   },
   statement: {
-    fontSize: 22,
+    fontSize: s(22),
     fontFamily: fontFamily.bold,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
 });

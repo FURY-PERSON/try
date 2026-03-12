@@ -16,6 +16,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { showToast } from '@/stores/useToastStore';
+import { s } from '@/utils/scale';
 
 export default function NicknameModal() {
   const insets = useSafeAreaInsets();
@@ -233,56 +234,56 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 32,
-    gap: 16,
+    paddingHorizontal: s(32),
+    gap: s(16),
     alignItems: 'center',
   },
   avatarSection: {
     alignItems: 'center',
-    gap: 2,
+    gap: s(2),
   },
   avatarCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: s(88),
+    height: s(88),
+    borderRadius: s(44),
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 46,
+    fontSize: s(46),
   },
   tapHint: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.medium,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: s(4),
   },
   emojiPicker: {
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: s(16),
+    padding: s(12),
     width: '100%',
   },
   emojiScroll: {
-    maxHeight: 160,
+    maxHeight: s(160),
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 4,
+    gap: s(4),
   },
   emojiItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: s(44),
+    height: s(44),
+    borderRadius: s(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   emojiText: {
-    fontSize: 28,
+    fontSize: s(28),
   },
   title: {
-    fontSize: 28,
+    fontSize: s(28),
     fontFamily: fontFamily.extraBold,
     textAlign: 'center',
     letterSpacing: -0.3,
@@ -293,23 +294,23 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: s(10),
   },
   regenerateBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: s(44),
+    height: s(44),
+    borderRadius: s(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   hint: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   footer: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-    gap: 8,
+    paddingHorizontal: s(16),
+    paddingBottom: s(32),
+    gap: s(8),
   },
 });

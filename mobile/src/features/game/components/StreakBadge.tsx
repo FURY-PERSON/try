@@ -22,6 +22,7 @@ import { FireAura } from './FireAura';
 import { haptics } from '@/utils/haptics';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type StreakBadgeProps = {
   days: number;
@@ -642,15 +643,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 9999,
-    gap: 4,
+    borderRadius: s(9999),
+    gap: s(4),
   },
   text: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.bold,
   },
   textMd: {
-    fontSize: 18,
+    fontSize: s(18),
   },
   fireOverlay: {
     position: 'absolute',
@@ -659,7 +660,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   starOverlay: {
-    fontSize: 10,
+    fontSize: s(10),
     marginLeft: -2,
   },
   plusOneContainer: {
@@ -669,7 +670,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   plusOne: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.extraBold,
   },
   burstContainer: {
@@ -679,8 +680,8 @@ const styles = StyleSheet.create({
   },
   burstParticle: {
     position: 'absolute',
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: s(5),
+    height: s(5),
+    borderRadius: s(2.5),
   },
 });

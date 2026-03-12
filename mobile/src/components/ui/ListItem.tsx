@@ -10,6 +10,7 @@ import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { FC, ReactNode } from 'react';
+import { s } from '@/utils/scale';
 
 type ListItemVariant = 'default' | 'card';
 
@@ -127,30 +128,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    minHeight: 48,
+    paddingVertical: s(12),
+    paddingHorizontal: s(16),
+    minHeight: s(48),
   },
   left: {
-    marginRight: 14,
+    marginRight: s(14),
   },
   content: {
     flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.regular,
-    lineHeight: 22,
+    lineHeight: s(22),
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.regular,
-    lineHeight: 18,
-    marginTop: 2,
+    lineHeight: s(18),
+    marginTop: s(2),
   },
   rightText: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.regular,
-    marginRight: 4,
+    marginRight: s(4),
   },
 });

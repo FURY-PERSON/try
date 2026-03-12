@@ -3,8 +3,33 @@ import { colors } from './colors';
 import { typography } from './typography';
 import { spacing, borderRadius, elevation } from './spacing';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { isTablet, s } from '@/utils/scale';
 import type { ThemeColors, ColorScheme } from './colors';
 import type { FC, ReactNode } from 'react';
+
+const TABLET_SCALE = 1.4;
+export { isTablet };
+export const scale = s;
+function scaleObj<T extends Record<string, number>>(obj: T, scale: number): T {
+  const result = {} as T;
+  for (const key in obj) {
+    result[key] = (obj[key] * scale) as T[typeof key];
+  }
+  return result;
+}
+
+function scaleTypography(typo: typeof typography, scale: number): typeof typography {
+  const result = {} as typeof typography;
+  for (const key in typo) {
+    const style = typo[key as keyof typeof typo];
+    result[key as keyof typeof typo] = {
+      ...style,
+      fontSize: style.fontSize ? Math.round(style.fontSize * scale) : style.fontSize,
+      lineHeight: style.lineHeight ? Math.round(style.lineHeight * scale) : style.lineHeight,
+    };
+  }
+  return result;
+}
 
 export type ThemeGradients = {
   primary: [string, string];
@@ -24,6 +49,8 @@ type Theme = {
   gradients: ThemeGradients;
   colorScheme: ColorScheme;
   isDark: boolean;
+  isTablet: boolean;
+  scale: (value: number) => number;
 };
 
 const ThemeContext = createContext<Theme | null>(null);
@@ -58,13 +85,15 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({ children }) => {
   const theme: Theme = useMemo(
     () => ({
       colors: colors[colorScheme],
-      typography,
-      spacing,
-      borderRadius,
+      typography: isTablet ? scaleTypography(typography, TABLET_SCALE) : typography,
+      spacing: isTablet ? scaleObj(spacing, TABLET_SCALE) : spacing,
+      borderRadius: isTablet ? scaleObj(borderRadius, TABLET_SCALE) : borderRadius,
       elevation,
       gradients: colorScheme === 'dark' ? darkGradients : lightGradients,
       colorScheme,
       isDark: colorScheme === 'dark',
+      isTablet,
+      scale,
     }),
     [colorScheme],
   );

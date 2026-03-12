@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/Switch';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { FC, ReactNode } from 'react';
+import { s } from '@/utils/scale';
 
 type SettingsRowProps = {
   icon?: ReactNode;
@@ -98,25 +99,25 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: s(14),
+    paddingHorizontal: s(16),
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   iconWrap: {
-    width: 32,
-    height: 32,
+    width: s(32),
+    height: s(32),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: s(14),
   },
   title: {
     flex: 1,
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.semiBold,
   },
   value: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.regular,
-    marginRight: 8,
+    marginRight: s(8),
   },
 });

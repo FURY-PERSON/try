@@ -15,6 +15,7 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type SwipeHintOverlayProps = {
   variant: 'answer' | 'continue';
@@ -102,31 +103,31 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    gap: 24,
-    marginTop: 160
+    gap: s(24),
+    marginTop: s(160)
   },
   hand: {
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   fingerEmoji: {
-    fontSize: 64,
+    fontSize: s(64),
   },
   hintText: {
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: s(28),
   },
   button: {
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: s(32),
+    paddingVertical: s(12),
+    borderRadius: s(24),
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.4)',
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.semiBold,
     color: '#FFFFFF',
   },

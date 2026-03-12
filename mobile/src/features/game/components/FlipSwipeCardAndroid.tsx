@@ -44,6 +44,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { SwipeDirection } from '../types';
 import type { FlipSwipeCardRef, FlipSwipeCardProps } from './FlipSwipeCard';
+import { s } from '@/utils/scale';
 
 type FlipPhase = 'front' | 'flipping' | 'back';
 
@@ -643,12 +644,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   card: {
-    minHeight: 300,
+    minHeight: s(300),
     overflow: 'visible',
   },
   faceOuter: {
     width: '100%',
-    minHeight: 300,
+    minHeight: s(300),
     overflow: 'visible',
   },
   backFaceOuter: {
@@ -664,20 +665,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   topAccent: {
-    height: 3,
+    height: s(3),
     width: '100%',
   },
   frontContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingHorizontal: s(24),
+    paddingVertical: s(32),
     flex: 1,
     justifyContent: 'center',
   },
   overlay: {
     position: 'absolute',
-    top: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    top: s(24),
+    paddingHorizontal: s(16),
+    paddingVertical: s(8),
     zIndex: 10,
   },
   factOverlay: {
@@ -687,93 +688,93 @@ const styles = StyleSheet.create({
     left: 20,
   },
   overlayText: {
-    fontSize: 18,
+    fontSize: s(18),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   categoryBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 8,
-    marginTop: 12,
+    paddingHorizontal: s(14),
+    paddingVertical: s(6),
+    borderRadius: s(12),
+    marginBottom: s(8),
+    marginTop: s(12),
   },
   category: {
-    fontSize: 12,
+    fontSize: s(12),
     fontFamily: fontFamily.bold,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
   statementQuote: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.black,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
   quoteEnd: {
     textAlign: 'center',
   },
   frontStatement: {
-    fontSize: 22,
+    fontSize: s(22),
     fontFamily: fontFamily.bold,
-    lineHeight: 32,
+    lineHeight: s(32),
     textAlign: 'center',
   },
   resultBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    gap: s(8),
+    paddingVertical: s(14),
+    paddingHorizontal: s(24),
   },
   resultText: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   resultChevron: {
-    marginLeft: 4,
+    marginLeft: s(4),
   },
   backBody: {
     flex: 1,
   },
   backBodyContent: {
-    padding: 24,
+    padding: s(24),
   },
   backStatement: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.medium,
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 12,
+    lineHeight: s(22),
+    marginBottom: s(12),
   },
   truthBadge: {
     alignSelf: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 16,
-    marginBottom: 16,
+    paddingHorizontal: s(14),
+    paddingVertical: s(5),
+    borderRadius: s(16),
+    marginBottom: s(16),
   },
   truthText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
   },
   explanation: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
-    lineHeight: 22,
+    lineHeight: s(22),
   },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
+    gap: s(4),
+    marginTop: s(8),
   },
   sourceText: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.medium,
   },
   sourceLink: {

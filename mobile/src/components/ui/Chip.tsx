@@ -10,6 +10,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import type { FC, ReactNode } from 'react';
+import { s } from '@/utils/scale';
 
 type ChipVariant = 'primary' | 'blue' | 'orange' | 'purple' | 'default';
 
@@ -114,18 +115,18 @@ export const Chip: FC<ChipProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: s(16),
+    paddingVertical: s(8),
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconLeft: {
-    marginRight: 6,
+    marginRight: s(6),
   },
   label: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.semiBold,
   },
 });

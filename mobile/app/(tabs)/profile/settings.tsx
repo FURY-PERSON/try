@@ -15,6 +15,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { APP_VERSION, PRIVACY_POLICY_URL } from '@/constants/config';
 import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
+import { s } from '@/utils/scale';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -141,28 +142,28 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    minHeight: 44,
+    minHeight: s(44),
     justifyContent: 'center',
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: s(8),
     marginLeft: -6,
   },
   backText: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.medium,
   },
   largeTitle: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.bold,
     letterSpacing: -0.5,
   },
   chipRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    gap: s(8),
+    paddingHorizontal: s(16),
+    paddingBottom: s(14),
   },
 });

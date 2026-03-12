@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type DividerProps = {
   marginVertical?: number;
@@ -31,6 +32,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inset: {
-    marginLeft: 16,
+    marginLeft: s(16),
   },
 });

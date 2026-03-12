@@ -10,6 +10,7 @@ import { Feather } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
 import type { TextInputProps, ViewStyle } from 'react-native';
+import { s } from '@/utils/scale';
 
 type InputVariant = 'default' | 'search' | 'answer';
 
@@ -128,17 +129,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    minHeight: 48,
+    paddingHorizontal: s(14),
+    minHeight: s(48),
   },
   iconLeft: {
-    marginRight: 10,
+    marginRight: s(10),
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: s(12),
   },
   iconRight: {
-    marginLeft: 10,
+    marginLeft: s(10),
   },
 });

@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
 import type { FC, ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
+import { s } from '@/utils/scale';
 
 type CardVariant = 'default' | 'highlighted' | 'flat' | 'gradient';
 
@@ -131,7 +132,7 @@ export const Card: FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: s(20),
   },
   overflow: {
     overflow: 'hidden',

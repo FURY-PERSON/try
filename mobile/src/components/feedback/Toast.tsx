@@ -13,6 +13,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type ToastVariant = 'success' | 'error' | 'info' | 'warning';
 
@@ -120,19 +121,19 @@ const styles = StyleSheet.create({
     }),
   },
   indicator: {
-    width: 4,
+    width: s(4),
   },
   content: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: s(16),
+    paddingVertical: s(14),
   },
   message: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.semiBold,
-    marginLeft: 12,
+    marginLeft: s(12),
     flex: 1,
   },
 });

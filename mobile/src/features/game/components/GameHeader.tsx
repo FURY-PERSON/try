@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StreakBadge } from './StreakBadge';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type GameHeaderProps = {
   progress: number;
@@ -72,12 +73,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
-    gap: 12,
+    height: s(52),
+    gap: s(12),
   },
   closeButton: {
-    width: 36,
-    height: 36,
+    width: s(36),
+    height: s(36),
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -7,6 +7,7 @@ import { useFeatureFlag } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { UnityBanner, type BannerSize } from './UnityBanner';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 class AdErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
@@ -111,7 +112,7 @@ export const AdBanner: FC<AdBannerProps> = ({ placement, size = 'BANNER' }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: s(8),
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     ...Platform.select({

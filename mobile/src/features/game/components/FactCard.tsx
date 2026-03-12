@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Linking, Pressable, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
+import { s, isTablet } from '@/utils/scale';
 
 type FactCardProps = {
   explanation: string;
@@ -28,6 +29,9 @@ export const FactCard: FC<FactCardProps> = ({
 }) => {
   const { colors, borderRadius, spacing, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
+  const { width, height } = useWindowDimensions();
+  const tabletCardSize = Math.min(width, height) - s(64);
+  const tabletStyle = isTablet ? { width: tabletCardSize, height: tabletCardSize, alignSelf: 'center' as const } : undefined;
 
   const handleSourcePress = () => {
     if (sourceUrl) {
@@ -45,6 +49,7 @@ export const FactCard: FC<FactCardProps> = ({
           borderRadius: borderRadius.xl,
           ...elevation.md,
         },
+        tabletStyle,
       ]}
     >
       <LinearGradient
@@ -117,36 +122,36 @@ const styles = StyleSheet.create({
   headerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    gap: s(10),
+    paddingHorizontal: s(20),
+    paddingVertical: s(14),
   },
   title: {
-    fontSize: 18,
+    fontSize: s(18),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   body: {
-    padding: 20,
+    padding: s(20),
   },
   illustration: {
     width: '100%',
     aspectRatio: 16 / 9,
-    marginBottom: 12,
+    marginBottom: s(12),
   },
   factText: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 24,
+    lineHeight: s(24),
   },
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 8,
+    gap: s(4),
+    marginTop: s(8),
   },
   sourceText: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.semiBold,
   },
   sourceLink: {
@@ -155,6 +160,6 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 20,
+    marginTop: s(20),
   },
 });

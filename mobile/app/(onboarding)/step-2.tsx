@@ -11,6 +11,7 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useOnboarding } from '@/features/onboarding/hooks/useOnboarding';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import { s } from '@/utils/scale';
 
 export default function OnboardingStep2() {
   const insets = useSafeAreaInsets();
@@ -84,42 +85,42 @@ export default function OnboardingStep2() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  skipButton: { alignSelf: 'flex-end', padding: 16 },
-  skipText: { fontSize: 15, fontFamily: fontFamily.bold },
+  skipButton: { alignSelf: 'flex-end', padding: s(16) },
+  skipText: { fontSize: s(15), fontFamily: fontFamily.bold },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: s(32),
   },
   illustrationWrapper: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: s(32),
   },
   illustration: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
+    width: s(180),
+    height: s(180),
+    borderRadius: s(90),
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: s(28),
     fontFamily: fontFamily.extraBold,
-    lineHeight: 36,
+    lineHeight: s(36),
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: s(12),
     letterSpacing: -0.3,
   },
   description: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 24,
+    lineHeight: s(24),
     textAlign: 'center',
   },
-  footer: { paddingHorizontal: 16, paddingBottom: 32, gap: 16 },
-  buttonPadded: { paddingHorizontal: 4 },
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { width: 24, borderRadius: 4 },
+  footer: { paddingHorizontal: s(16), paddingBottom: s(32), gap: s(16) },
+  buttonPadded: { paddingHorizontal: s(4) },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: s(8) },
+  dot: { width: s(8), height: s(8), borderRadius: s(4) },
+  dotActive: { width: s(24), borderRadius: s(4) },
 });

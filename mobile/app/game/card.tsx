@@ -28,6 +28,7 @@ import { fontFamily } from '@/theme/typography';
 import { showToast } from '@/stores/useToastStore';
 import type { FlipSwipeCardRef } from '@/features/game/components/FlipSwipeCard';
 import type { DailySetQuestion } from '@/shared';
+import { s, isTablet } from '@/utils/scale';
 
 // Static LinearGradient point objects
 const GRADIENT_START = { x: 0, y: 0 } as const;
@@ -534,52 +535,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   padded: {
-    paddingHorizontal: 20,
+    paddingHorizontal: s(20),
   },
   cardArea: {
     flex: 1,
     justifyContent: 'center',
-    paddingBottom: '30%',
+    paddingBottom: isTablet ? 0 : '30%',
   },
   counterRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 4,
-    height: 28,
-    gap: 8,
+    marginTop: s(4),
+    height: s(28),
+    gap: s(8),
   },
   counterText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
     letterSpacing: 0.5,
   },
   undoButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: s(30),
+    height: s(30),
+    borderRadius: s(15),
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonsRow: {
-    paddingHorizontal: 20,
-    marginTop: 24,
-    height: 56,
+    paddingHorizontal: s(20),
+    marginTop: s(24),
+    height: s(56),
+    ...(isTablet && { alignSelf: 'center', width: '60%' }),
   },
   buttonsContent: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: s(12),
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 16,
+    gap: s(8),
+    paddingVertical: s(14),
+    borderRadius: s(16),
     borderWidth: 1.5,
   },
   fakeButton: {
@@ -593,45 +595,45 @@ const styles = StyleSheet.create({
     borderWidth: 0,
   },
   actionButtonText: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.bold,
   },
   actionButtonTextWhite: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.bold,
     color: '#FFFFFF',
   },
   modalContent: {
     width: '100%',
-    padding: 24,
+    padding: s(24),
     alignItems: 'center',
-    gap: 12,
+    gap: s(12),
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.bold,
     textAlign: 'center',
   },
   modalDesc: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: s(12),
+    marginTop: s(8),
     width: '100%',
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: 12,
+    paddingVertical: s(14),
+    paddingHorizontal: s(6),
+    borderRadius: s(12),
     alignItems: 'center',
   },
   modalButtonText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
   },
   adOverlay: {
@@ -644,35 +646,35 @@ const styles = StyleSheet.create({
   prevCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: s(8),
   },
   prevCardStatement: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.medium,
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: s(22),
   },
   prevCardTruthBadge: {
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 16,
+    paddingHorizontal: s(14),
+    paddingVertical: s(5),
+    borderRadius: s(16),
   },
   prevCardTruthText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
   },
   prevCardExplanation: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
-    lineHeight: 22,
+    lineHeight: s(22),
     textAlign: 'center',
   },
   prevCardCloseBtn: {
     width: '100%',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: s(14),
+    borderRadius: s(12),
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: s(4),
   },
 });

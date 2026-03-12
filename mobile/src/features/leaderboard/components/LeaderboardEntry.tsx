@@ -7,6 +7,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type LeaderboardEntryProps = {
   entry: LeaderboardEntryType;
@@ -124,30 +125,30 @@ export const LeaderboardEntry: FC<LeaderboardEntryProps> = React.memo(({
 
 const styles = StyleSheet.create({
   topCard: {
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   topCardInner: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: s(14),
+    paddingHorizontal: s(16),
   },
   card: {
-    marginBottom: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    marginBottom: s(8),
+    paddingVertical: s(12),
+    paddingHorizontal: s(16),
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: s(12),
   },
   rankTop: {
-    width: 32,
-    fontSize: 20,
+    width: s(32),
+    fontSize: s(20),
     textAlign: 'center',
   },
   rank: {
-    width: 32,
-    fontSize: 14,
+    width: s(32),
+    fontSize: s(14),
     fontFamily: fontFamily.bold,
     textAlign: 'center',
   },
@@ -155,16 +156,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   nickname: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.bold,
   },
   scoreTop: {
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.extraBold,
     letterSpacing: -0.3,
   },
   score: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.extraBold,
   },
 });

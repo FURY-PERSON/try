@@ -19,6 +19,7 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
+import { s } from '@/utils/scale';
 
 export default function StreakMilestoneModal() {
   const insets = useSafeAreaInsets();
@@ -122,31 +123,31 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: s(12),
   },
   days: {
-    fontSize: 72,
+    fontSize: s(72),
     fontFamily: fontFamily.black,
     color: '#FFFFFF',
     letterSpacing: -2,
-    lineHeight: 80,
+    lineHeight: s(80),
   },
   title: {
-    fontSize: 28,
+    fontSize: s(28),
     fontFamily: fontFamily.extraBold,
     textAlign: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: s(32),
     color: '#FFFFFF',
   },
   desc: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
     color: 'rgba(255,255,255,0.85)',
-    paddingHorizontal: 40,
+    paddingHorizontal: s(40),
   },
   footer: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingHorizontal: s(16),
+    paddingBottom: s(32),
   },
 });

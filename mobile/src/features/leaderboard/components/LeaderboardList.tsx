@@ -8,6 +8,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { LeaderboardEntry as LeaderboardEntryType, LeaderboardMode } from '@/shared';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type LeaderboardListProps = {
   data: LeaderboardEntryType[];
@@ -76,26 +77,26 @@ export const LeaderboardList: FC<LeaderboardListProps> = ({ data, currentUserId,
 
 const styles = StyleSheet.create({
   contextBlock: {
-    marginTop: 8,
+    marginTop: s(8),
   },
   separator: {
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.bold,
-    marginBottom: 8,
+    marginBottom: s(8),
     letterSpacing: 4,
   },
   positionFooter: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    paddingVertical: s(14),
+    paddingHorizontal: s(20),
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: s(8),
   },
   positionText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
   },
   adFooter: {
-    marginTop: 16,
+    marginTop: s(16),
   },
 });

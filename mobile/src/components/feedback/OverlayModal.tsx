@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Pressable, BackHandler } from 'react-native';
+import { StyleSheet, Pressable, BackHandler, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,6 +8,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import type { FC, ReactNode } from 'react';
+import { s, isTablet } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -24,6 +25,7 @@ export const OverlayModal: FC<OverlayModalProps> = ({
   onClose,
   children,
 }) => {
+  const { width } = useWindowDimensions();
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.9);
   const pointerEvents = useSharedValue(false);
@@ -79,7 +81,7 @@ export const OverlayModal: FC<OverlayModalProps> = ({
       />
 
       {/* Content */}
-      <Animated.View style={[styles.content, contentStyle]}>
+      <Animated.View style={[styles.content, isTablet && { width: width * 0.6 }, contentStyle]}>
         {children}
       </Animated.View>
     </Animated.View>
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   content: {
-    paddingHorizontal: 32,
+    paddingHorizontal: s(32),
     width: '100%',
   },
 });

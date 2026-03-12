@@ -4,6 +4,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { useTranslation } from 'react-i18next';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type HeatmapCalendarProps = {
   activityMap: Record<string, number>;
@@ -184,12 +185,12 @@ export const HeatmapCalendar: FC<HeatmapCalendarProps> = ({ activityMap }) => {
 
 const styles = StyleSheet.create({
   monthRow: {
-    height: 18,
-    marginBottom: 2,
+    height: s(18),
+    marginBottom: s(2),
     position: 'relative',
   },
   monthLabel: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.regular,
     position: 'absolute',
     top: 0,
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dayLabel: {
-    fontSize: 10,
+    fontSize: s(10),
     fontFamily: fontFamily.regular,
     position: 'absolute',
   },
@@ -206,13 +207,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 8,
-    gap: 3,
+    marginTop: s(8),
+    gap: s(3),
   },
   legendText: {
-    fontSize: 10,
+    fontSize: s(10),
     fontFamily: fontFamily.regular,
-    marginHorizontal: 2,
+    marginHorizontal: s(2),
   },
   legendCell: {
     width: CELL_SIZE,

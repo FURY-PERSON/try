@@ -9,6 +9,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type FireParticlesProps = {
   count: number;
@@ -101,8 +102,8 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: s(4),
+    height: s(4),
+    borderRadius: s(2),
   },
 });

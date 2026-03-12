@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type OnboardingSlideProps = {
   title: string;
@@ -32,27 +33,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: s(32),
   },
   illustrationContainer: {
-    width: 220,
-    height: 220,
-    marginBottom: 32,
+    width: s(220),
+    height: s(220),
+    marginBottom: s(32),
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: s(28),
     fontFamily: fontFamily.extraBold,
-    lineHeight: 36,
+    lineHeight: s(36),
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: s(12),
     letterSpacing: -0.3,
   },
   description: {
-    fontSize: 17,
+    fontSize: s(17),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 24,
+    lineHeight: s(24),
     textAlign: 'center',
   },
 });

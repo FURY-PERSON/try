@@ -11,6 +11,7 @@ import { fontFamily } from '@/theme/typography';
 import { haptics } from '@/utils/haptics';
 import type { FC } from 'react';
 import type { ViewStyle } from 'react-native';
+import { s, isTablet } from '@/utils/scale';
 
 type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'blue' | 'orange' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -192,7 +193,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fullWidth: {
-    width: '100%',
+    width: isTablet ? '60%' : '100%',
+    alignSelf: 'center',
   },
   content: {
     flexDirection: 'row',
@@ -204,9 +206,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   iconLeft: {
-    marginRight: 8,
+    marginRight: s(8),
   },
   iconRight: {
-    marginLeft: 8,
+    marginLeft: s(8),
   },
 });

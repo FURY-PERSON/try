@@ -21,6 +21,7 @@ import { AdBanner } from '@/components/ads/AdBanner';
 import { useFloatingTabBarHeight } from '@/components/navigation/FloatingTabBar';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import { s } from '@/utils/scale';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -160,54 +161,54 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   profileHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingHorizontal: s(20),
+    paddingTop: s(8),
+    paddingBottom: s(24),
   },
   headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: s(44),
   },
   largeTitle: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.bold,
     letterSpacing: -0.5,
   },
   settingsBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: s(36),
+    height: s(36),
+    borderRadius: s(18),
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarSection: {
     alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
+    gap: s(12),
+    marginTop: s(16),
   },
   avatarPressable: {
   },
   nickname: {
-    fontSize: 18,
+    fontSize: s(18),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
   },
   nicknameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: s(6),
   },
   statCards: {
     flexDirection: 'row',
-    gap: 12,
+    gap: s(12),
     marginTop: -12,
   },
   sectionOverline: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.bold,
     letterSpacing: 1.5,
-    marginBottom: 4,
+    marginBottom: s(4),
   },
 });

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type BadgeVariant = 'primary' | 'red' | 'orange' | 'blue' | 'emerald';
 
@@ -35,20 +36,20 @@ export const Badge: FC<BadgeProps> = ({ count, variant = 'red' }) => {
 
 const styles = StyleSheet.create({
   container: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    minWidth: s(18),
+    height: s(18),
+    borderRadius: s(9),
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: s(4),
     position: 'absolute',
     top: -6,
     right: -6,
   },
   text: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 16,
+    lineHeight: s(16),
   },
 });

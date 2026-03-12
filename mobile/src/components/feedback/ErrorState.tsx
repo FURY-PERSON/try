@@ -6,6 +6,7 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
+import { s } from '@/utils/scale';
 
 type ErrorStateProps = {
   message?: string;
@@ -39,29 +40,29 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 48,
+    padding: s(48),
   },
   iconContainer: {
-    width: 72,
-    height: 72,
+    width: s(72),
+    height: s(72),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: s(20),
   },
   title: {
-    fontSize: 20,
+    fontSize: s(20),
     fontFamily: fontFamily.bold,
-    lineHeight: 26,
+    lineHeight: s(26),
     textAlign: 'center',
   },
   message: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.regular,
-    lineHeight: 20,
+    lineHeight: s(20),
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: s(8),
   },
   action: {
-    marginTop: 24,
+    marginTop: s(24),
   },
 });

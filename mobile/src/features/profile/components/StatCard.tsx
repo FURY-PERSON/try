@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import type { FC, ReactNode } from 'react';
+import { s } from '@/utils/scale';
 
 type StatCardProps = {
   icon: ReactNode;
@@ -32,28 +33,28 @@ export const StatCard: FC<StatCardProps> = ({ icon, value, label, accentColor })
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
+    paddingVertical: s(16),
+    paddingHorizontal: s(12),
   },
   content: {
     alignItems: 'center',
-    gap: 6,
+    gap: s(6),
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: s(40),
+    height: s(40),
+    borderRadius: s(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   value: {
-    fontSize: 24,
+    fontSize: s(24),
     fontFamily: fontFamily.bold,
     letterSpacing: -0.3,
   },
   label: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.medium,
   },
 });

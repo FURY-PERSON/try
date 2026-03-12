@@ -45,11 +45,12 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CategoryWithCount, DifficultyProgress, HomeFeedCollection } from '@/shared';
+import { s } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function HomeScreen() {
-  const { colors, spacing, gradients, elevation, borderRadius } = useThemeContext();
+  const { colors, spacing, gradients, elevation, borderRadius, scale } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const language = useSettingsStore((s) => s.language);
@@ -357,6 +358,7 @@ export default function HomeScreen() {
                     borderRadius={borderRadius}
                     elevation={elevation}
                     loading={loadingCollection === item.id}
+                    scaleSize={scale}
                     onPress={() => handleOpenCollection(item.id)}
                   />
                 )}
@@ -372,7 +374,7 @@ export default function HomeScreen() {
               <Text style={[styles.sectionOverline, { color: colors.primary, paddingHorizontal: spacing.screenPadding }]}>
                 {t('home.categories').toUpperCase()}
               </Text>
-              <View style={styles.categoriesContainer}>
+              <View style={{ height: scale(160) }}>
                 <FlatList
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -391,6 +393,7 @@ export default function HomeScreen() {
                       colors={colors}
                       borderRadius={borderRadius}
                       elevation={elevation}
+                      scaleSize={scale}
                       onPress={() => handleOpenCategory(item.id)}
                     />
                   )}
@@ -445,6 +448,7 @@ const CategoryCard = React.memo(function CategoryCard({
   colors,
   borderRadius: br,
   elevation: elev,
+  scaleSize,
   onPress,
 }: {
   category: CategoryWithCount;
@@ -452,20 +456,23 @@ const CategoryCard = React.memo(function CategoryCard({
   colors: Record<string, string>;
   borderRadius: Record<string, number>;
   elevation: Record<string, Record<string, unknown>>;
+  scaleSize: (v: number) => number;
   onPress: () => void;
 }) {
   const name = language === 'en' ? (category.nameEn || category.name) : category.name;
   const { t } = useTranslation();
-  const scale = useSharedValue(1);
+  const anim = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: anim.value }],
   }));
+
+  const cardSize = scaleSize(140);
 
   return (
     <AnimatedPressable
-      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPressIn={() => { anim.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { anim.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={onPress}
       style={animStyle}
     >
@@ -473,6 +480,8 @@ const CategoryCard = React.memo(function CategoryCard({
         style={[
           styles.categoryCard,
           {
+            width: cardSize,
+            height: cardSize,
             backgroundColor: colors.surface,
             borderColor: colors.border,
             borderRadius: br.xl,
@@ -481,7 +490,7 @@ const CategoryCard = React.memo(function CategoryCard({
         ]}
       >
         <View style={[styles.categoryAccent, { backgroundColor: category.color ?? colors.primary }]} />
-        <IconFromName name={category.icon} size={32} color={category.color ?? colors.primary} />
+        <IconFromName name={category.icon} size={scaleSize(32)} color={category.color ?? colors.primary} />
         <Text style={[styles.categoryName, { color: colors.textPrimary }]} numberOfLines={2}>
           {name}
         </Text>
@@ -577,6 +586,7 @@ const CollectionCard = React.memo(function CollectionCard({
   borderRadius: br,
   elevation: elev,
   loading,
+  scaleSize,
   onPress,
 }: {
   collection: HomeFeedCollection;
@@ -585,20 +595,21 @@ const CollectionCard = React.memo(function CollectionCard({
   borderRadius: Record<string, number>;
   elevation: Record<string, Record<string, unknown>>;
   loading: boolean;
+  scaleSize: (v: number) => number;
   onPress: () => void;
 }) {
   const title = language === 'en' ? (collection.titleEn || collection.title) : collection.title;
   const desc = language === 'en' ? (collection.descriptionEn || collection.description) : collection.description;
   const { t } = useTranslation();
-  const scale = useSharedValue(1);
+  const anim = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: anim.value }],
   }));
 
   return (
     <AnimatedPressable
-      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPressIn={() => { anim.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
+      onPressOut={() => { anim.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
       onPress={onPress}
       disabled={loading}
       style={animStyle}
@@ -607,6 +618,7 @@ const CollectionCard = React.memo(function CollectionCard({
         style={[
           styles.collectionCard,
           {
+            width: scaleSize(180),
             backgroundColor: colors.surface,
             borderWidth: 1,
             borderColor: colors.border,
@@ -615,7 +627,7 @@ const CollectionCard = React.memo(function CollectionCard({
           },
         ]}
       >
-        <IconFromName name={collection.icon} size={32} color={colors.primary} />
+        <IconFromName name={collection.icon} size={scaleSize(32)} color={colors.primary} />
         <Text style={[styles.collectionTitle, { color: colors.textPrimary }]} numberOfLines={2}>
           {title}
         </Text>
@@ -642,7 +654,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: s(44),
     zIndex: 10,
   },
   headerRight: {
@@ -650,76 +662,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   largeTitle: {
-    fontSize: 32,
+    fontSize: s(32),
     fontFamily: fontFamily.bold,
     letterSpacing: -0.5,
   },
   skeletons: {
-    marginTop: 24,
+    marginTop: s(24),
   },
   // Hero Daily Card
   heroCard: {
-    padding: 24,
+    padding: s(24),
   },
   heroOverline: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.bold,
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   heroTitle: {
-    fontSize: 24,
+    fontSize: s(24),
     fontFamily: fontFamily.bold,
-    lineHeight: 30,
+    lineHeight: s(30),
     letterSpacing: -0.2,
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   heroDesc: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.regular,
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: s(20),
+    marginBottom: s(16),
   },
   lockText: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.semiBold,
-    lineHeight: 20,
-    marginTop: 4,
+    lineHeight: s(20),
+    marginTop: s(4),
   },
   // Random facts button
   randomButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    gap: 12,
+    padding: s(16),
+    gap: s(12),
   },
   randomEmoji: {
-    fontSize: 28,
+    fontSize: s(28),
   },
   randomTitle: {
-    fontSize: 16,
+    fontSize: s(16),
     fontFamily: fontFamily.bold,
   },
   randomDesc: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.regular,
-    marginTop: 2,
+    marginTop: s(2),
   },
   // Section headers
   sectionOverline: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.bold,
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   categoriesContainer: {
-    height: 160,
+    height: s(160),
   },
   // Category cards
   categoryCard: {
-    width: 140,
-    height: 140,
-    padding: 16,
+    padding: s(16),
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -733,80 +743,79 @@ const styles = StyleSheet.create({
     height: 3,
   },
   categoryIconWrap: {
-    height: 36,
+    height: s(36),
     justifyContent: 'center',
     alignItems: 'center',
   },
   categoryName: {
-    fontSize: 14,
+    fontSize: s(14),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
   },
   categoryCount: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   // Difficulty cards
   difficultyRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: s(12),
+    marginTop: s(8),
   },
   difficultyCard: {
-    padding: 16,
+    padding: s(16),
     alignItems: 'center',
-    gap: 6,
+    gap: s(6),
     flex: 1,
   },
   difficultyGradientDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: s(36),
+    height: s(36),
+    borderRadius: s(18),
     overflow: 'hidden',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   difficultyDotInner: {
     flex: 1,
   },
   difficultyTitle: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.bold,
   },
   difficultyDesc: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.regular,
     textAlign: 'center',
   },
   difficultyProgress: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.medium,
     textAlign: 'center',
   },
   // Collection cards
   collectionCard: {
-    width: 180,
-    padding: 16,
-    gap: 6,
+    padding: s(16),
+    gap: s(6),
   },
   collectionIconWrap: {
-    height: 36,
+    height: s(36),
     justifyContent: 'center',
   },
   collectionTitle: {
-    fontSize: 15,
+    fontSize: s(15),
     fontFamily: fontFamily.bold,
-    lineHeight: 20,
-    height: 40,
+    lineHeight: s(20),
+    height: s(40),
   },
   collectionDesc: {
-    fontSize: 13,
+    fontSize: s(13),
     fontFamily: fontFamily.regular,
-    lineHeight: 18,
-    height: 36,
+    lineHeight: s(18),
+    height: s(36),
   },
   collectionCount: {
-    fontSize: 11,
+    fontSize: s(11),
     fontFamily: fontFamily.regular,
   },
 
