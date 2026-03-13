@@ -4,7 +4,6 @@ declare module 'react-native-config' {
     APP_ENV?: string;
     API_URL?: string;
     VERSION_NAME?: string;
-    VERSION_CODE?: string;
     BUNDLE_ID?: string;
     PRIVACY_POLICY_URL?: string;
   }

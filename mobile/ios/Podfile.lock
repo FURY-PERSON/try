@@ -358,6 +358,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSplashScreen (0.29.24):
     - ExpoModulesCore
+  - ExpoTrackingTransparency (5.1.1):
+    - ExpoModulesCore
   - EXStructuredHeaders (4.0.0)
   - EXUpdates (0.27.5):
     - DoubleConversion
@@ -2512,6 +2514,7 @@ DEPENDENCIES:
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
   - ExpoSharing (from `../node_modules/expo-sharing/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
+  - ExpoTrackingTransparency (from `../node_modules/expo-tracking-transparency/ios`)
   - EXStructuredHeaders (from `../node_modules/expo-structured-headers/ios`)
   - EXUpdates (from `../node_modules/expo-updates/ios`)
   - EXUpdatesInterface (from `../node_modules/expo-updates-interface/ios`)
@@ -2717,6 +2720,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-sharing/ios"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
+  ExpoTrackingTransparency:
+    :path: "../node_modules/expo-tracking-transparency/ios"
   EXStructuredHeaders:
     :path: "../node_modules/expo-structured-headers/ios"
   EXUpdates:
@@ -2926,6 +2931,7 @@ SPEC CHECKSUMS:
   ExpoSecureStore: 9a3665d7161dd1031be386e278bffd623658f316
   ExpoSharing: 849a5ce9985c22598c16ec027e32969be8062e8e
   ExpoSplashScreen: 8261985ce9778f904abc7e31bed3538dce67ed4d
+  ExpoTrackingTransparency: dbd02eaa51cd9983ed746866a66e2eeb3a0f151f
   EXStructuredHeaders: 09c70347b282e3d2507e25fb4c747b1b885f87f6
   EXUpdates: 0bde9ab842c3a9c8dc492063acdf1efdfbd3ee75
   EXUpdatesInterface: 7c977640bdd8b85833c19e3959ba46145c5719db
