@@ -10,11 +10,16 @@
     "jsEngine": "hermes",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#58CC02"
+      "image": "./assets/images/splash-ios.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#112439"
     },
     "ios": {
+      "splash": {
+        "image": "./assets/images/splash-ios.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#112439"
+      },
       "supportsTablet": false,
       "bundleIdentifier": "com.factfront.app",
       "buildNumber": "1",
@@ -108,7 +113,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#58CC02"
+        "backgroundColor": "#001140"
       },
       "package": "com.factfront.app",
       "versionCode": 1,
@@ -117,6 +122,7 @@
       "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
     },
     "plugins": [
+      "./plugins/withLocalizedIcons",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
       "expo-router",
@@ -144,9 +150,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#58CC02",
-          "image": "./assets/images/splash.png",
-          "imageWidth": 200
+          "backgroundColor": "#112439",
+          "image": "./assets/images/splash-ios.png",
+          "resizeMode": "cover"
         }
       ]
     ],

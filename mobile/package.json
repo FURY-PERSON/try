@@ -25,7 +25,9 @@
     "test": "jest",
     "postinstall": "node scripts/postinstall.js",
     "clean": "react-native-clean-project",
-    "clean:android": "cd android && ./gradlew :app:clean"
+    "clean:android": "cd android && ./gradlew :app:clean",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.2.3",

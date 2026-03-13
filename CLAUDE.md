@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Do not use expo prebuild!
+
 ## Project Overview
 
 **Fact Front** — a mobile quiz app with an admin panel and REST API.

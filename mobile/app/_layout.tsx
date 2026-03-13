@@ -27,6 +27,7 @@ import { initAdProvider } from '@/services/adProvider';
 import { initializeFirebase } from '@/services/firebase';
 import { GlobalToast } from '@/components/feedback/GlobalToast';
 import i18n from '@/i18n';
+import { applyLocalizedIcon } from '@/modules/localizedIcons';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -128,6 +129,7 @@ export default function RootLayout() {
         }
         adManager.initialize();
         initializeFirebase();
+        applyLocalizedIcon();
       } catch {
         // Device init failed, continue
       }
