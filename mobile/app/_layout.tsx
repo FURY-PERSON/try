@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Platform } from 'react-native';
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -153,6 +154,11 @@ export default function RootLayout() {
         loadFeatureFlags(),
         initApp(),
       ]);
+
+      // Request ATT permission on iOS before initializing ad SDK
+      if (Platform.OS === 'ios') {
+        await requestTrackingPermissionsAsync().catch(() => {});
+      }
 
       // Init ad provider after flags are loaded.
       // Non-blocking: resolves after max 1 second, SDK continues in background.
