@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Switch, Platform } from 'react-native';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { HomeFeed } from '@/shared';
 import { useTranslation } from 'react-i18next';
@@ -39,11 +39,15 @@ export default function CollectionDetailScreen() {
   const [showReplayWarning, setShowReplayWarning] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  const { data: collection, isLoading, isError } = useQuery({
+  const { data: collection, isLoading, isError, refetch } = useQuery({
     queryKey: ['collection', id],
     queryFn: () => collectionsApi.getById(id!),
     enabled: !!id,
   });
+
+  useFocusEffect(useCallback(() => {
+    if (id) refetch();
+  }, [id, refetch]));
 
   React.useEffect(() => {
     if (id) {
@@ -92,7 +96,7 @@ export default function CollectionDetailScreen() {
   }, [id, starting, startCollectionSession, router]);
 
   const handleStart = useCallback(() => {
-    if (collection?.completed) {
+    if (isFullyDone) {
       if (replayWarningDismissed) {
         doStart(true);
       } else {
@@ -101,7 +105,7 @@ export default function CollectionDetailScreen() {
     } else {
       doStart(false);
     }
-  }, [collection?.completed, replayWarningDismissed, doStart]);
+  }, [isFullyDone, replayWarningDismissed, doStart]);
 
   const handleConfirmReplay = useCallback(() => {
     if (dontShowAgain) {
@@ -142,7 +146,8 @@ export default function CollectionDetailScreen() {
   }
 
   const totalCount = collection._count.questions;
-  const answeredCount = collection.completed ? totalCount : 0;
+  const answeredCount = collection.answeredCount;
+  const isFullyDone = totalCount > 0 && answeredCount >= totalCount;
 
   return (
     <Screen padded={false} backgroundColor={isDark ? colors.background : accentColor + '25'}>
@@ -191,45 +196,6 @@ export default function CollectionDetailScreen() {
           </Card>
         </AnimatedEntrance>
 
-        {/* Last result */}
-        {collection.lastResult && (
-          <AnimatedEntrance delay={200}>
-            <Card variant="default" style={styles.completedCard}>
-              <View style={styles.completedRow}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.emerald + '15' }]}>
-                  <Feather name="check-circle" size={18} color={colors.emerald} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.completedTitle, { color: colors.emerald }]}>
-                    {t('collection.completed')}
-                  </Text>
-                  <Text style={[styles.completedResult, { color: colors.textSecondary }]}>
-                    {t('collection.lastScore', {
-                      correct: collection.lastResult.correctAnswers,
-                      total: collection.lastResult.totalQuestions,
-                    })}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          </AnimatedEntrance>
-        )}
-
-        {/* All done */}
-        {collection.completed && (
-          <AnimatedEntrance delay={200}>
-            <Card variant="default" style={styles.completedCard}>
-              <View style={styles.completedRow}>
-                <View style={[styles.infoIconBg, { backgroundColor: colors.gold + '15' }]}>
-                  <Feather name="award" size={18} color={colors.gold} />
-                </View>
-                <Text style={[styles.completedTitle, { color: colors.gold }]}>
-                  {t('category.allDone')}
-                </Text>
-              </View>
-            </Card>
-          </AnimatedEntrance>
-        )}
       </View>
 
       {/* Ad Banner above buttons */}
@@ -241,12 +207,12 @@ export default function CollectionDetailScreen() {
       <AnimatedEntrance delay={300}>
         <View style={[styles.footer, { paddingHorizontal: spacing.screenPadding, paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
           <Button
-            label={collection.completed ? t('category.playAgain') : t('category.start')}
+            label={isFullyDone ? t('category.playAgain') : t('category.start')}
             variant="primary"
             size="lg"
             onPress={handleStart}
             loading={starting}
-            iconLeft={<Feather name={collection.completed ? 'rotate-ccw' : 'play'} size={18} color="#FFFFFF" />}
+            iconLeft={<Feather name={isFullyDone ? 'rotate-ccw' : 'play'} size={18} color="#FFFFFF" />}
           />
           <Button
             label={t('common.back')}

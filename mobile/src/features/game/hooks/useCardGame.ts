@@ -7,6 +7,7 @@ import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { calculateCardScore } from '../utils';
 import { analytics } from '@/services/analytics';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useAdsStore } from '@/stores/useAdsStore';
 import type { DailySetQuestion } from '@/shared';
 import type { CardResult, SwipeDirection } from '../types';
 
@@ -40,6 +41,8 @@ export const useCardGame = (
   const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
   const savedProgressIds = useRef<Set<string>>(new Set());
   const savedProgressSessionRef = useRef(sessionId);
+  const addFactsAnswered = useAdsStore((s) => s.addFactsAnswered);
+  const factsAnsweredInSessionRef = useRef(0);
 
   // Reset tracked IDs when session changes
   if (savedProgressSessionRef.current !== sessionId) {
@@ -72,73 +75,41 @@ export const useCardGame = (
       let answeredCorrectly = false;
 
       try {
-        // For daily sets, submit individual answers to server
-        // For collections, use local question data (isTrue is not sent by server)
+        // Check answer locally for instant feedback — no waiting for server
+        const isCorrect = userAnswer === currentQuestion.isTrue;
+        const score = calculateCardScore(isCorrect, timeSpentMs);
+        answeredCorrectly = isCorrect;
+
+        const resolvedStatement = language === 'en' && currentQuestion.statementEn
+          ? currentQuestion.statementEn : currentQuestion.statement;
+        const resolvedExplanation = language === 'en' && currentQuestion.explanationEn
+          ? currentQuestion.explanationEn : (currentQuestion.explanation ?? '');
+        const resolvedSource = language === 'en' && currentQuestion.sourceEn
+          ? currentQuestion.sourceEn : (currentQuestion.source ?? '');
+        const resolvedSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
+          ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
+
+        setFeedback({
+          statement: resolvedStatement,
+          isTrue: currentQuestion.isTrue,
+          userAnsweredCorrectly: isCorrect,
+          explanation: resolvedExplanation,
+          source: resolvedSource,
+          sourceUrl: resolvedSourceUrl,
+        });
+
+        setPendingResult({
+          questionId: currentQuestion.id,
+          correct: isCorrect,
+          score,
+          timeSpentMs,
+        });
+
+        // For daily sets: fire-and-forget per-question submit for server-side tracking.
+        // The full result set is re-submitted via submitDailySet() at the end anyway.
         if (collectionType === 'daily') {
-          const result = await gameApi.submitAnswer(
-            currentQuestion.id,
-            userAnswer,
-            timeSpentSeconds,
-          );
-
-          const score = calculateCardScore(result.correct, timeSpentMs);
-          answeredCorrectly = result.correct;
-
-          const resolvedStatement = language === 'en' && currentQuestion.statementEn
-            ? currentQuestion.statementEn : currentQuestion.statement;
-          const resolvedExplanation = language === 'en' && result.explanationEn
-            ? result.explanationEn : result.explanation;
-
-          const resolvedSource = language === 'en' && result.sourceEn
-            ? result.sourceEn : result.source;
-          const resolvedSourceUrl = language === 'en' && result.sourceUrlEn
-            ? result.sourceUrlEn : result.sourceUrl;
-
-          setFeedback({
-            statement: resolvedStatement,
-            isTrue: result.isTrue,
-            userAnsweredCorrectly: result.correct,
-            explanation: resolvedExplanation,
-            source: resolvedSource,
-            sourceUrl: resolvedSourceUrl,
-          });
-
-          setPendingResult({
-            questionId: currentQuestion.id,
-            correct: result.correct,
-            score,
-            timeSpentMs,
-          });
-        } else {
-          // Collection mode — check answer locally
-          const isCorrect = userAnswer === currentQuestion.isTrue;
-          const score = calculateCardScore(isCorrect, timeSpentMs);
-          answeredCorrectly = isCorrect;
-
-          const colStatement = language === 'en' && currentQuestion.statementEn
-            ? currentQuestion.statementEn : currentQuestion.statement;
-          const colExplanation = language === 'en' && currentQuestion.explanationEn
-            ? currentQuestion.explanationEn : (currentQuestion.explanation ?? '');
-
-          const colSource = language === 'en' && currentQuestion.sourceEn
-            ? currentQuestion.sourceEn : (currentQuestion.source ?? '');
-          const colSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
-            ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
-
-          setFeedback({
-            statement: colStatement,
-            isTrue: currentQuestion.isTrue,
-            userAnsweredCorrectly: isCorrect,
-            explanation: colExplanation,
-            source: colSource,
-            sourceUrl: colSourceUrl,
-          });
-
-          setPendingResult({
-            questionId: currentQuestion.id,
-            correct: isCorrect,
-            score,
-            timeSpentMs,
+          gameApi.submitAnswer(currentQuestion.id, userAnswer, timeSpentSeconds).catch(() => {
+            // Silent — included in final submitDailySet()
           });
         }
 
@@ -270,6 +241,26 @@ export const useCardGame = (
       setPendingResult(null);
       submitCardResult(pendingResult);
 
+      // Increment facts counter every 3 answers so progress is persisted mid-game
+      factsAnsweredInSessionRef.current += 1;
+      if (factsAnsweredInSessionRef.current % 3 === 0) {
+        addFactsAnswered(3);
+      }
+
+      // Read progress immediately after submitCardResult (synchronous Zustand update),
+      // BEFORE any awaits — prevents race condition where resetDailyProgress() can clear
+      // the store while we're awaiting saveProgress, causing final submit to be skipped.
+      const newProgress = useGameStore.getState().dailyProgress;
+      const currentIsReplay = useGameStore.getState().isReplay;
+      const needsFinalSubmit = newProgress.completed && !currentIsReplay;
+      const finalResults = needsFinalSubmit
+        ? newProgress.results.map((r) => ({
+            questionId: r.questionId,
+            result: r.correct ? ('correct' as const) : ('incorrect' as const),
+            timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
+          }))
+        : null;
+
       // Save individual answer progress for collection modes
       if (
         collectionType !== 'daily' &&
@@ -294,20 +285,11 @@ export const useCardGame = (
       }
 
       // Submit full set when all cards are done (skip for replays)
-      // Need to read fresh state after submitCardResult
-      const newProgress = useGameStore.getState().dailyProgress;
-      const currentIsReplay = useGameStore.getState().isReplay;
-      if (newProgress.completed && !currentIsReplay) {
-        const gameResults = newProgress.results.map((r) => ({
-          questionId: r.questionId,
-          result: r.correct ? ('correct' as const) : ('incorrect' as const),
-          timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
-        }));
-
+      if (finalResults) {
         if (collectionType === 'daily' && dailySetId) {
-          await submitDailySetResults(gameResults);
+          await submitDailySetResults(finalResults);
         } else if (sessionId) {
-          await submitCollectionResults(gameResults);
+          await submitCollectionResults(finalResults);
         }
       }
     } else {

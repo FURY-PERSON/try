@@ -6,12 +6,7 @@ type CollectionListItem = CollectionSummary & { completed: boolean };
 type CollectionDetail = CollectionSummary & {
   startDate: string | null;
   endDate: string | null;
-  completed: boolean;
-  lastResult: {
-    correctAnswers: number;
-    totalQuestions: number;
-    completedAt: string;
-  } | null;
+  answeredCount: number;
 };
 
 type StartParams = {

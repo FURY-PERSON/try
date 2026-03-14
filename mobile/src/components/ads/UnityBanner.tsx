@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
@@ -30,6 +30,16 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, size = 'BANNER', 
   const bannerAdViewRef = useRef<LevelPlayBannerAdViewMethods>(null);
   const retriesRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear pending retry timer on unmount to prevent calling loadAd on an unmounted component
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const scheduleRetry = useCallback(() => {
     if (retriesRef.current >= RETRY_DELAYS_S.length) {

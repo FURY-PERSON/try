@@ -57,7 +57,7 @@ export const AdBanner: FC<AdBannerProps> = ({ placement, size = 'BANNER' }) => {
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     if (resolvedSize !== null) return;
     const height = e.nativeEvent.layout.height;
-    setResolvedSize(height >= 250 ? 'MEDIUM_RECTANGLE' : 'LARGE');
+    setResolvedSize(height >= 250 ? 'MEDIUM_RECTANGLE' : height < 80 ? 'BANNER' : 'LARGE');
   }, [resolvedSize]);
 
   const finalSize = resolvedSize ?? 'LARGE';

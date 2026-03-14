@@ -276,19 +276,25 @@ export class HomeService {
       },
     });
 
-    const completedProgress = await this.prisma.userCollectionProgress.findMany({
-      where: {
-        userId,
-        collectionType: 'collection',
-        referenceId: { in: collections.map((c) => c.id) },
-      },
-      select: { referenceId: true },
+    // Count distinct answered questions per collection from the per-question history table
+    const collectionIds = collections.map((c) => c.id);
+    const itemCounts = await this.prisma.userCollectionItemHistory.groupBy({
+      by: ['collectionId'],
+      where: { userId, collectionId: { in: collectionIds } },
+      _count: { questionId: true },
     });
-    const completedIds = new Set(completedProgress.map((p) => p.referenceId));
 
-    return collections.map((c) => ({
-      ...c,
-      isCompleted: completedIds.has(c.id),
-    }));
+    const progressByCollection = new Map<string, number>(
+      itemCounts.map((r) => [r.collectionId, r._count.questionId]),
+    );
+
+    return collections.map((c) => {
+      const answeredCount = progressByCollection.get(c.id) ?? 0;
+      return {
+        ...c,
+        answeredCount,
+        isCompleted: c._count.questions > 0 && answeredCount >= c._count.questions,
+      };
+    });
   }
 }

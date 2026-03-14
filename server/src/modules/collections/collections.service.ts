@@ -113,27 +113,13 @@ export class CollectionsService {
       throw new NotFoundException('Collection has expired');
     }
 
-    // Check completion status
-    const progress = await this.prisma.userCollectionProgress.findFirst({
-      where: {
-        userId,
-        collectionType: 'collection',
-        referenceId: id,
-      },
-      orderBy: { completedAt: 'desc' },
-      select: { correctAnswers: true, totalQuestions: true, completedAt: true },
+    const answeredCount = await this.prisma.userCollectionItemHistory.count({
+      where: { userId, collectionId: id },
     });
 
     return {
       ...collection,
-      completed: !!progress,
-      lastResult: progress
-        ? {
-            correctAnswers: progress.correctAnswers,
-            totalQuestions: progress.totalQuestions,
-            completedAt: progress.completedAt,
-          }
-        : null,
+      answeredCount,
     };
   }
 
@@ -151,7 +137,7 @@ export class CollectionsService {
       return this.startByDifficulty(userId, dto.difficulty!, count ?? 10, replay);
     }
     if (dto.type === 'collection') {
-      return this.startByCollection(userId, dto.collectionId!, count ?? 10);
+      return this.startByCollection(userId, dto.collectionId!, count ?? 10, replay);
     }
 
     throw new BadRequestException('Invalid collection type');
@@ -309,7 +295,7 @@ export class CollectionsService {
 
     return {
       correctAnswers,
-      totalQuestions: session.questionIds.length,
+      totalQuestions: dto.results.length,
       totalTimeSeconds,
       score,
       streak: shouldUpdateStreak ? currentStreak : streakStart.currentStreak,
@@ -340,8 +326,30 @@ export class CollectionsService {
       return { saved: 0 };
     }
 
-    // Skip for collection-type sessions (collection items are not in Question table)
+    // For collection-type sessions: persist per-question history for resume support
     if (session.type === 'collection') {
+      if (session.referenceId) {
+        const sessionQuestionIds = new Set(session.questionIds);
+        const newResults = dto.results.filter(
+          (r) =>
+            sessionQuestionIds.has(r.questionId) &&
+            !session.savedQuestionIds.has(r.questionId),
+        );
+        if (newResults.length > 0) {
+          await this.prisma.userCollectionItemHistory.createMany({
+            data: newResults.map((r) => ({
+              userId,
+              collectionId: session.referenceId!,
+              questionId: r.questionId,
+            })),
+            skipDuplicates: true,
+          });
+          for (const r of newResults) {
+            session.savedQuestionIds.add(r.questionId);
+          }
+        }
+        return { saved: newResults.length };
+      }
       return { saved: 0 };
     }
 
@@ -663,6 +671,7 @@ export class CollectionsService {
     userId: string,
     collectionId: string,
     count: number,
+    replay = false,
   ) {
     if (!collectionId) {
       throw new BadRequestException(
@@ -693,13 +702,28 @@ export class CollectionsService {
     }
 
     const allItems = collection.questions;
-    const items = allItems.slice(0, count);
+
+    let items: typeof allItems;
+    if (replay) {
+      items = allItems.slice(0, count);
+    } else {
+      const answered = await this.prisma.userCollectionItemHistory.findMany({
+        where: { userId, collectionId },
+        select: { questionId: true },
+      });
+      const answeredIds = new Set(answered.map((a) => a.questionId));
+      const unanswered = allItems.filter((q) => !answeredIds.has(q.id));
+      // If all answered, fall back to full list (acts as implicit replay)
+      items = (unanswered.length > 0 ? unanswered : allItems).slice(0, count);
+    }
+
     const sessionId = this.createSession(
       userId,
       'collection',
       collectionId,
       null,
       items,
+      replay,
     );
 
     return {

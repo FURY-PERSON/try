@@ -57,7 +57,10 @@ export default function ResultsModal() {
   const scoreOpacity = useSharedValue(0);
 
   useEffect(() => {
-    addFactsAnswered(totalCards);
+    // useCardGame already flushed every completed group of 3 mid-game;
+    // here we only save the remainder so total count stays exact.
+    const remainder = totalCards % 3;
+    if (remainder > 0) addFactsAnswered(remainder);
     analytics.logEvent('collection_complete', {
       type: collectionType,
       correctCount,

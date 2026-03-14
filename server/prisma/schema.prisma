@@ -26,9 +26,10 @@ model User {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  questionHistory    UserQuestionHistory[]
-  leaderboardEntries LeaderboardEntry[]
-  collectionProgress UserCollectionProgress[]
+  questionHistory          UserQuestionHistory[]
+  leaderboardEntries       LeaderboardEntry[]
+  collectionProgress       UserCollectionProgress[]
+  collectionItemHistory    UserCollectionItemHistory[]
 
   @@index([lastPlayedDate])
 }
@@ -227,6 +228,19 @@ model UserCollectionProgress {
 
   @@index([userId, collectionType])
   @@index([userId, referenceId])
+}
+
+model UserCollectionItemHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  collectionId String
+  questionId   String
+  answeredAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, collectionId, questionId])
+  @@index([userId, collectionId])
 }
 
 model Notification {

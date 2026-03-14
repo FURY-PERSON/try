@@ -304,7 +304,7 @@ function QuestionDialogControlled({
       <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="bg-surface rounded-2xl p-6 w-full max-w-4xl shadow-xl pointer-events-auto"
+          className="bg-surface rounded-2xl p-6 w-full max-w-4xl shadow-xl pointer-events-auto max-h-[85vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">

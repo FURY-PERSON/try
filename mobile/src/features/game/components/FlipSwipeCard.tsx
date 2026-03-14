@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useImperativeHandle, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useImperativeHandle, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -167,6 +167,14 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     }
   }, [activeFeedback]);
 
+  // Stable callback refs — allows gesture to be memoized without capturing stale onSwipe/onDismiss
+  const onSwipeRef = useRef(onSwipe);
+  onSwipeRef.current = onSwipe;
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+  const callOnSwipe = useCallback((direction: SwipeDirection) => { onSwipeRef.current(direction); }, []);
+  const callOnDismiss = useCallback(() => { onDismissRef.current(); }, []);
+
   // Imperative methods for programmatic swipe/dismiss
   const programmaticSwipe = useCallback((direction: SwipeDirection) => {
     if (isSubmittingShared.value) return;
@@ -176,18 +184,18 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
       withTiming(peakX, { duration: 150, easing: Easing.out(Easing.cubic) }),
       withSpring(0, { damping: 26, stiffness: 200 }),
     );
-    onSwipe(direction);
-  }, [swipeThreshold, onSwipe, isSubmittingShared, isProgrammatic, translateX]);
+    callOnSwipe(direction);
+  }, [swipeThreshold, callOnSwipe, isSubmittingShared, isProgrammatic, translateX]);
 
   const programmaticDismiss = useCallback(() => {
     translateX.value = withTiming(
       screenWidth * 1.5,
       { duration: 200, easing: Easing.in(Easing.cubic) },
       (finished) => {
-        if (finished) runOnJS(onDismiss)();
+        if (finished) runOnJS(callOnDismiss)();
       },
     );
-  }, [screenWidth, onDismiss, translateX]);
+  }, [screenWidth, callOnDismiss, translateX]);
 
   useImperativeHandle(ref, () => ({
     programmaticSwipe,
@@ -197,7 +205,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   // Card moves faster than finger for snappier feel
   const SWIPE_SPEED_MULTIPLIER = 1.5;
 
-  const gesture = Gesture.Pan()
+  // Memoize gesture to prevent native handler re-attach on every render (same pattern as Android)
+  const gesture = useMemo(() => Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
       if (phase.value === 'flipping') return;
@@ -219,40 +228,33 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
       const absVel = Math.abs(event.velocityX);
       const inertiaFactor = Math.min(1, Math.max(0, (absVel - 800) / 800));
 
-      // withSpring with velocity gives natural inertia — card overshoots
-      // then settles to target in one smooth animation (no jerk)
       const springToZero = (vel: number) =>
         withSpring(0, { velocity: vel, damping: 18, stiffness: 120, mass: 1 });
 
-      // Spring with high damping for answer swipes — keeps inertia feel
-      // but settles quickly without long oscillation before flip
       const answerSpring = (vel: number) =>
         withSpring(0, { velocity: vel, damping: 26, stiffness: 200, mass: 1 });
 
       if (phase.value === 'front') {
-        // Phase 1: swipe to answer
         if (amplifiedX > swipeThreshold) {
           translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
-          runOnJS(onSwipe)('right');
+          runOnJS(callOnSwipe)('right');
         } else if (amplifiedX < -swipeThreshold) {
           translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, flipReturn);
-          runOnJS(onSwipe)('left');
+          runOnJS(callOnSwipe)('left');
         } else {
-          // Below threshold — spring back with inertia
           translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
           translateY.value = withTiming(0, snapBack);
         }
       } else if (phase.value === 'back') {
-        // Phase 2: swipe to dismiss
         if (Math.abs(amplifiedX) > dismissThreshold) {
           const flyDir = amplifiedX > 0 ? 1 : -1;
           translateX.value = withTiming(
             flyDir * screenWidth * 1.5,
             { duration: 200, easing: Easing.in(Easing.cubic) },
             (finished) => {
-              if (finished) runOnJS(onDismiss)();
+              if (finished) runOnJS(callOnDismiss)();
             },
           );
           translateY.value = withTiming(0, { duration: 200 });
@@ -261,7 +263,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
           translateY.value = withTiming(0, snapBack);
         }
       }
-    });
+    }), [swipeThreshold, dismissThreshold, screenWidth, callOnSwipe, callOnDismiss]);
 
   // Card transform (translate + rotate from drag)
   const halfScreen = screenWidth / 2;
