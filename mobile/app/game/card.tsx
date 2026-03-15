@@ -309,6 +309,17 @@ export default function CardScreen() {
     ? (language === 'en' && nextQuestion.statementEn ? nextQuestion.statementEn : nextQuestion.statement)
     : undefined;
 
+  // Pre-render data for explanation card (Android — avoids layout work during fly-in)
+  const explanationText = currentQuestion
+    ? (language === 'en' && currentQuestion.explanationEn ? currentQuestion.explanationEn : (currentQuestion.explanation ?? ''))
+    : '';
+  const sourceText = currentQuestion
+    ? (language === 'en' && currentQuestion.sourceEn ? currentQuestion.sourceEn : (currentQuestion.source ?? ''))
+    : '';
+  const sourceUrlText = currentQuestion
+    ? (language === 'en' && currentQuestion.sourceUrlEn ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined))
+    : undefined;
+
   return (
     <Screen padded={false} backgroundColor={gradients.card[0]}>
       <LinearGradient
@@ -357,6 +368,10 @@ export default function CardScreen() {
                 isSubmitting={isSubmitting}
                 nextStatement={nextStatement}
                 nextCategoryName={nextCategoryName}
+                explanation={explanationText}
+                source={sourceText}
+                sourceUrl={sourceUrlText ?? undefined}
+                isTrue={currentQuestion?.isTrue}
               />
             </View>
 

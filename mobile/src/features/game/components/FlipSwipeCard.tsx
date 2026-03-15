@@ -70,6 +70,11 @@ export type FlipSwipeCardProps = {
   isSubmitting?: boolean;
   nextStatement?: string;
   nextCategoryName?: string;
+  /** Pre-render data for the explanation card (Android only) */
+  explanation?: string;
+  source?: string;
+  sourceUrl?: string;
+  isTrue?: boolean;
 };
 
 type FlipPhase = 'front' | 'flipping' | 'back';

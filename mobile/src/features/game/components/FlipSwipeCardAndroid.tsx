@@ -1,19 +1,20 @@
 /**
- * Android-optimized card component.
- * Uses scaleX flip (squish -> swap -> expand) instead of rotateY to
- * completely eliminate top-clipping on Android.
+ * Android card component — fly-out / fly-in animation.
+ *
+ * Instead of flipping the card (scaleX), the front card (statement) flies
+ * off-screen and a separate back card (explanation) flies in from the
+ * same side. The user can then swipe the explanation card in any direction
+ * to dismiss it and advance to the next card.
  *
  * Key Android perf optimizations:
- * - No LinearGradient on animated card faces (expo-linear-gradient is slow on Android)
- *   Top accent replaced with solid View, result banner uses solid background
- * - collapsable={false} on animated views (prevents Android view-flattening)
- * - needsOffscreenAlphaCompositing on faces with opacity toggle
- * - mainEntranceStyle merged into cardDragStyle (fewer animated layers = fewer native updates/frame)
- * - Gesture memoized with useMemo (prevents native re-attach)
- * - Stable callback refs for onSwipe/onDismiss (prevents cascading recreations)
- * - All inline styles memoized (zero GC pressure during animation)
- * - Back face always mounted, no renderToHardwareTextureAndroid on back face
- * - activeFeedback via useMemo + ref (no extra re-render)
+ * - No LinearGradient on animated card faces
+ * - collapsable={false} on animated views (no needsOffscreenAlphaCompositing — no animated opacity)
+ * - programmaticSwipe batched via runOnUI (single worklet, not 4 JSI calls)
+ * - Swipe fly-out duration scaled by remaining distance
+ * - Gesture memoized with useMemo
+ * - Stable callback refs
+ * - All inline styles memoized
+ * - Back face always mounted + pre-rendered with question data
  */
 import React, { useEffect, useMemo, useState, useImperativeHandle, useCallback, useRef } from 'react';
 import {
@@ -30,8 +31,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
+
   runOnJS,
+  runOnUI,
   interpolate,
   interpolateColor,
   Extrapolation,
@@ -46,10 +48,12 @@ import type { SwipeDirection } from '../types';
 import type { FlipSwipeCardRef, FlipSwipeCardProps } from './FlipSwipeCard';
 import { s } from '@/utils/scale';
 
-type FlipPhase = 'front' | 'flipping' | 'back';
+type CardPhase = 'front' | 'transitioning' | 'back';
 
-const FLIP_DURATION = 400;
 const SNAP_DURATION = 180;
+const FLY_OUT_DURATION = 250;
+const BUTTON_FLY_OUT_DURATION = 480;
+const FLY_IN_DURATION = 300;
 const GRADIENT_START = { x: 0, y: 0 } as const;
 const GRADIENT_END_H = { x: 1, y: 0 } as const;
 
@@ -106,6 +110,10 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   isSubmitting = false,
   nextStatement,
   nextCategoryName,
+  explanation: preExplanation,
+  source: preSource,
+  sourceUrl: preSourceUrl,
+  isTrue: preIsTrue,
 }, ref) => {
   const { colors, borderRadius, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -115,11 +123,14 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   const dismissThreshold = useMemo(() => screenWidth * 0.20 / 1.1, [screenWidth]);
   const cardWidth = useMemo(() => screenWidth - 48, [screenWidth]);
   const halfScreen = screenWidth / 2;
+  const flyDistance = screenWidth * 1.5;
 
-  const translateX = useSharedValue(0);
+  // --- Shared values ---
+  const frontTranslateX = useSharedValue(0);
+  const backTranslateX = useSharedValue(flyDistance);
   const translateY = useSharedValue(0);
-  const flipProgress = useSharedValue(0);
-  const phase = useSharedValue<FlipPhase>('front');
+  const phase = useSharedValue<CardPhase>('front');
+  const answerDirection = useSharedValue(1); // 1 = right, -1 = left
   const entranceProgress = useSharedValue(1);
   const isSubmittingShared = useSharedValue(false);
   const isProgrammatic = useSharedValue(false);
@@ -132,13 +143,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   const [stackContent, setStackContent] = useState({ nextStatement, nextCategoryName });
   const [fourthCardReady, setFourthCardReady] = useState(true);
 
-  // Stable refs for callbacks — prevents gesture/programmatic callbacks from recreating on parent re-render
+  // Stable refs for callbacks
   const onSwipeRef = useRef(onSwipe);
   onSwipeRef.current = onSwipe;
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
 
-  // useMemo — no extra re-render (unlike useState buffer)
   const activeFeedback = useMemo(
     () => (feedback?.statement === statement ? feedback : null),
     [feedback, statement],
@@ -153,12 +163,13 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
 
   // Reset on card change
   useEffect(() => {
-    translateX.value = 0;
+    frontTranslateX.value = 0;
+    backTranslateX.value = flyDistance;
     translateY.value = 0;
-    flipProgress.value = 0;
     phase.value = 'front';
     isProgrammatic.value = false;
     isCorrectShared.value = false;
+    answerDirection.value = 1;
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
     lastFeedbackRef.current = null;
@@ -173,61 +184,86 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     };
   }, [cardIndex]);
 
-  // Update correctness when feedback arrives
+  // When feedback arrives — only update correctness.
+  // The back card fly-in is triggered by the front fly-out completion callback
+  // (sequential: front fully exits → then back enters).
   useEffect(() => {
     if (activeFeedback) {
       isCorrectShared.value = activeFeedback.userAnsweredCorrectly;
-      // Fallback: if flip wasn't started by gesture/button, start it now
-      if (flipProgress.value === 0 && phase.value === 'front') {
-        phase.value = 'flipping';
-        flipProgress.value = withTiming(1, {
-          duration: FLIP_DURATION,
-          easing: Easing.inOut(Easing.ease),
+
+      // Fallback: feedback arrived without a swipe (e.g. external state change)
+      if (phase.value === 'front') {
+        const dir = answerDirection.value;
+        phase.value = 'transitioning';
+        frontTranslateX.value = withTiming(dir * flyDistance, {
+          duration: FLY_OUT_DURATION,
+          easing: Easing.out(Easing.cubic),
         }, (finished) => {
-          if (finished) phase.value = 'back';
+          if (finished) {
+            backTranslateX.value = dir * flyDistance;
+            backTranslateX.value = withTiming(0, {
+              duration: FLY_IN_DURATION,
+              easing: Easing.out(Easing.cubic),
+            }, (fin) => {
+              if (fin) phase.value = 'back';
+            });
+          }
         });
       }
+      // If phase is 'transitioning', the front fly-out completion callback
+      // handles starting the back fly-in. No action needed here.
     }
   }, [activeFeedback]);
 
-  // Stable callbacks via refs — never recreated, so gesture & imperative handle stay stable
+  // Stable callbacks via refs
   const callOnSwipe = useCallback((direction: SwipeDirection) => {
-    onSwipeRef.current(direction);
+    // Defer by 1 frame so the fly-out animation starts on the UI thread
+    // before the JS thread gets busy with handleSwipe state updates
+    // (setIsSubmitting, setFeedback, setPendingResult, setLiveStreak)
+    requestAnimationFrame(() => onSwipeRef.current(direction));
   }, []);
 
   const callOnDismiss = useCallback(() => {
     onDismissRef.current();
   }, []);
 
-  const startFlip = useCallback(() => {
-    phase.value = 'flipping';
-    flipProgress.value = withTiming(1, {
-      duration: FLIP_DURATION,
-      easing: Easing.inOut(Easing.ease),
-    }, (finished) => {
-      if (finished) phase.value = 'back';
-    });
-  }, [phase, flipProgress]);
-
   const programmaticSwipe = useCallback((direction: SwipeDirection) => {
     if (isSubmittingShared.value) return;
-    isProgrammatic.value = true;
-    const peakX = direction === 'right' ? swipeThreshold * 1.2 : -swipeThreshold * 1.2;
-    translateX.value = withSequence(
-      withTiming(peakX, { duration: 140, easing: Easing.out(Easing.cubic) }),
-      withTiming(0, { duration: 180, easing: Easing.inOut(Easing.cubic) }),
-    );
-    startFlip();
+    const dir = direction === 'right' ? 1 : -1;
+
+    // Batch all shared value updates in a single UI-thread worklet execution.
+    // This avoids 4 separate JS→UI bridge calls, reducing animated style
+    // recomputation from 4 rounds to 1.
+    runOnUI(() => {
+      'worklet';
+      isProgrammatic.value = true;
+      answerDirection.value = dir;
+      phase.value = 'transitioning';
+      frontTranslateX.value = withTiming(dir * flyDistance, {
+        duration: BUTTON_FLY_OUT_DURATION,
+        easing: Easing.out(Easing.cubic),
+      }, (finished) => {
+        if (finished) {
+          backTranslateX.value = dir * flyDistance;
+          backTranslateX.value = withTiming(0, {
+            duration: FLY_IN_DURATION,
+            easing: Easing.out(Easing.cubic),
+          }, (fin) => {
+            if (fin) phase.value = 'back';
+          });
+        }
+      });
+    })();
     callOnSwipe(direction);
-  }, [swipeThreshold, callOnSwipe, isSubmittingShared, isProgrammatic, translateX, startFlip]);
+  }, [flyDistance, callOnSwipe, isSubmittingShared, isProgrammatic, answerDirection, phase, frontTranslateX, backTranslateX]);
 
   const programmaticDismiss = useCallback(() => {
-    translateX.value = withTiming(
-      screenWidth * 1.5,
-      { duration: 200, easing: Easing.in(Easing.cubic) },
+    backTranslateX.value = withTiming(
+      flyDistance,
+      { duration: 200, easing: Easing.out(Easing.cubic) },
       (finished) => { if (finished) runOnJS(callOnDismiss)(); },
     );
-  }, [screenWidth, callOnDismiss, translateX]);
+  }, [flyDistance, callOnDismiss, backTranslateX]);
 
   useImperativeHandle(ref, () => ({
     programmaticSwipe,
@@ -236,73 +272,80 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
 
   const SWIPE_SPEED_MULTIPLIER = 1.5;
 
-  // Memoize gesture to avoid native handler re-attach on every render
   const gesture = useMemo(() => Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
-      if (phase.value === 'flipping') return;
+      if (phase.value === 'transitioning') return;
       if (phase.value === 'front' && isSubmittingShared.value) return;
-      translateX.value = event.translationX * SWIPE_SPEED_MULTIPLIER;
+
+      if (phase.value === 'front') {
+        frontTranslateX.value = event.translationX * SWIPE_SPEED_MULTIPLIER;
+      } else if (phase.value === 'back') {
+        backTranslateX.value = event.translationX * SWIPE_SPEED_MULTIPLIER;
+      }
       translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
-      if (phase.value === 'flipping') return;
+      if (phase.value === 'transitioning') return;
       if (phase.value === 'front' && isSubmittingShared.value) return;
 
       const amplifiedX = event.translationX * SWIPE_SPEED_MULTIPLIER;
       const snap = { duration: SNAP_DURATION, easing: Easing.out(Easing.cubic) };
 
       if (phase.value === 'front') {
-        if (amplifiedX > swipeThreshold) {
-          translateX.value = withTiming(0, snap);
-          translateY.value = withTiming(0, snap);
-          phase.value = 'flipping';
-          flipProgress.value = withTiming(1, {
-            duration: FLIP_DURATION,
-            easing: Easing.inOut(Easing.ease),
+        if (Math.abs(amplifiedX) > swipeThreshold) {
+          const dir = amplifiedX > 0 ? 1 : -1;
+          answerDirection.value = dir;
+          phase.value = 'transitioning';
+          // Scale duration by remaining distance — card already partially swiped,
+          // so full duration would make it appear to decelerate at the transition.
+          const remainingRatio = 1 - Math.abs(amplifiedX) / flyDistance;
+          const adjustedDuration = Math.max(100, Math.round(FLY_OUT_DURATION * remainingRatio));
+          // Front flies out; back flies in only after front fully exits
+          frontTranslateX.value = withTiming(dir * flyDistance, {
+            duration: adjustedDuration,
+            easing: Easing.out(Easing.cubic),
           }, (finished) => {
-            if (finished) phase.value = 'back';
+            if (finished) {
+              backTranslateX.value = dir * flyDistance;
+              backTranslateX.value = withTiming(0, {
+                duration: FLY_IN_DURATION,
+                easing: Easing.out(Easing.cubic),
+              }, (fin) => {
+                if (fin) phase.value = 'back';
+              });
+            }
           });
-          runOnJS(callOnSwipe)('right');
-        } else if (amplifiedX < -swipeThreshold) {
-          translateX.value = withTiming(0, snap);
           translateY.value = withTiming(0, snap);
-          phase.value = 'flipping';
-          flipProgress.value = withTiming(1, {
-            duration: FLIP_DURATION,
-            easing: Easing.inOut(Easing.ease),
-          }, (finished) => {
-            if (finished) phase.value = 'back';
-          });
-          runOnJS(callOnSwipe)('left');
+          runOnJS(callOnSwipe)(dir === 1 ? 'right' : 'left');
         } else {
-          translateX.value = withTiming(0, snap);
+          frontTranslateX.value = withTiming(0, snap);
           translateY.value = withTiming(0, snap);
         }
       } else if (phase.value === 'back') {
         if (Math.abs(amplifiedX) > dismissThreshold) {
           const flyDir = amplifiedX > 0 ? 1 : -1;
-          translateX.value = withTiming(
-            flyDir * screenWidth * 1.5,
-            { duration: 200, easing: Easing.in(Easing.cubic) },
+          backTranslateX.value = withTiming(
+            flyDir * flyDistance,
+            { duration: 200, easing: Easing.out(Easing.cubic) },
             (finished) => { if (finished) runOnJS(callOnDismiss)(); },
           );
           translateY.value = withTiming(0, { duration: 200 });
         } else {
-          translateX.value = withTiming(0, snap);
+          backTranslateX.value = withTiming(0, snap);
           translateY.value = withTiming(0, snap);
         }
       }
-    }), [swipeThreshold, dismissThreshold, screenWidth, callOnSwipe, callOnDismiss]);
+    }), [swipeThreshold, dismissThreshold, flyDistance, callOnSwipe, callOnDismiss]);
 
-  // --- Animated styles (merged where possible to reduce animated layer count) ---
+  // --- Animated styles ---
 
-  // Merged: mainEntranceStyle + cardDragStyle into one (saves 1 animated layer = 1 fewer native update/frame)
-  const cardAnimStyle = useAnimatedStyle(() => {
+  // Front card: entrance + drag/fly-out transform
+  const frontCardStyle = useAnimatedStyle(() => {
     'worklet';
     const ep = entranceProgress.value;
     const rotation = interpolate(
-      translateX.value,
+      frontTranslateX.value,
       [-halfScreen, 0, halfScreen],
       [-15, 0, 15],
       Extrapolation.CLAMP,
@@ -311,69 +354,43 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
       transform: [
         { scale: 0.96 + ep * 0.04 },
         { translateY: 12 - ep * 12 },
-        { translateX: translateX.value },
+        { translateX: frontTranslateX.value },
         { translateY: translateY.value },
         { rotateZ: `${rotation}deg` },
       ],
     };
   });
 
-  // scaleX flip: 1 -> 0 -> 1, front visible first half, back visible second half
-  const frontFaceStyle = useAnimatedStyle(() => {
+  // Back card: fly-in/drag/fly-out transform
+  const backCardStyle = useAnimatedStyle(() => {
     'worklet';
-    const fp = flipProgress.value;
-    const scaleX = fp <= 0.5
-      ? 1 - fp * 2       // 1 -> 0
-      : (fp - 0.5) * 2;  // 0 -> 1
+    const rotation = interpolate(
+      backTranslateX.value,
+      [-halfScreen, 0, halfScreen],
+      [-15, 0, 15],
+      Extrapolation.CLAMP,
+    );
     return {
-      transform: [{ scaleX }],
-      opacity: fp <= 0.5 ? 1 : 0,
+      transform: [
+        { translateX: backTranslateX.value },
+        { translateY: phase.value === 'back' ? translateY.value : 0 },
+        { rotateZ: `${rotation}deg` },
+      ],
     };
   });
 
-  const backFaceStyle = useAnimatedStyle(() => {
-    'worklet';
-    const fp = flipProgress.value;
-    const scaleX = fp <= 0.5
-      ? 1 - fp * 2
-      : (fp - 0.5) * 2;
-    return {
-      transform: [{ scaleX }],
-      opacity: fp > 0.5 ? 1 : 0,
-    };
-  });
-
-  // Smooth border: gray -> green/red during swipe, then result color after flip
+  // Front border: gray → green/red during swipe
   const borderColorDefault = colors.border;
-  const cardBorderStyle = useAnimatedStyle(() => {
+  const frontBorderStyle = useAnimatedStyle(() => {
     'worklet';
-    const fp = flipProgress.value;
-
-    if (isSubmittingShared.value && fp === 0) {
+    if (isSubmittingShared.value && phase.value === 'front') {
       return { borderColor: 'rgba(99, 102, 241, 0.3)', borderWidth: 2 };
     }
-
-    if (fp > 0) {
-      const correctColor = interpolateColor(
-        fp, [0, 0.5, 1],
-        [borderColorDefault, borderColorDefault, 'rgba(16, 185, 68, 0.45)'],
-      );
-      const incorrectColor = interpolateColor(
-        fp, [0, 0.5, 1],
-        [borderColorDefault, borderColorDefault, 'rgba(239, 68, 68, 0.45)'],
-      );
-      return {
-        borderColor: isCorrectShared.value ? correctColor : incorrectColor,
-        borderWidth: 2,
-      };
-    }
-
-    if (isProgrammatic.value) {
+    if (isProgrammatic.value || phase.value !== 'front') {
       return { borderColor: borderColorDefault, borderWidth: 2 };
     }
-
     const progress = interpolate(
-      translateX.value,
+      frontTranslateX.value,
       [-swipeThreshold, 0, swipeThreshold],
       [-1, 0, 1],
       Extrapolation.CLAMP,
@@ -386,27 +403,38 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     return { borderColor, borderWidth: 2 };
   });
 
+  // Back border: result color (green = correct, red = incorrect)
+  const backBorderStyle = useAnimatedStyle(() => {
+    'worklet';
+    const borderColor = isCorrectShared.value
+      ? 'rgba(16, 185, 68, 0.45)'
+      : 'rgba(239, 68, 68, 0.45)';
+    return { borderColor, borderWidth: 2 };
+  });
+
+  // FACT overlay opacity (front only)
   const factOverlayStyle = useAnimatedStyle(() => {
     'worklet';
-    if (flipProgress.value > 0 || isProgrammatic.value) return { opacity: 0 };
+    if (phase.value !== 'front' || isProgrammatic.value) return { opacity: 0 };
     return {
       opacity: interpolate(
-        translateX.value, [0, swipeThreshold], [0, 1], Extrapolation.CLAMP,
+        frontTranslateX.value, [0, swipeThreshold], [0, 1], Extrapolation.CLAMP,
       ),
     };
   });
 
+  // FAKE overlay opacity (front only)
   const fakeOverlayStyle = useAnimatedStyle(() => {
     'worklet';
-    if (flipProgress.value > 0 || isProgrammatic.value) return { opacity: 0 };
+    if (phase.value !== 'front' || isProgrammatic.value) return { opacity: 0 };
     return {
       opacity: interpolate(
-        translateX.value, [-swipeThreshold, 0], [1, 0], Extrapolation.CLAMP,
+        frontTranslateX.value, [-swipeThreshold, 0], [1, 0], Extrapolation.CLAMP,
       ),
     };
   });
 
-  // Stack styles
+  // Stack styles (unchanged)
   const secondStackStyle = useAnimatedStyle(() => {
     'worklet';
     const ep = entranceProgress.value;
@@ -439,15 +467,18 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
 
   const remainingCards = totalCards - cardIndex;
 
-  // Back face derived values — use backFeedback (ref-backed, no state)
+  // Back face derived values — use pre-render props for content that's known
+  // before the user answers, feedback only for correct/incorrect result banner
   const isCorrectBack = backFeedback?.userAnsweredCorrectly;
   const resultBgColor = isCorrectBack ? gradients.success[0] : gradients.danger[0];
   const resultIcon = isCorrectBack ? 'check-circle' : 'close-circle';
   const resultText = isCorrectBack ? t('game.correct') : t('game.incorrect');
-  const truthLabel = backFeedback?.isTrue ? t('game.fact') : t('game.fake');
-  const truthColor = backFeedback?.isTrue ? colors.emerald : colors.red;
+  // Truth/explanation data is known from the question — pre-render immediately
+  const resolvedIsTrue = backFeedback?.isTrue ?? preIsTrue;
+  const truthLabel = resolvedIsTrue ? t('game.fact') : t('game.fake');
+  const truthColor = resolvedIsTrue ? colors.emerald : colors.red;
 
-  // Memoize all inline style objects to avoid GC pressure and unnecessary native updates
+  // Memoized inline styles
   const dynamicStyles = useMemo(() => ({
     stackCard: { width: cardWidth },
     card: { width: cardWidth },
@@ -461,11 +492,9 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     categoryColor: { color: colors.primary } as const,
     quoteColor: { color: colors.primary } as const,
     statementColor: { color: colors.textPrimary } as const,
-    // Solid color replacing gradient for front face top accent (3px)
     topAccentColor: { backgroundColor: gradients.primary[0] } as const,
   }), [cardWidth, colors, borderRadius, gradients]);
 
-  // Memoize BackFaceBody colors prop to prevent re-render when parent re-renders
   const backFaceColors = useMemo(() => ({
     textSecondary: colors.textSecondary,
     textPrimary: colors.textPrimary,
@@ -498,7 +527,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
         />
       )}
 
-      {/* Second card in stack — keeps LinearGradient (not animated, so perf is fine) */}
+      {/* Second card in stack */}
       {remainingCards > 1 && (
         <Animated.View
           collapsable={false}
@@ -536,23 +565,20 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
         </Animated.View>
       )}
 
-      {/* Main interactive card */}
+      {/* Main interactive area — container stays in place for gesture detection */}
       <GestureDetector gesture={gesture}>
         <Animated.View
           collapsable={false}
-          style={[styles.card, dynamicStyles.card, cardAnimStyle]}
+          style={[styles.cardContainer, dynamicStyles.card]}
         >
-          {/* FRONT FACE */}
+          {/* FRONT CARD (statement) */}
           <Animated.View
             collapsable={false}
-            needsOffscreenAlphaCompositing
-            renderToHardwareTextureAndroid
-            style={[styles.faceOuter, frontFaceStyle]}
+            style={[styles.frontCard, frontCardStyle]}
           >
             <Animated.View
-              style={[styles.faceInner, dynamicStyles.faceInnerBase, cardBorderStyle]}
+              style={[styles.faceInner, dynamicStyles.faceInnerBase, frontBorderStyle]}
             >
-              {/* Solid View instead of LinearGradient — much cheaper on Android during animation */}
               <View style={[styles.topAccent, dynamicStyles.topAccentRadius, dynamicStyles.topAccentColor]} />
 
               <Animated.View
@@ -569,11 +595,11 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
 
               <View style={styles.frontContent}>
                 {categoryName
-                  ?<View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
-                  <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
-                </View>
+                  ? <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
+                    <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
+                  </View>
                   : null}
-  
+
                 <Text style={[styles.statementQuote, dynamicStyles.quoteColor]}>&laquo;</Text>
                 <Text
                   style={[styles.frontStatement, dynamicStyles.statementColor]}
@@ -588,17 +614,15 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
             </Animated.View>
           </Animated.View>
 
-          {/* BACK FACE — always mounted, no renderToHardwareTextureAndroid (avoids re-rasterize on content change) */}
+          {/* BACK CARD (explanation) — always mounted, starts off-screen */}
           <Animated.View
             collapsable={false}
-            needsOffscreenAlphaCompositing
-            style={[styles.backFaceOuter, backFaceStyle]}
+            style={[styles.backCard, backCardStyle]}
           >
             <Animated.View
-              style={[styles.faceInner, dynamicStyles.faceInnerBase, cardBorderStyle]}
+              style={[styles.faceInner, dynamicStyles.faceInnerBase, backBorderStyle]}
             >
               <Pressable onPress={programmaticDismiss}>
-                {/* Solid background instead of LinearGradient — saves expensive native gradient draw during flip */}
                 <View
                   style={[styles.resultBanner, dynamicStyles.topAccentRadius, { backgroundColor: resultBgColor }]}
                 >
@@ -615,10 +639,10 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
                 nestedScrollEnabled
               >
                 <BackFaceBody
-                  statement={backFeedback?.statement}
-                  explanation={backFeedback?.explanation}
-                  source={backFeedback?.source}
-                  sourceUrl={backFeedback?.sourceUrl}
+                  statement={backFeedback?.statement ?? statement}
+                  explanation={backFeedback?.explanation ?? preExplanation}
+                  source={backFeedback?.source ?? preSource}
+                  sourceUrl={backFeedback?.sourceUrl ?? preSourceUrl}
                   truthColor={truthColor}
                   truthLabel={truthLabel}
                   colors={backFaceColors}
@@ -643,16 +667,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: '100%',
   },
-  card: {
+  cardContainer: {
     minHeight: s(300),
     overflow: 'visible',
   },
-  faceOuter: {
+  frontCard: {
     width: '100%',
     minHeight: s(300),
     overflow: 'visible',
   },
-  backFaceOuter: {
+  backCard: {
     position: 'absolute',
     top: 0,
     left: 0,
