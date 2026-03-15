@@ -361,6 +361,25 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   // Incrementing counter triggers pre-mounted burst particles (UI thread only, no re-render)
   const burstTrigger = useSharedValue(0);
 
+  // One-time glow pulse animation — started once on mount and when tier changes,
+  // NOT on every `days` change. This prevents stacking infinite animations.
+  const prevTierRef = useRef(tier);
+  useEffect(() => {
+    if (days === 0 || !animated) {
+      glowScale.value = 1;
+      return;
+    }
+    glowScale.value = withRepeat(
+      withSequence(
+        withTiming(1 + scalePulse * 3, { duration: 1000 }),
+        withTiming(1, { duration: 1000 }),
+      ),
+      -1,
+      true,
+    );
+    prevTierRef.current = tier;
+  }, [animated, tier, scalePulse, glowScale]);
+
   useEffect(() => {
     const prevDays = prevDaysRef.current;
     prevDaysRef.current = days;
@@ -384,15 +403,6 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       false,
     );
 
-    glowScale.value = withRepeat(
-      withSequence(
-        withTiming(1 + scalePulse * 3, { duration: 1000 }),
-        withTiming(1, { duration: 1000 }),
-      ),
-      -1,
-      true,
-    );
-
     if (days > prevDays && prevDays > 0) {
       burstScale.value = withSequence(
         withSpring(1.3, { damping: 8, stiffness: 400 }),
@@ -400,7 +410,7 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       );
       setPlusOneKey((k) => k + 1);
     }
-  }, [animated, days, rotation, glowScale, burstScale, badgeOpacity, rotationAmplitude, scalePulse]);
+  }, [animated, days, rotation, burstScale, badgeOpacity, rotationAmplitude]);
 
   const handlePress = useCallback(() => {
     if (days <= 0) return;

@@ -22,6 +22,10 @@ import { showToast } from '@/stores/useToastStore';
 import type { HomeFeed } from '@/shared';
 import { s } from '@/utils/scale';
 
+// Static gradient point objects — avoids per-render allocation
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 export default function RandomFactsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, spacing, gradients, elevation, isDark } = useThemeContext();
@@ -94,8 +98,8 @@ export default function RandomFactsScreen() {
           colors={isDark
             ? [accentColor + '20', accentColor + '08', 'transparent']
             : [accentColor + '25', accentColor + '08', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          start={GRADIENT_START}
+          end={GRADIENT_END_V}
           style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
           <View style={[styles.iconCircle, { backgroundColor: accentColor + '20', ...elevation.md }]}>

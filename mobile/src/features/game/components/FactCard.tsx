@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/Button';
 import type { FC } from 'react';
 import { s, isTablet } from '@/utils/scale';
 
+// Static gradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_H = { x: 1, y: 0 } as const;
+
 type FactCardProps = {
   explanation: string;
   source: string;
@@ -19,7 +23,7 @@ type FactCardProps = {
   onShare: () => void;
 };
 
-export const FactCard: FC<FactCardProps> = ({
+export const FactCard: FC<FactCardProps> = React.memo(({
   explanation,
   source,
   sourceUrl,
@@ -54,8 +58,8 @@ export const FactCard: FC<FactCardProps> = ({
     >
       <LinearGradient
         colors={gradients.warm}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        start={GRADIENT_START}
+        end={GRADIENT_END_H}
         style={[styles.headerGradient, { borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl }]}
       >
         <MaterialCommunityIcons name="book-open-variant" size={24} color="#FFFFFF" />
@@ -112,7 +116,7 @@ export const FactCard: FC<FactCardProps> = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

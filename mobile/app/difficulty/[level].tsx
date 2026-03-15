@@ -22,6 +22,10 @@ import { showToast } from '@/stores/useToastStore';
 import type { HomeFeed } from '@/shared';
 import { s } from '@/utils/scale';
 
+// Static gradient point objects — avoids per-render allocation
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 const DIFFICULTY_CONFIG: Record<string, { icon: string; colorLight: string; colorDark: string; gradient: [string, string] }> = {
   easy: { icon: 'leaf', colorLight: '#22C55E', colorDark: '#4ADE80', gradient: ['#22C55E', '#16A34A'] },
   medium: { icon: 'flame', colorLight: '#F59E0B', colorDark: '#FBBF24', gradient: ['#F59E0B', '#D97706'] },
@@ -99,8 +103,8 @@ export default function DifficultyDetailScreen() {
           colors={isDark
             ? [accentColor + '20', accentColor + '08', 'transparent']
             : [accentColor + '25', accentColor + '08', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          start={GRADIENT_START}
+          end={GRADIENT_END_V}
           style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
           <View style={[styles.iconCircle, { backgroundColor: accentColor + '20', ...elevation.md }]}>

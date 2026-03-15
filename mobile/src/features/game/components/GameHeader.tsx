@@ -21,7 +21,7 @@ type GameHeaderProps = {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const GameHeader: FC<GameHeaderProps> = ({ progress, streak, onClose }) => {
+export const GameHeader: FC<GameHeaderProps> = React.memo(({ progress, streak, onClose }) => {
   const { colors, spacing, borderRadius } = useThemeContext();
   const router = useRouter();
   const closeScale = useSharedValue(1);
@@ -67,7 +67,7 @@ export const GameHeader: FC<GameHeaderProps> = ({ progress, streak, onClose }) =
       <StreakBadge days={streak} />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

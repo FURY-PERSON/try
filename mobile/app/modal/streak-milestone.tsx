@@ -21,6 +21,10 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { s } from '@/utils/scale';
 
+// Static gradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 export default function StreakMilestoneModal() {
   const insets = useSafeAreaInsets();
   const { colors, gradients } = useThemeContext();
@@ -74,8 +78,8 @@ export default function StreakMilestoneModal() {
     <Screen style={styles.screen} backgroundColor={gradients.warm[0]}>
       <LinearGradient
         colors={gradients.warm}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        start={GRADIENT_START}
+        end={GRADIENT_END_V}
         style={styles.gradient}
       >
         <View style={[styles.content, { paddingTop: insets.top }]}>

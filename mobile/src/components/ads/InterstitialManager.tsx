@@ -70,6 +70,7 @@ if (useAdsStore.getState().sdkReady) {
 
 /**
  * Wait for the ad to be loaded, with a max timeout.
+ * Uses longer polling interval (250ms) to reduce JS thread overhead during game start.
  */
 function waitForAdLoaded(timeoutMs: number): Promise<boolean> {
   if (adLoaded) return Promise.resolve(true);
@@ -83,7 +84,7 @@ function waitForAdLoaded(timeoutMs: number): Promise<boolean> {
         clearInterval(interval);
         resolve(false);
       }
-    }, 100);
+    }, 250);
   });
 }
 

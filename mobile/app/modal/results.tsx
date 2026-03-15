@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -30,6 +30,10 @@ import { getResultMessage } from '@/features/game/utils';
 import { analytics } from '@/services/analytics';
 import { s } from '@/utils/scale';
 
+// Static gradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 export default function ResultsModal() {
   const insets = useSafeAreaInsets();
   const { colors, gradients, spacing, borderRadius } = useThemeContext();
@@ -44,9 +48,9 @@ export default function ResultsModal() {
   const addFactsAnswered = useAdsStore((s) => s.addFactsAnswered);
 
   const results = dailyProgress.results;
-  const correctCount = results.filter((r) => r.correct).length;
+  const correctCount = useMemo(() => results.filter((r) => r.correct).length, [results]);
   const totalCards = dailyProgress.totalCards;
-  const resultBools = results.map((r) => r.correct);
+  const resultBools = useMemo(() => results.map((r) => r.correct), [results]);
   const messageKey = getResultMessage(correctCount, totalCards);
   const isDaily = collectionType === 'daily';
   const percent = totalCards > 0 ? correctCount / totalCards : 0;
@@ -101,7 +105,7 @@ export default function ResultsModal() {
 
   const streak = submissionResult?.streak ?? 0;
 
-  const handleShare = () => {
+  const handleShare = useCallback(() => {
     shareResult({
       score: correctCount,
       total: totalCards,
@@ -109,22 +113,22 @@ export default function ResultsModal() {
       results: resultBools,
     });
     analytics.logEvent('share_result');
-  };
+  }, [correctCount, totalCards, streak, resultBools]);
 
-  const handleGoHome = () => {
+  const handleGoHome = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
     queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
     resetDailyProgress();
     router.dismissAll();
-  };
+  }, [queryClient, resetDailyProgress, router]);
 
   return (
     <Screen style={[styles.screen, { paddingTop: insets.top }]}>
       {/* Performance gradient header */}
       <LinearGradient
         colors={[bgGradient[0] + '30', bgGradient[1] + '10', 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        start={GRADIENT_START}
+        end={GRADIENT_END_V}
         style={styles.headerGradient}
       />
 

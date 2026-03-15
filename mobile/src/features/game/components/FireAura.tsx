@@ -124,7 +124,7 @@ const FLAME_CONFIGS = [
   { xRatio: -0.25, size: 5, durationBase: 850, swayBase: 3, colorIdx: 6 },
 ];
 
-export const FireAura: FC<FireAuraProps> = ({
+export const FireAura: FC<FireAuraProps> = React.memo(({
   containerWidth,
   containerHeight,
 }) => {
@@ -144,7 +144,7 @@ export const FireAura: FC<FireAuraProps> = ({
       ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, Text, Platform, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useMemo, useCallback, useRef } from 'react';
+import { View, Text, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -18,9 +18,9 @@ import type { FC } from 'react';
 import type { SwipeDirection } from '../types';
 import { s } from '@/utils/scale';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
-const CARD_WIDTH = SCREEN_WIDTH - 48;
+// Static gradient point objects
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_H = { x: 1, y: 0 } as const;
 
 type SwipeCardProps = {
   statement: string;
@@ -33,7 +33,7 @@ type SwipeCardProps = {
   nextCategoryName?: string;
 };
 
-export const SwipeCard: FC<SwipeCardProps> = ({
+const SwipeCardInner: FC<SwipeCardProps> = ({
   statement,
   categoryName,
   cardIndex,
@@ -45,8 +45,18 @@ export const SwipeCard: FC<SwipeCardProps> = ({
 }) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
+  const { width: screenWidth } = useWindowDimensions();
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const isDisabledShared = useSharedValue(disabled);
+
+  const SWIPE_THRESHOLD = useMemo(() => screenWidth * 0.25, [screenWidth]);
+  const CARD_WIDTH = useMemo(() => screenWidth - 48, [screenWidth]);
+
+  // Sync disabled prop to shared value
+  useEffect(() => {
+    isDisabledShared.value = disabled;
+  }, [disabled, isDisabledShared]);
 
   // Reset position when card changes
   useEffect(() => {
@@ -54,31 +64,36 @@ export const SwipeCard: FC<SwipeCardProps> = ({
     translateY.value = 0;
   }, [cardIndex, translateX, translateY]);
 
-  const handleSwipeAction = (direction: SwipeDirection) => {
-    onSwipe(direction);
-  };
+  // Stable callback ref to avoid gesture recreation
+  const onSwipeRef = useRef(onSwipe);
+  onSwipeRef.current = onSwipe;
+  const callOnSwipe = useCallback((direction: SwipeDirection) => {
+    onSwipeRef.current(direction);
+  }, []);
 
-  const gesture = Gesture.Pan()
-    .enabled(!disabled)
+  // Memoize gesture to prevent native handler re-attach on every render
+  const gesture = useMemo(() => Gesture.Pan()
     .activeOffsetX([-15, 15])
     .onUpdate((event) => {
+      if (isDisabledShared.value) return;
       translateX.value = event.translationX;
       translateY.value = event.translationY * 0.3;
     })
     .onEnd((event) => {
+      if (isDisabledShared.value) return;
       if (event.translationX > SWIPE_THRESHOLD) {
-        translateX.value = withTiming(SCREEN_WIDTH * 1.5, { duration: 300 });
-        runOnJS(handleSwipeAction)('right');
+        translateX.value = withTiming(screenWidth * 1.5, { duration: 300 });
+        runOnJS(callOnSwipe)('right');
       } else if (event.translationX < -SWIPE_THRESHOLD) {
-        translateX.value = withTiming(-SCREEN_WIDTH * 1.5, { duration: 300 });
-        runOnJS(handleSwipeAction)('left');
+        translateX.value = withTiming(-screenWidth * 1.5, { duration: 300 });
+        runOnJS(callOnSwipe)('left');
       } else {
         translateX.value = withSpring(0);
         translateY.value = withSpring(0);
       }
-    });
+    }), [SWIPE_THRESHOLD, screenWidth, callOnSwipe]);
 
-  const HALF_SCREEN = SCREEN_WIDTH / 2;
+  const HALF_SCREEN = screenWidth / 2;
 
   const cardStyle = useAnimatedStyle(() => {
     'worklet';
@@ -143,6 +158,12 @@ export const SwipeCard: FC<SwipeCardProps> = ({
 
   const remainingCards = totalCards - cardIndex;
 
+  // Memoize dynamic styles that depend on dimensions
+  const dynamicStyles = useMemo(() => ({
+    stackCard: { width: CARD_WIDTH },
+    card: { width: CARD_WIDTH },
+  }), [CARD_WIDTH]);
+
   return (
     <View style={styles.wrapper}>
       {/* Third card in stack — empty placeholder */}
@@ -150,6 +171,7 @@ export const SwipeCard: FC<SwipeCardProps> = ({
         <View
           style={[
             styles.stackCard,
+            dynamicStyles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
@@ -168,6 +190,7 @@ export const SwipeCard: FC<SwipeCardProps> = ({
         <View
           style={[
             styles.stackCard,
+            dynamicStyles.stackCard,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
@@ -182,8 +205,8 @@ export const SwipeCard: FC<SwipeCardProps> = ({
         >
           <LinearGradient
             colors={gradients.primary}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            start={GRADIENT_START}
+            end={GRADIENT_END_H}
             style={[styles.topAccent, { borderTopLeftRadius: borderRadius.xxl, borderTopRightRadius: borderRadius.xxl }]}
           />
           {nextStatement ? (
@@ -211,6 +234,7 @@ export const SwipeCard: FC<SwipeCardProps> = ({
           renderToHardwareTextureAndroid
           style={[
             styles.card,
+            dynamicStyles.card,
             {
               backgroundColor: colors.surface,
               borderRadius: borderRadius.xxl,
@@ -222,8 +246,8 @@ export const SwipeCard: FC<SwipeCardProps> = ({
         >
           <LinearGradient
             colors={gradients.primary}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            start={GRADIENT_START}
+            end={GRADIENT_END_H}
             style={[styles.topAccent, { borderTopLeftRadius: borderRadius.xxl, borderTopRightRadius: borderRadius.xxl }]}
           />
 
@@ -268,19 +292,19 @@ export const SwipeCard: FC<SwipeCardProps> = ({
   );
 };
 
+export const SwipeCard = React.memo(SwipeCardInner);
+
 const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
   },
   stackCard: {
     position: 'absolute',
-    width: CARD_WIDTH,
     left: 0,
     bottom: 0,
     height: '100%',
   },
   card: {
-    width: CARD_WIDTH,
     minHeight: s(300),
     ...Platform.select({
       ios: { overflow: 'hidden' as const },

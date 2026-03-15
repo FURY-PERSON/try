@@ -73,12 +73,12 @@ const Particle: FC<{ color: string; delay: number; containerSize: number }> = ({
   );
 };
 
-export const FireParticles: FC<FireParticlesProps> = ({
+export const FireParticles: FC<FireParticlesProps> = React.memo(({
   count,
   color,
   containerSize,
 }) => {
-  const particles = Array.from({ length: count }, (_, i) => i);
+  const particles = React.useMemo(() => Array.from({ length: count }, (_, i) => i), [count]);
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -92,7 +92,7 @@ export const FireParticles: FC<FireParticlesProps> = ({
       ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

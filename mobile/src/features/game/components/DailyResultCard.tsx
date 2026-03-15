@@ -14,7 +14,7 @@ type DailyResultCardProps = {
   results: boolean[];
 };
 
-const ResultSquare: FC<{ correct: boolean; index: number; colors: Record<string, string> }> = ({
+const ResultSquare: FC<{ correct: boolean; index: number; colors: Record<string, string> }> = React.memo(({
   correct,
   index,
   colors,
@@ -44,9 +44,9 @@ const ResultSquare: FC<{ correct: boolean; index: number; colors: Record<string,
       ]}
     />
   );
-};
+});
 
-export const DailyResultCard: FC<DailyResultCardProps> = ({ results }) => {
+export const DailyResultCard: FC<DailyResultCardProps> = React.memo(({ results }) => {
   const { colors } = useThemeContext();
 
   return (
@@ -61,7 +61,7 @@ export const DailyResultCard: FC<DailyResultCardProps> = ({ results }) => {
       ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

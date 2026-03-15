@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
@@ -17,14 +17,14 @@ export default function FactModal() {
     illustrationUrl?: string;
   }>();
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     await shareFact(params.explanation ?? '', params.source ?? '');
     analytics.logEvent('fact_shared');
-  };
+  }, [params.explanation, params.source]);
 
   React.useEffect(() => {
     analytics.logEvent('fact_viewed');

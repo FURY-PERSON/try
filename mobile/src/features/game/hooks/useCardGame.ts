@@ -34,8 +34,10 @@ export const useCardGame = (
   const collectionType = useGameStore((s) => s.collectionType);
   const isReplay = useGameStore((s) => s.isReplay);
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
+  const feedbackRef = useRef<AnswerFeedback | null>(null);
   const [previousFeedback, setPreviousFeedback] = useState<AnswerFeedback | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const currentStreak = useGameStore((s) => s.currentStreak);
   const [liveStreak, setLiveStreak] = useState(currentStreak);
   const [pendingResult, setPendingResult] = useState<CardResult | null>(null);
@@ -62,9 +64,12 @@ export const useCardGame = (
 
   const handleSwipe = useCallback(
     async (direction: SwipeDirection) => {
-      if (!currentQuestion || isSubmitting || feedback) return;
+      // Use refs for guard checks to avoid recreating this callback on every
+      // feedback/isSubmitting state change — reduces re-renders during animations
+      if (!currentQuestion || isSubmittingRef.current || feedbackRef.current) return;
 
       setIsSubmitting(true);
+      isSubmittingRef.current = true;
       const startTime =
         useGameStore.getState().currentCardStartTime ?? Date.now();
       const timeSpentMs = Date.now() - startTime;
@@ -89,14 +94,16 @@ export const useCardGame = (
         const resolvedSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
           ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
 
-        setFeedback({
+        const newFeedback = {
           statement: resolvedStatement,
           isTrue: currentQuestion.isTrue,
           userAnsweredCorrectly: isCorrect,
           explanation: resolvedExplanation,
           source: resolvedSource,
           sourceUrl: resolvedSourceUrl,
-        });
+        };
+        feedbackRef.current = newFeedback;
+        setFeedback(newFeedback);
 
         setPendingResult({
           questionId: currentQuestion.id,
@@ -141,14 +148,16 @@ export const useCardGame = (
         const fbSourceUrl = language === 'en' && currentQuestion.sourceUrlEn
           ? currentQuestion.sourceUrlEn : (currentQuestion.sourceUrl ?? undefined);
 
-        setFeedback({
+        const newFeedback = {
           statement: fbStatement,
           isTrue: currentQuestion.isTrue,
           userAnsweredCorrectly: isCorrect,
           explanation: fbExplanation,
           source: fbSource,
           sourceUrl: fbSourceUrl,
-        });
+        };
+        feedbackRef.current = newFeedback;
+        setFeedback(newFeedback);
 
         setPendingResult({
           questionId: currentQuestion.id,
@@ -158,12 +167,11 @@ export const useCardGame = (
         });
       } finally {
         setIsSubmitting(false);
+        isSubmittingRef.current = false;
       }
     },
     [
       currentQuestion,
-      isSubmitting,
-      feedback,
       collectionType,
       language,
     ],
@@ -232,11 +240,12 @@ export const useCardGame = (
     [sessionId, setSubmissionResult],
   );
 
-  const handleNextCard = useCallback(async () => {
+  const handleNextCard = useCallback(() => {
     if (pendingResult) {
       // Store current feedback as previous before clearing
       setPreviousFeedback(feedback);
       // Clear feedback BEFORE advancing index to prevent stale content flash
+      feedbackRef.current = null;
       setFeedback(null);
       setPendingResult(null);
       submitCardResult(pendingResult);
@@ -248,8 +257,8 @@ export const useCardGame = (
       }
 
       // Read progress immediately after submitCardResult (synchronous Zustand update),
-      // BEFORE any awaits — prevents race condition where resetDailyProgress() can clear
-      // the store while we're awaiting saveProgress, causing final submit to be skipped.
+      // BEFORE any async work — prevents race condition where resetDailyProgress() can
+      // clear the store while we're awaiting network calls.
       const newProgress = useGameStore.getState().dailyProgress;
       const currentIsReplay = useGameStore.getState().isReplay;
       const needsFinalSubmit = newProgress.completed && !currentIsReplay;
@@ -261,7 +270,8 @@ export const useCardGame = (
           }))
         : null;
 
-      // Save individual answer progress for collection modes
+      // Fire-and-forget: save individual answer progress for collection modes.
+      // Does NOT block the JS thread — the card transition happens immediately.
       if (
         collectionType !== 'daily' &&
         !isReplay &&
@@ -275,21 +285,22 @@ export const useCardGame = (
             : ('incorrect' as const),
           timeSpentSeconds: Math.round(pendingResult.timeSpentMs / 1000),
         };
-        try {
-          await collectionsApi.saveProgress(sessionId, [progressResult]);
-          savedProgressIds.current.add(pendingResult.questionId);
-        } catch {
-          // Answer will be included in final submit()
-          console.warn('Failed to save progress for', pendingResult.questionId);
-        }
+        const capturedQuestionId = pendingResult.questionId;
+        collectionsApi.saveProgress(sessionId, [progressResult])
+          .then(() => { savedProgressIds.current.add(capturedQuestionId); })
+          .catch(() => {
+            // Answer will be included in final submit()
+            console.warn('Failed to save progress for', capturedQuestionId);
+          });
       }
 
-      // Submit full set when all cards are done (skip for replays)
+      // Fire-and-forget: submit full set when all cards are done (skip for replays).
+      // The results screen navigation is driven by isComplete state, not by this await.
       if (finalResults) {
         if (collectionType === 'daily' && dailySetId) {
-          await submitDailySetResults(finalResults);
+          submitDailySetResults(finalResults);
         } else if (sessionId) {
-          await submitCollectionResults(finalResults);
+          submitCollectionResults(finalResults);
         }
       }
     } else {

@@ -25,6 +25,10 @@ import { analytics } from '@/services/analytics';
 import { showToast } from '@/stores/useToastStore';
 import { s } from '@/utils/scale';
 
+// Static gradient point objects — avoids per-render allocation
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END_V = { x: 0, y: 1 } as const;
+
 export default function CategoryDetailScreen() {
   const insets = useSafeAreaInsets();
   const { colors, gradients, spacing, borderRadius, elevation, isDark } = useThemeContext();
@@ -151,8 +155,8 @@ export default function CategoryDetailScreen() {
           colors={isDark
             ? [categoryColor + '20', categoryColor + '08', 'transparent']
             : [categoryColor + '25', categoryColor + '08', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+          start={GRADIENT_START}
+          end={GRADIENT_END_V}
           style={[styles.heroHeader, { paddingTop: insets.top + 24 }]}
         >
           <View style={[styles.iconCircle, { backgroundColor: categoryColor + '20', ...elevation.md }]}>

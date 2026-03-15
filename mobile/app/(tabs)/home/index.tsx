@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -48,6 +48,12 @@ import type { CategoryWithCount, DifficultyProgress, HomeFeedCollection } from '
 import { s } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Static gradient point objects — avoids per-render allocation
+const GRADIENT_START_00 = { x: 0, y: 0 } as const;
+const GRADIENT_END_11 = { x: 1, y: 1 } as const;
+const GRADIENT_END_01 = { x: 0, y: 1 } as const;
+const GRADIENT_END_10 = { x: 1, y: 0 } as const;
 
 export default function HomeScreen() {
   const { colors, spacing, gradients, elevation, borderRadius, scale } = useThemeContext();
@@ -102,12 +108,22 @@ export default function HomeScreen() {
 
   const collections = allCollections;
 
+  // Track scroll analytics only once per session to avoid excessive logging
+  const categoriesScrolledRef = useRef(false);
+  const collectionsScrolledRef = useRef(false);
+
   const handleCategoriesScroll = useCallback((_e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    analytics.logEvent('home_section_scroll', { section: 'categories' });
+    if (!categoriesScrolledRef.current) {
+      categoriesScrolledRef.current = true;
+      analytics.logEvent('home_section_scroll', { section: 'categories' });
+    }
   }, []);
 
   const handleCollectionsScroll = useCallback((_e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    analytics.logEvent('home_section_scroll', { section: 'collections' });
+    if (!collectionsScrolledRef.current) {
+      collectionsScrolledRef.current = true;
+      analytics.logEvent('home_section_scroll', { section: 'collections' });
+    }
   }, []);
 
   useEffect(() => {
@@ -155,7 +171,7 @@ export default function HomeScreen() {
     router.push({ pathname: '/collection/[id]', params: { id: collectionId } });
   }, [router]);
 
-  const getLockoutText = () => {
+  const lockoutText = useMemo(() => {
     if (!daily?.unlocksAt) return '';
     const unlocksAt = new Date(daily.unlocksAt);
     const now = new Date();
@@ -165,7 +181,17 @@ export default function HomeScreen() {
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays > 0) return t('home.locked', { days: diffDays });
     return t('home.lockedHours', { hours: diffHours });
-  };
+  }, [daily?.unlocksAt, t]);
+
+  const difficultyCards = useMemo<Array<{
+    key: 'easy' | 'medium' | 'hard';
+    gradient: [string, string];
+    icon: string;
+  }>>(() => [
+    { key: 'easy', gradient: gradients.success, icon: '🟢' },
+    { key: 'medium', gradient: gradients.warm, icon: '🟡' },
+    { key: 'hard', gradient: gradients.danger, icon: '🔴' },
+  ], [gradients.success, gradients.warm, gradients.danger]);
 
   if (isLoading) {
     return (
@@ -190,16 +216,6 @@ export default function HomeScreen() {
       </Screen>
     );
   }
-
-  const difficultyCards: Array<{
-    key: 'easy' | 'medium' | 'hard';
-    gradient: [string, string];
-    icon: string;
-  }> = [
-    { key: 'easy', gradient: gradients.success, icon: '🟢' },
-    { key: 'medium', gradient: gradients.warm, icon: '🟡' },
-    { key: 'hard', gradient: gradients.danger, icon: '🔴' },
-  ];
 
   return (
     <Screen padded={false}>
@@ -228,8 +244,8 @@ export default function HomeScreen() {
         <AnimatedEntrance delay={100}>
           <LinearGradient
             colors={gradients.card}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={GRADIENT_START_00}
+            end={GRADIENT_END_11}
             style={[
               styles.heroCard,
               {
@@ -261,7 +277,7 @@ export default function HomeScreen() {
                   </Text>
                 )}
                 <Text style={[styles.lockText, { color: colors.textTertiary }]}>
-                  {getLockoutText()}
+                  {lockoutText}
                 </Text>
               </>
             ) : dailyData?.progress ? (
@@ -555,8 +571,8 @@ const DifficultyCard = React.memo(function DifficultyCard({
         <View style={[styles.difficultyGradientDot]}>
           <LinearGradient
             colors={gradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            start={GRADIENT_START_00}
+            end={GRADIENT_END_11}
             style={styles.difficultyDotInner}
           />
         </View>
