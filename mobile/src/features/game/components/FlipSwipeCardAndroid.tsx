@@ -231,9 +231,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     if (isSubmittingShared.value) return;
     const dir = direction === 'right' ? 1 : -1;
 
+    // Set correctness immediately so the back card border color is ready
+    // without waiting for the React re-render cycle.
+    const userAnswer = direction === 'right';
+    isCorrectShared.value = userAnswer === !!preIsTrue;
+
     // Batch all shared value updates in a single UI-thread worklet execution.
-    // This avoids 4 separate JS→UI bridge calls, reducing animated style
-    // recomputation from 4 rounds to 1.
     runOnUI(() => {
       'worklet';
       isProgrammatic.value = true;
@@ -254,8 +257,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
         }
       });
     })();
-    callOnSwipe(direction);
-  }, [flyDistance, callOnSwipe, isSubmittingShared, isProgrammatic, answerDirection, phase, frontTranslateX, backTranslateX]);
+
+    // Defer handleSwipe by 150ms so its heavy React re-render (5 setState calls)
+    // lands when the card is already ~40% off-screen — stutter becomes invisible.
+    // rAF (16ms) was too early — re-render hit frames 2-3 when card barely moved.
+    setTimeout(() => onSwipeRef.current(direction), 150);
+  }, [flyDistance, isSubmittingShared, isProgrammatic, isCorrectShared, preIsTrue, answerDirection, phase, frontTranslateX, backTranslateX]);
 
   const programmaticDismiss = useCallback(() => {
     backTranslateX.value = withTiming(
