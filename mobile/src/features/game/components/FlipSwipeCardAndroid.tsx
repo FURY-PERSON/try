@@ -52,7 +52,8 @@ type CardPhase = 'front' | 'transitioning' | 'back';
 
 const SNAP_DURATION = 180;
 const FLY_OUT_DURATION = 250;
-const BUTTON_FLY_OUT_DURATION = 480;
+const BUTTON_FLY_OUT_DURATION = 300;
+const BUTTON_FLY_IN_DURATION = 250;
 const FLY_IN_DURATION = 300;
 const GRADIENT_START = { x: 0, y: 0 } as const;
 const GRADIENT_END_H = { x: 1, y: 0 } as const;
@@ -143,6 +144,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   const [stackContent, setStackContent] = useState({ nextStatement, nextCategoryName });
   const [fourthCardReady, setFourthCardReady] = useState(true);
 
+  // Guard against firing callbacks after unmount
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
+
   // Stable refs for callbacks
   const onSwipeRef = useRef(onSwipe);
   onSwipeRef.current = onSwipe;
@@ -220,7 +227,9 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     // Defer by 1 frame so the fly-out animation starts on the UI thread
     // before the JS thread gets busy with handleSwipe state updates
     // (setIsSubmitting, setFeedback, setPendingResult, setLiveStreak)
-    requestAnimationFrame(() => onSwipeRef.current(direction));
+    requestAnimationFrame(() => {
+      if (mountedRef.current) onSwipeRef.current(direction);
+    });
   }, []);
 
   const callOnDismiss = useCallback(() => {
@@ -249,7 +258,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
         if (finished) {
           backTranslateX.value = dir * flyDistance;
           backTranslateX.value = withTiming(0, {
-            duration: FLY_IN_DURATION,
+            duration: BUTTON_FLY_IN_DURATION,
             easing: Easing.out(Easing.cubic),
           }, (fin) => {
             if (fin) phase.value = 'back';
@@ -261,7 +270,9 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     // Defer handleSwipe by 150ms so its heavy React re-render (5 setState calls)
     // lands when the card is already ~40% off-screen — stutter becomes invisible.
     // rAF (16ms) was too early — re-render hit frames 2-3 when card barely moved.
-    setTimeout(() => onSwipeRef.current(direction), 150);
+    setTimeout(() => {
+      if (mountedRef.current) onSwipeRef.current(direction);
+    }, 150);
   }, [flyDistance, isSubmittingShared, isProgrammatic, isCorrectShared, preIsTrue, answerDirection, phase, frontTranslateX, backTranslateX]);
 
   const programmaticDismiss = useCallback(() => {
