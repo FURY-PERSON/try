@@ -28,6 +28,7 @@ type StreakBadgeProps = {
   days: number;
   animated?: boolean;
   size?: 'sm' | 'md';
+  showIncrement?: boolean;
 };
 
 type StreakTier = {
@@ -42,9 +43,9 @@ function getStreakTier(streak: number): StreakTier {
   if (streak <= 0) return { tier: 0, color: '#22C55E', rotationAmplitude: 0, scalePulse: 0, glowRadius: 0 };
   if (streak < 5) return { tier: 1, color: '#22C55E', rotationAmplitude: 3, scalePulse: 0.02, glowRadius: 4 };
   if (streak < 10) return { tier: 2, color: '#EAB308', rotationAmplitude: 4, scalePulse: 0.04, glowRadius: 8 };
-  if (streak < 25) return { tier: 3, color: '#F97316', rotationAmplitude: 5, scalePulse: 0.06, glowRadius: 12 };
-  if (streak < 50) return { tier: 4, color: '#EF4444', rotationAmplitude: 7, scalePulse: 0.08, glowRadius: 16 };
-  if (streak < 100) return { tier: 5, color: '#DC2626', rotationAmplitude: 9, scalePulse: 0.10, glowRadius: 20 };
+  if (streak < 20) return { tier: 3, color: '#F97316', rotationAmplitude: 5, scalePulse: 0.06, glowRadius: 12 };
+  if (streak < 30) return { tier: 4, color: '#EF4444', rotationAmplitude: 7, scalePulse: 0.08, glowRadius: 16 };
+  if (streak < 40) return { tier: 5, color: '#DC2626', rotationAmplitude: 9, scalePulse: 0.10, glowRadius: 20 };
   return { tier: 7, color: '#9333EA', rotationAmplitude: 12, scalePulse: 0.14, glowRadius: 28 };
 }
 
@@ -344,13 +345,14 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   days,
   animated = true,
   size = 'sm',
+  showIncrement = true,
 }) => {
   const prevDaysRef = useRef(days);
   const [tapBurstKey, setTapBurstKey] = useState(0);
   const [plusOneKey, setPlusOneKey] = useState(0);
   const { tier, color, rotationAmplitude, scalePulse, glowRadius } = getStreakTier(days);
 
-  const isInferno = days >= 100;
+  const isInferno = days >= 40;
 
   const rotation = useSharedValue(0);
   const glowScale = useSharedValue(1);
@@ -408,7 +410,9 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         withSpring(1.3, { damping: 8, stiffness: 400 }),
         withSpring(1, { damping: 12, stiffness: 200 }),
       );
-      setPlusOneKey((k) => k + 1);
+      if (showIncrement) {
+        setPlusOneKey((k) => k + 1);
+      }
     }
   }, [animated, days, rotation, burstScale, badgeOpacity, rotationAmplitude]);
 

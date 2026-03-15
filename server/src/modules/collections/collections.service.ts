@@ -119,7 +119,7 @@ export class CollectionsService {
 
     return {
       ...collection,
-      answeredCount,
+      answeredCount: Math.min(answeredCount, collection._count.questions),
     };
   }
 
@@ -704,6 +704,7 @@ export class CollectionsService {
     const allItems = collection.questions;
 
     let items: typeof allItems;
+    let effectiveReplay = replay;
     if (replay) {
       items = allItems.slice(0, count);
     } else {
@@ -713,8 +714,13 @@ export class CollectionsService {
       });
       const answeredIds = new Set(answered.map((a) => a.questionId));
       const unanswered = allItems.filter((q) => !answeredIds.has(q.id));
-      // If all answered, fall back to full list (acts as implicit replay)
-      items = (unanswered.length > 0 ? unanswered : allItems).slice(0, count);
+      if (unanswered.length > 0) {
+        items = unanswered.slice(0, count);
+      } else {
+        // All answered — treat as replay (skip streak updates)
+        items = allItems.slice(0, count);
+        effectiveReplay = true;
+      }
     }
 
     const sessionId = this.createSession(
@@ -723,11 +729,12 @@ export class CollectionsService {
       collectionId,
       null,
       items,
-      replay,
+      effectiveReplay,
     );
 
     return {
       sessionId,
+      replay: effectiveReplay,
       questions: items.map((item) => ({
         id: item.id,
         statement: item.statement,

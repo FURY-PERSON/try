@@ -38,7 +38,7 @@ export default function NicknameModal() {
   const [nicknameAvailable, setNicknameAvailable] = useState(true);
   const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const isValid = value.length >= 3 && value.length <= 16;
+  const isValid = value.length >= 3 && value.length <= 32;
 
   useEffect(() => {
     if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
@@ -116,9 +116,14 @@ export default function NicknameModal() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, justifyContent: 'space-between' }}
+        style={{ flex: 1 }}
       >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
         {/* Avatar emoji */}
         <AnimatedEntrance delay={0} direction="up" style={styles.avatarSection}>
           <Pressable
@@ -179,7 +184,7 @@ export default function NicknameModal() {
                 onChangeText={setValue}
                 placeholder={t('nickname.placeholder')}
                 autoFocus
-                maxLength={16}
+                maxLength={32}
               />
             </View>
             <Pressable
@@ -203,7 +208,7 @@ export default function NicknameModal() {
             {t('nickname.hint')}
           </Text>
         </AnimatedEntrance>
-      </View>
+
 
       <AnimatedEntrance delay={400} direction="up">
         <View style={styles.footer}>
@@ -223,6 +228,7 @@ export default function NicknameModal() {
           />
         </View>
       </AnimatedEntrance>
+      </ScrollView>
       </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
     </Screen>
@@ -232,7 +238,7 @@ export default function NicknameModal() {
 const styles = StyleSheet.create({
   screen: { justifyContent: 'space-between' },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: s(32),
     gap: s(16),

@@ -31,6 +31,7 @@ export type CollectionSessionQuestion = {
 export type CollectionSession = {
   sessionId: string;
   questions: CollectionSessionQuestion[];
+  replay?: boolean;
 };
 
 export type CollectionSubmitResult = {

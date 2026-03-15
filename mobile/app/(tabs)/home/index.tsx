@@ -235,7 +235,7 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.headerRight}>
               <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
-              <StreakBadge days={streak} />
+              <StreakBadge days={streak} showIncrement={false} />
             </View>
           </View>
         </AnimatedEntrance>

@@ -84,7 +84,8 @@ export default function CollectionDetailScreen() {
       });
       const cachedFeed = queryClient.getQueryData<HomeFeed>(['home', 'feed']);
       const streak = cachedFeed?.userProgress?.streak ?? 0;
-      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, replay, streak);
+      const effectiveReplay = replay || session.replay === true;
+      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, effectiveReplay, streak);
       analytics.logEvent('collection_start', {
         type: 'collection',
         referenceId: id,
@@ -150,7 +151,7 @@ export default function CollectionDetailScreen() {
   }
 
   const totalCount = collection._count.questions;
-  const answeredCount = collection.answeredCount;
+  const answeredCount = Math.min(collection.answeredCount, totalCount);
   const isFullyDone = totalCount > 0 && answeredCount >= totalCount;
 
   return (

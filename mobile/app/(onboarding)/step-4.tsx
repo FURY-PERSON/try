@@ -100,7 +100,12 @@ export default function OnboardingStep4() {
           </Text>
         </Pressable>
 
-        <View style={styles.content}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
           <AnimatedEntrance delay={0} direction="up">
             <Text style={[styles.title, { color: colors.textPrimary }]}>
               {t('onboarding.step4Title')}
@@ -170,7 +175,7 @@ export default function OnboardingStep4() {
                     if (validationError) setValidationError('');
                   }}
                   placeholder={t('nickname.placeholder')}
-                  maxLength={16}
+                  maxLength={32}
                   autoCapitalize="words"
                   autoCorrect={false}
                 />
@@ -191,7 +196,6 @@ export default function OnboardingStep4() {
               <Text style={[styles.errorText, { color: colors.red }]}>{validationError}</Text>
             ) : null}
           </AnimatedEntrance>
-        </View>
 
         <AnimatedEntrance delay={450} direction="up">
           <View style={[styles.footer, { paddingBottom: Platform.OS === 'android' ? 32 + insets.bottom : 32 }]}>
@@ -213,6 +217,7 @@ export default function OnboardingStep4() {
             </View>
           </View>
         </AnimatedEntrance>
+        </ScrollView>
       </LinearGradient>
       </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
@@ -225,7 +230,7 @@ const styles = StyleSheet.create({
   skipButton: { alignSelf: 'flex-end', padding: s(16) },
   skipText: { fontSize: s(15), fontFamily: fontFamily.bold },
   content: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: s(32),

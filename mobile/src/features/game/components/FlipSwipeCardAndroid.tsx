@@ -611,7 +611,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
                 <Text style={styles.overlayText}>{t('game.fake')}</Text>
               </Animated.View>
 
-              <View style={styles.frontContent}>
+              <ScrollView
+                style={styles.frontScrollView}
+                contentContainerStyle={styles.frontContent}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
+              >
                 {categoryName
                   ? <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
                     <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
@@ -621,14 +626,11 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
                 <Text style={[styles.statementQuote, dynamicStyles.quoteColor]}>&laquo;</Text>
                 <Text
                   style={[styles.frontStatement, dynamicStyles.statementColor]}
-                  numberOfLines={8}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.65}
                 >
                   {statement}
                 </Text>
                 <Text style={[styles.statementQuote, styles.quoteEnd, dynamicStyles.quoteColor]}>&raquo;</Text>
-              </View>
+              </ScrollView>
             </Animated.View>
           </Animated.View>
 
@@ -710,10 +712,13 @@ const styles = StyleSheet.create({
     height: s(3),
     width: '100%',
   },
+  frontScrollView: {
+    flex: 1,
+  },
   frontContent: {
     paddingHorizontal: s(24),
     paddingVertical: s(32),
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
   },
   overlay: {

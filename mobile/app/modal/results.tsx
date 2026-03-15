@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { DailyResultCard } from '@/features/game/components/DailyResultCard';
@@ -36,7 +35,7 @@ const GRADIENT_END_V = { x: 0, y: 1 } as const;
 
 export default function ResultsModal() {
   const insets = useSafeAreaInsets();
-  const { colors, gradients, spacing, borderRadius } = useThemeContext();
+  const { colors, gradients, spacing } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -52,7 +51,6 @@ export default function ResultsModal() {
   const totalCards = dailyProgress.totalCards;
   const resultBools = useMemo(() => results.map((r) => r.correct), [results]);
   const messageKey = getResultMessage(correctCount, totalCards);
-  const isDaily = collectionType === 'daily';
   const percent = totalCards > 0 ? correctCount / totalCards : 0;
 
   // Animated count-up for score
@@ -178,29 +176,6 @@ export default function ResultsModal() {
           <DailyResultCard results={resultBools} />
         </AnimatedEntrance>
 
-        {/* Leaderboard position only for daily sets, hidden in replay */}
-        {!isReplay && isDaily && submissionResult && submissionResult.totalPlayers > 0 ? (
-          <AnimatedEntrance delay={500} direction="up">
-            <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
-              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
-                {t('results.percentile', {
-                  percent: submissionResult.percentile,
-                })}
-              </Text>
-            </Card>
-          </AnimatedEntrance>
-        ) : !isReplay && isDaily ? (
-          <AnimatedEntrance delay={500} direction="up">
-            <Card variant="default" style={{ ...styles.positionCard, borderRadius: borderRadius.lg }}>
-              <Text style={[styles.positionText, { color: colors.textSecondary }]}>
-                {t('results.position', {
-                  position: '—',
-                  total: '—',
-                })}
-              </Text>
-            </Card>
-          </AnimatedEntrance>
-        ) : null}
       </View>
 
       <AnimatedEntrance delay={600} direction="up">
@@ -257,15 +232,6 @@ const styles = StyleSheet.create({
   percentText: {
     fontSize: s(17),
     fontFamily: fontFamily.semiBold,
-    textAlign: 'center',
-  },
-  positionCard: {
-    paddingVertical: s(10),
-    paddingHorizontal: s(20),
-  },
-  positionText: {
-    fontSize: s(15),
-    fontFamily: fontFamily.medium,
     textAlign: 'center',
   },
   replayBanner: {

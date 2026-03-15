@@ -625,9 +625,14 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
               <Text style={styles.overlayText}>{t('game.fake')}</Text>
             </Animated.View>
 
-            <View style={styles.frontContent}>
+            <ScrollView
+              style={styles.frontScrollView}
+              contentContainerStyle={styles.frontContent}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
               {categoryName
-                ?              <View
+                ? <View
                 style={[
                   styles.categoryBadge,
                   { backgroundColor: colors.primary + '12' },
@@ -638,7 +643,6 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                 </Text>
               </View>
                 : null}
-
 
               <Text
                 style={[styles.statementQuote, { color: colors.primary }]}
@@ -665,7 +669,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
               >
                 &raquo;
               </Text>
-            </View>
+            </ScrollView>
             </Animated.View>
           </Animated.View>
 
@@ -808,10 +812,13 @@ const styles = StyleSheet.create({
     height: s(3),
     width: '100%',
   },
+  frontScrollView: {
+    flex: 1,
+  },
   frontContent: {
     paddingHorizontal: s(24),
     paddingVertical: s(32),
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
   },
   overlay: {
