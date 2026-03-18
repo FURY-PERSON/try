@@ -10,6 +10,7 @@ import {
   Flag,
   LogOut,
   MessageSquare,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { to: '/admin/feature-flags', icon: Flag, label: 'Feature Flags' },
   { to: '/admin/reference', icon: BookOpen, label: 'Никнеймы и аватары' },
   { to: '/admin/support-requests', icon: MessageSquare, label: 'Поддержка' },
+  { to: '/admin/logs', icon: FileText, label: 'Логи' },
 ];
 
 export function AppLayout() {

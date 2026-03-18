@@ -99,12 +99,25 @@ export class AdminDailySetsService {
       );
     }
 
+    // Auto-publish if status is 'scheduled' and date is today or in the past
+    let resolvedStatus = dto.status ?? 'draft';
+    if (resolvedStatus === 'scheduled') {
+      const nowUtc = new Date();
+      const msk = new Date(nowUtc.getTime() + 3 * 60 * 60 * 1000);
+      const todayMsk = new Date(
+        Date.UTC(msk.getUTCFullYear(), msk.getUTCMonth(), msk.getUTCDate()),
+      );
+      if (dateValue <= todayMsk) {
+        resolvedStatus = 'published';
+      }
+    }
+
     return this.prisma.dailySet.create({
       data: {
         date: dateValue, // already UTC midnight
         theme: dto.theme,
         themeEn: dto.themeEn,
-        status: dto.status ?? 'draft',
+        status: resolvedStatus,
         questions: {
           create: dto.questionIds.map((questionId, index) => ({
             questionId,
@@ -178,6 +191,22 @@ export class AdminDailySetsService {
     if (dto.themeEn !== undefined) updateData.themeEn = dto.themeEn;
     if (dto.date !== undefined) updateData.date = toUtcMidnight(dto.date);
     if (dto.status !== undefined) updateData.status = dto.status;
+
+    // Auto-publish if status is (or becomes) 'scheduled' and date is today or past
+    const finalStatus = (updateData.status as string) ?? existing.status;
+    if (finalStatus === 'scheduled') {
+      const finalDate = updateData.date
+        ? new Date(updateData.date as Date)
+        : existing.date;
+      const nowUtc = new Date();
+      const msk = new Date(nowUtc.getTime() + 3 * 60 * 60 * 1000);
+      const todayMsk = new Date(
+        Date.UTC(msk.getUTCFullYear(), msk.getUTCMonth(), msk.getUTCDate()),
+      );
+      if (finalDate <= todayMsk) {
+        updateData.status = 'published';
+      }
+    }
 
     return this.prisma.dailySet.update({
       where: { id },

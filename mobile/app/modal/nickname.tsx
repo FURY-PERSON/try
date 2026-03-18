@@ -212,14 +212,16 @@ export default function NicknameModal() {
 
       <AnimatedEntrance delay={400} direction="up">
         <View style={styles.footer}>
-          <Button
-            label={isValid && !nicknameAvailable ? t('nickname.alreadyTaken') : t('common.save')}
-            variant="primary"
-            size="lg"
-            disabled={!isValid || !nicknameAvailable}
-            loading={loading}
-            onPress={handleSave}
-          />
+          <View style={styles.submitBtnWrapper}>
+            <Button
+              label={isValid && !nicknameAvailable ? t('nickname.alreadyTaken') : t('common.save')}
+              variant="primary"
+              size="lg"
+              disabled={!isValid || !nicknameAvailable}
+              loading={loading}
+              onPress={handleSave}
+            />
+          </View>
           <Button
             label={t('common.cancel')}
             variant="ghost"
@@ -318,5 +320,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(16),
     paddingBottom: s(32),
     gap: s(8),
+    alignItems: 'center',
+  },
+  submitBtnWrapper: {
+    width: '60%',
   },
 });

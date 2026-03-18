@@ -8,6 +8,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Platform,
+  type ScrollView as ScrollViewType,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -125,6 +126,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   // after the entrance animation (300ms) fully completes.
   const [fourthCardReady, setFourthCardReady] = useState(true);
 
+  const backScrollRef = useRef<ScrollViewType>(null);
+
   // Guard against stale feedback from a previous card
   const activeFeedback = useMemo(
     () => (feedback?.statement === statement ? feedback : null),
@@ -139,6 +142,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     phase.value = 'front';
     isProgrammatic.value = false;
     isCorrectShared.value = false;
+    backScrollRef.current?.scrollTo({ y: 0, animated: false });
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
     // Hide 4th card immediately on transition start
@@ -704,6 +708,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
                 </Pressable>
 
                 <ScrollView
+                  ref={backScrollRef}
                   style={styles.backBody}
                   contentContainerStyle={styles.backBodyContent}
                   showsVerticalScrollIndicator={false}

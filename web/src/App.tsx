@@ -22,6 +22,7 @@ const FeatureFlagsPage = lazy(() => import('@/pages/FeatureFlagsPage').then((m) 
 const SupportPage = lazy(() => import('@/pages/SupportPage').then((m) => ({ default: m.SupportPage })));
 const AdminSupportPage = lazy(() => import('@/pages/AdminSupportPage').then((m) => ({ default: m.AdminSupportPage })));
 const AdminSupportDetailPage = lazy(() => import('@/pages/AdminSupportDetailPage').then((m) => ({ default: m.AdminSupportDetailPage })));
+const AdminLogsPage = lazy(() => import('@/pages/AdminLogsPage').then((m) => ({ default: m.AdminLogsPage })));
 
 function PageFallback() {
   return (
@@ -66,6 +67,7 @@ export function App() {
         <Route path="feature-flags" element={<Suspense fallback={<PageFallback />}><FeatureFlagsPage /></Suspense>} />
         <Route path="support-requests" element={<Suspense fallback={<PageFallback />}><AdminSupportPage /></Suspense>} />
         <Route path="support-requests/:id" element={<Suspense fallback={<PageFallback />}><AdminSupportDetailPage /></Suspense>} />
+        <Route path="logs" element={<Suspense fallback={<PageFallback />}><AdminLogsPage /></Suspense>} />
       </Route>
       <Route path="*" element={<Suspense fallback={<PageFallback />}><NotFoundPage /></Suspense>} />
     </Routes>

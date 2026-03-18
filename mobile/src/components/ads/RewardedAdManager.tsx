@@ -3,6 +3,7 @@ import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
 import { getAdProvider } from '@/services/adProvider';
+import { apiClient } from '@/services/api';
 
 export const useRewardedAd = () => {
   const loadedRef = useRef(false);
@@ -29,10 +30,18 @@ export const useRewardedAd = () => {
             adNetworkRef.current = adInfo?.adNetwork ?? 'unknown';
             setIsReady(true);
           },
-          onAdLoadFailed: () => {
+          onAdLoadFailed: (error) => {
             loadedRef.current = false;
             setIsReady(false);
             analytics.logEvent('ad_rewarded_failed', { provider: provider ?? 'unknown' });
+            const errorCode = error?.errorCode ?? 0;
+            
+            apiClient.post('/logs', {
+              type: 'ad_rewarded_failed',
+              message: JSON.stringify(error),
+              meta: { provider, errorCode },
+              deviceId: undefined,
+            }).catch(() => {});
           },
           onAdInfoChanged: () => {},
           onAdDisplayed: () => {},

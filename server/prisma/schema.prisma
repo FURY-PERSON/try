@@ -315,3 +315,16 @@ model SupportTicket {
   @@map("support_tickets")
   @@index([status])
 }
+
+model AppLog {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  meta      Json?
+  deviceId  String?
+  createdAt DateTime @default(now())
+
+  @@map("app_logs")
+  @@index([type])
+  @@index([createdAt])
+}

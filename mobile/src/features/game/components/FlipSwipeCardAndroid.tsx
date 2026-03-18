@@ -25,6 +25,7 @@ import {
   Pressable,
   ScrollView,
   useWindowDimensions,
+  type ScrollView as ScrollViewType,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -144,6 +145,8 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   const [stackContent, setStackContent] = useState({ nextStatement, nextCategoryName });
   const [fourthCardReady, setFourthCardReady] = useState(true);
 
+  const backScrollRef = useRef<ScrollViewType>(null);
+
   // Guard against firing callbacks after unmount
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -176,6 +179,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     phase.value = 'front';
     isProgrammatic.value = false;
     isCorrectShared.value = false;
+    backScrollRef.current?.scrollTo({ y: 0, animated: false });
     answerDirection.value = 1;
     entranceProgress.value = 0;
     entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
@@ -198,15 +202,20 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     if (activeFeedback) {
       isCorrectShared.value = activeFeedback.userAnsweredCorrectly;
 
-      // Fallback: feedback arrived without a swipe (e.g. external state change)
-      if (phase.value === 'front') {
-        const dir = answerDirection.value;
-        phase.value = 'transitioning';
-        frontTranslateX.value = withTiming(dir * flyDistance, {
-          duration: FLY_OUT_DURATION,
-          easing: Easing.out(Easing.cubic),
-        }, (finished) => {
-          if (finished) {
+      // Fallback: feedback arrived without a swipe (e.g. external state change).
+      // Check phase on the UI thread via runOnUI to avoid stale reads —
+      // on Android ARM the JS thread can see an outdated phase.value that was
+      // already set to 'transitioning' on the UI thread, which would start a
+      // competing animation and cancel the gesture-driven fly-out chain.
+      runOnUI(() => {
+        'worklet';
+        if (phase.value === 'front') {
+          const dir = answerDirection.value;
+          phase.value = 'transitioning';
+          frontTranslateX.value = withTiming(dir * flyDistance, {
+            duration: FLY_OUT_DURATION,
+            easing: Easing.out(Easing.cubic),
+          }, () => {
             backTranslateX.value = dir * flyDistance;
             backTranslateX.value = withTiming(0, {
               duration: FLY_IN_DURATION,
@@ -214,9 +223,9 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
             }, (fin) => {
               if (fin) phase.value = 'back';
             });
-          }
-        });
-      }
+          });
+        }
+      })();
       // If phase is 'transitioning', the front fly-out completion callback
       // handles starting the back fly-in. No action needed here.
     }
@@ -254,16 +263,14 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
       frontTranslateX.value = withTiming(dir * flyDistance, {
         duration: BUTTON_FLY_OUT_DURATION,
         easing: Easing.out(Easing.cubic),
-      }, (finished) => {
-        if (finished) {
-          backTranslateX.value = dir * flyDistance;
-          backTranslateX.value = withTiming(0, {
-            duration: BUTTON_FLY_IN_DURATION,
-            easing: Easing.out(Easing.cubic),
-          }, (fin) => {
-            if (fin) phase.value = 'back';
-          });
-        }
+      }, () => {
+        backTranslateX.value = dir * flyDistance;
+        backTranslateX.value = withTiming(0, {
+          duration: BUTTON_FLY_IN_DURATION,
+          easing: Easing.out(Easing.cubic),
+        }, (fin) => {
+          if (fin) phase.value = 'back';
+        });
       });
     })();
 
@@ -279,7 +286,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
     backTranslateX.value = withTiming(
       flyDistance,
       { duration: 200, easing: Easing.out(Easing.cubic) },
-      (finished) => { if (finished) runOnJS(callOnDismiss)(); },
+      () => { runOnJS(callOnDismiss)(); },
     );
   }, [flyDistance, callOnDismiss, backTranslateX]);
 
@@ -319,20 +326,20 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
           // so full duration would make it appear to decelerate at the transition.
           const remainingRatio = 1 - Math.abs(amplifiedX) / flyDistance;
           const adjustedDuration = Math.max(100, Math.round(FLY_OUT_DURATION * remainingRatio));
-          // Front flies out; back flies in only after front fully exits
+          // Front flies out; back flies in after front exits.
+          // Always proceed to back fly-in even if front was interrupted —
+          // prevents card from getting stuck in 'transitioning' phase on Android.
           frontTranslateX.value = withTiming(dir * flyDistance, {
             duration: adjustedDuration,
             easing: Easing.out(Easing.cubic),
-          }, (finished) => {
-            if (finished) {
-              backTranslateX.value = dir * flyDistance;
-              backTranslateX.value = withTiming(0, {
-                duration: FLY_IN_DURATION,
-                easing: Easing.out(Easing.cubic),
-              }, (fin) => {
-                if (fin) phase.value = 'back';
-              });
-            }
+          }, () => {
+            backTranslateX.value = dir * flyDistance;
+            backTranslateX.value = withTiming(0, {
+              duration: FLY_IN_DURATION,
+              easing: Easing.out(Easing.cubic),
+            }, (fin) => {
+              if (fin) phase.value = 'back';
+            });
           });
           translateY.value = withTiming(0, snap);
           runOnJS(callOnSwipe)(dir === 1 ? 'right' : 'left');
@@ -346,7 +353,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
           backTranslateX.value = withTiming(
             flyDir * flyDistance,
             { duration: 200, easing: Easing.out(Easing.cubic) },
-            (finished) => { if (finished) runOnJS(callOnDismiss)(); },
+            () => { runOnJS(callOnDismiss)(); },
           );
           translateY.value = withTiming(0, { duration: 200 });
         } else {
@@ -653,6 +660,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
               </Pressable>
 
               <ScrollView
+                ref={backScrollRef}
                 style={styles.backBody}
                 contentContainerStyle={styles.backBodyContent}
                 showsVerticalScrollIndicator={false}

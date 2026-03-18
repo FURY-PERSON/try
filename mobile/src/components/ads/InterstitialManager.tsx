@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
+import { apiClient } from '@/services/api';
 
 // Singleton interstitial ad — persists across screen mounts
 let singletonAd: any = null;
@@ -29,10 +30,15 @@ function ensureAdLoaded() {
         },
         onAdLoadFailed: (error) => {
           adLoaded = false;
-          analytics.logEvent('ad_interstitial_failed', {
-            provider: useAdsStore.getState().detectedProvider ?? 'unknown',
-            errorCode: error?.errorCode ?? 0,
-          });
+          const provider = useAdsStore.getState().detectedProvider ?? 'unknown';
+          const errorCode = error?.errorCode ?? 0;
+          analytics.logEvent('ad_interstitial_failed', { provider, errorCode });
+          apiClient.post('/logs', {
+            type: 'ad_interstitial_failed',
+            message: JSON.stringify(error),
+            meta: { provider, errorCode },
+            deviceId: undefined,
+          }).catch(() => {});
         },
         onAdInfoChanged: () => {},
         onAdDisplayed: () => {},

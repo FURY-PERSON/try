@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Component, type ReactNode } from 'react';
+import React, { useState, useCallback, useEffect, Component, type ReactNode } from 'react';
 import { View, StyleSheet, Platform, type LayoutChangeEvent, Alert } from 'react-native';
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
@@ -38,9 +38,18 @@ export const AdBanner: FC<AdBannerProps> = ({ placement, size = 'BANNER' }) => {
 
   const adsEnabled = useFeatureFlag('ads_enable');
   const adFreeUntil = useAdsStore((s) => s.adFreeUntil);
+  const [, forceUpdate] = useState(0);
   const isAdFree = Date.now() < adFreeUntil;
   const provider = useAdsStore((s) => s.detectedProvider);
   const sdkReady = useAdsStore((s) => s.sdkReady);
+
+  // Re-render when ad-free period expires so ads reappear
+  useEffect(() => {
+    const remaining = adFreeUntil - Date.now();
+    if (remaining <= 0) return;
+    const timer = setTimeout(() => forceUpdate((n) => n + 1), remaining);
+    return () => clearTimeout(timer);
+  }, [adFreeUntil]);
 
   const bannerFlagKey = `ad_banner_${placement}`;
   const bannerEnabled = useFeatureFlag(bannerFlagKey);

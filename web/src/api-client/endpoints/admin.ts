@@ -278,6 +278,16 @@ export function createAdminEndpoints(http: AxiosInstance) {
       },
     },
 
+    // ── Logs ──
+    logs: {
+      list(params?: { page?: number; limit?: number; type?: string }) {
+        return http.get<PaginatedResponse<{ id: string; type: string; message: string; meta: Record<string, unknown> | null; deviceId: string | null; createdAt: string }>>('/api/admin/logs', { params });
+      },
+      types() {
+        return http.get<ApiResponse<{ type: string; count: number }[]>>('/api/admin/logs/types');
+      },
+    },
+
     // ── Feature Flags ──
     featureFlags: {
       list() {

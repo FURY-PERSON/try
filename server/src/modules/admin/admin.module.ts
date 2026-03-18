@@ -35,6 +35,8 @@ import { UploadController } from './upload/upload.controller';
 import { UploadService } from './upload/upload.service';
 import { AdminSupportController } from './support/admin-support.controller';
 import { AdminSupportService } from './support/admin-support.service';
+import { AdminLogsController } from './logs/admin-logs.controller';
+import { AdminLogsService } from './logs/admin-logs.service';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { AdminSupportService } from './support/admin-support.service';
     AdminFeatureFlagsController,
     UploadController,
     AdminSupportController,
+    AdminLogsController,
   ],
   providers: [
     AdminAuthService,
@@ -76,6 +79,7 @@ import { AdminSupportService } from './support/admin-support.service';
     AdminFeatureFlagsService,
     UploadService,
     AdminSupportService,
+    AdminLogsService,
   ],
   exports: [UploadService],
 })
