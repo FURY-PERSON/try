@@ -14,7 +14,9 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { Textarea } from '@/components/ui/Textarea';
 import { DailySetCreateQuestionDialog, DailySetEditQuestionDialog } from '@/components/DailySetQuestionDialogs';
+import { Star } from 'lucide-react';
 
 const createSchema = z.object({
   date: z.string().min(1, 'Выберите дату'),
@@ -35,6 +37,9 @@ export function DailySetCreatePage() {
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [usedFilter, setUsedFilter] = useState<'new' | 'all'>('new');
+  const [factOfDayQuestionId, setFactOfDayQuestionId] = useState<string | null>(null);
+  const [factOfDayCaption, setFactOfDayCaption] = useState('');
+  const [factOfDayCaptionEn, setFactOfDayCaptionEn] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
 
@@ -81,6 +86,11 @@ export function DailySetCreatePage() {
       api.admin.dailySets.create({
         ...data,
         questionIds: selectedQuestionIds,
+        ...(factOfDayQuestionId ? {
+          factOfDayQuestionId,
+          factOfDayCaption: factOfDayCaption || undefined,
+          factOfDayCaptionEn: factOfDayCaptionEn || undefined,
+        } : {}),
       }),
     onSuccess: () => {
       toast.success('Набор создан');
@@ -106,6 +116,11 @@ export function DailySetCreatePage() {
 
   const removeQuestion = (id: string) => {
     setSelectedQuestionIds((prev) => prev.filter((qId) => qId !== id));
+    if (factOfDayQuestionId === id) {
+      setFactOfDayQuestionId(null);
+      setFactOfDayCaption('');
+      setFactOfDayCaptionEn('');
+    }
   };
 
   const handleQuestionCreated = (id: string) => {
@@ -172,10 +187,11 @@ export function DailySetCreatePage() {
                 <div className="space-y-2">
                   {selectedQuestionIds.map((id, index) => {
                     const q = approvedQuestions.find((aq: any) => aq.id === id);
+                    const isFactOfDay = factOfDayQuestionId === id;
                     return (
                       <div
                         key={id}
-                        className="flex items-center justify-between p-2 bg-surface-secondary rounded-lg"
+                        className={`flex items-center justify-between p-2 rounded-lg ${isFactOfDay ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30' : 'bg-surface-secondary'}`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-xs font-mono text-text-secondary shrink-0">
@@ -188,19 +204,54 @@ export function DailySetCreatePage() {
                             {q?.statement?.slice(0, 40) ?? id.slice(0, 8)}...
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeQuestion(id)}
-                          className="p-1 text-text-secondary hover:text-red transition-colors shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            title={isFactOfDay ? 'Убрать факт дня' : 'Сделать фактом дня'}
+                            onClick={() => setFactOfDayQuestionId(isFactOfDay ? null : id)}
+                            className={`p-1 transition-colors ${isFactOfDay ? 'text-yellow-500' : 'text-text-secondary hover:text-yellow-500'}`}
+                          >
+                            <Star className="w-4 h-4" fill={isFactOfDay ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(id)}
+                            className="p-1 text-text-secondary hover:text-red transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
+
+            {factOfDayQuestionId && (
+              <div className="space-y-3 p-3 bg-yellow-500/5 rounded-lg border border-yellow-500/20">
+                <p className="text-sm font-medium text-text-primary flex items-center gap-2">
+                  <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                  Факт дня — подпись
+                </p>
+                <Textarea
+                  id="factOfDayCaption"
+                  label="Подпись (RU)"
+                  placeholder="Например: 87% людей ответили неправильно! А ты?"
+                  rows={2}
+                  value={factOfDayCaption}
+                  onChange={(e) => setFactOfDayCaption(e.target.value)}
+                />
+                <Textarea
+                  id="factOfDayCaptionEn"
+                  label="Подпись (EN)"
+                  placeholder="e.g. 87% of people got it wrong! Did you?"
+                  rows={2}
+                  value={factOfDayCaptionEn}
+                  onChange={(e) => setFactOfDayCaptionEn(e.target.value)}
+                />
+              </div>
+            )}
 
             <Button
               type="submit"

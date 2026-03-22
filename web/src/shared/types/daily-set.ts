@@ -7,6 +7,9 @@ export type DailySet = {
   theme: string;
   themeEn: string;
   status: DailySetStatus;
+  factOfDayQuestionId?: string | null;
+  factOfDayCaption?: string | null;
+  factOfDayCaptionEn?: string | null;
   createdAt: string;
   updatedAt: string;
 };

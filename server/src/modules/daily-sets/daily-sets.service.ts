@@ -222,6 +222,8 @@ export class DailySetsService {
       select: {
         id: true,
         factOfDayQuestionId: true,
+        factOfDayCaption: true,
+        factOfDayCaptionEn: true,
         questions: {
           select: { questionId: true },
         },
@@ -435,6 +437,8 @@ export class DailySetsService {
     // Build fact of the day data
     const factOfDay = await this.buildFactOfDay(
       dailySet.factOfDayQuestionId,
+      dailySet.factOfDayCaption,
+      dailySet.factOfDayCaptionEn,
       dailySet.questions.map((q) => q.questionId),
       dto.results,
     );
@@ -456,6 +460,8 @@ export class DailySetsService {
 
   private async buildFactOfDay(
     factOfDayQuestionId: string | null,
+    caption: string | null,
+    captionEn: string | null,
     questionIds: string[],
     userResults: Array<{ questionId: string; result: string }>,
   ) {
@@ -517,6 +523,8 @@ export class DailySetsService {
       isTrue: question.isTrue,
       wrongPercent,
       userCorrect,
+      caption,
+      captionEn,
     };
   }
 }

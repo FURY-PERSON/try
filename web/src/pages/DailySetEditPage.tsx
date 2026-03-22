@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Plus, X, Search } from 'lucide-react';
+import { ArrowLeft, Plus, X, Search, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import { api } from '@/services/api';
@@ -14,6 +14,7 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { Textarea } from '@/components/ui/Textarea';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const editSchema = z.object({
@@ -32,6 +33,9 @@ export function DailySetEditPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
+  const [factOfDayQuestionId, setFactOfDayQuestionId] = useState<string | null>(null);
+  const [factOfDayCaption, setFactOfDayCaption] = useState('');
+  const [factOfDayCaptionEn, setFactOfDayCaptionEn] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isTrueFilter, setIsTrueFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -104,6 +108,9 @@ export function DailySetEditPage() {
       setSelectedQuestionIds(
         dailySet.questions.map((dsq: any) => dsq.question?.id ?? dsq.questionId),
       );
+      setFactOfDayQuestionId(dailySet.factOfDayQuestionId ?? null);
+      setFactOfDayCaption(dailySet.factOfDayCaption ?? '');
+      setFactOfDayCaptionEn(dailySet.factOfDayCaptionEn ?? '');
     }
   }, [dailySet, reset]);
 
@@ -112,6 +119,9 @@ export function DailySetEditPage() {
       api.admin.dailySets.update(id!, {
         ...data,
         questionIds: selectedQuestionIds,
+        factOfDayQuestionId: factOfDayQuestionId ?? undefined,
+        factOfDayCaption: factOfDayCaption || undefined,
+        factOfDayCaptionEn: factOfDayCaptionEn || undefined,
       }),
     onSuccess: () => {
       toast.success('Набор обновлён');
@@ -137,6 +147,11 @@ export function DailySetEditPage() {
 
   const removeQuestion = (qId: string) => {
     setSelectedQuestionIds((prev) => prev.filter((id) => id !== qId));
+    if (factOfDayQuestionId === qId) {
+      setFactOfDayQuestionId(null);
+      setFactOfDayCaption('');
+      setFactOfDayCaptionEn('');
+    }
   };
 
   if (setLoading) {
@@ -222,10 +237,11 @@ export function DailySetEditPage() {
                 <div className="space-y-2">
                   {selectedQuestionIds.map((qId, index) => {
                     const q = allKnownQuestions.find((aq: any) => aq.id === qId);
+                    const isFactOfDay = factOfDayQuestionId === qId;
                     return (
                       <div
                         key={qId}
-                        className="flex items-center justify-between p-2 bg-surface-secondary rounded-lg"
+                        className={`flex items-center justify-between p-2 rounded-lg ${isFactOfDay ? 'bg-yellow-500/10 ring-1 ring-yellow-500/30' : 'bg-surface-secondary'}`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-xs font-mono text-text-secondary shrink-0">
@@ -238,19 +254,54 @@ export function DailySetEditPage() {
                             {q?.statement?.slice(0, 40) ?? qId.slice(0, 8)}...
                           </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => removeQuestion(qId)}
-                          className="p-1 text-text-secondary hover:text-red transition-colors shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            title={isFactOfDay ? 'Убрать факт дня' : 'Сделать фактом дня'}
+                            onClick={() => setFactOfDayQuestionId(isFactOfDay ? null : qId)}
+                            className={`p-1 transition-colors ${isFactOfDay ? 'text-yellow-500' : 'text-text-secondary hover:text-yellow-500'}`}
+                          >
+                            <Star className="w-4 h-4" fill={isFactOfDay ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeQuestion(qId)}
+                            className="p-1 text-text-secondary hover:text-red transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               )}
             </div>
+
+            {factOfDayQuestionId && (
+              <div className="space-y-3 p-3 bg-yellow-500/5 rounded-lg border border-yellow-500/20">
+                <p className="text-sm font-medium text-text-primary flex items-center gap-2">
+                  <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                  Факт дня — подпись
+                </p>
+                <Textarea
+                  id="factOfDayCaption"
+                  label="Подпись (RU)"
+                  placeholder="Например: 87% людей ответили неправильно! А ты?"
+                  rows={2}
+                  value={factOfDayCaption}
+                  onChange={(e) => setFactOfDayCaption(e.target.value)}
+                />
+                <Textarea
+                  id="factOfDayCaptionEn"
+                  label="Подпись (EN)"
+                  placeholder="e.g. 87% of people got it wrong! Did you?"
+                  rows={2}
+                  value={factOfDayCaptionEn}
+                  onChange={(e) => setFactOfDayCaptionEn(e.target.value)}
+                />
+              </div>
+            )}
 
             <Button
               type="submit"

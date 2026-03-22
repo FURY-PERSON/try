@@ -84,6 +84,9 @@ export type CreateDailySetDto = {
   themeEn: string;
   questionIds: string[];
   status?: 'draft' | 'scheduled' | 'published';
+  factOfDayQuestionId?: string;
+  factOfDayCaption?: string;
+  factOfDayCaptionEn?: string;
 };
 
 export type UpdateDailySetDto = Partial<CreateDailySetDto>;

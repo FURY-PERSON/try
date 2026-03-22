@@ -54,4 +54,16 @@ export class CreateDailySetDto {
   @IsOptional()
   @IsString()
   factOfDayQuestionId?: string;
+
+  @ApiPropertyOptional({ description: 'Подпись к факту дня (RU)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  factOfDayCaption?: string;
+
+  @ApiPropertyOptional({ description: 'Подпись к факту дня (EN)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  factOfDayCaptionEn?: string;
 }

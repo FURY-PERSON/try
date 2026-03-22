@@ -22,6 +22,8 @@ export type FactOfDay = {
   isTrue: boolean;
   wrongPercent: number;
   userCorrect: boolean;
+  caption: string | null;
+  captionEn: string | null;
 };
 
 export type SubmissionResult = {

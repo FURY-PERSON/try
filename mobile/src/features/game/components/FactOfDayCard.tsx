@@ -24,6 +24,10 @@ export const FactOfDayCard: FC<FactOfDayCardProps> = React.memo(({ factOfDay }) 
     ? factOfDay.statementEn
     : factOfDay.statement;
 
+  const caption = language === 'en' && factOfDay.captionEn
+    ? factOfDay.captionEn
+    : factOfDay.caption;
+
   const handleShare = useCallback(() => {
     shareFactOfDay({
       statement,
@@ -45,9 +49,15 @@ export const FactOfDayCard: FC<FactOfDayCardProps> = React.memo(({ factOfDay }) 
         &ldquo;{statement}&rdquo;
       </Text>
 
-      <Text style={[styles.wrongPercent, { color: colors.orange }]}>
-        {t('factOfDay.wrongPercent', { percent: factOfDay.wrongPercent })}
-      </Text>
+      {caption ? (
+        <Text style={[styles.caption, { color: colors.orange }]}>
+          {caption}
+        </Text>
+      ) : (
+        <Text style={[styles.wrongPercent, { color: colors.orange }]}>
+          {t('factOfDay.wrongPercent', { percent: factOfDay.wrongPercent })}
+        </Text>
+      )}
 
       <View style={[styles.userResult, {
         backgroundColor: factOfDay.userCorrect ? colors.emerald + '15' : colors.red + '15',
@@ -99,6 +109,11 @@ const styles = StyleSheet.create({
   wrongPercent: {
     fontSize: s(15),
     fontFamily: fontFamily.bold,
+  },
+  caption: {
+    fontSize: s(15),
+    fontFamily: fontFamily.bold,
+    lineHeight: s(20),
   },
   userResult: {
     flexDirection: 'row',

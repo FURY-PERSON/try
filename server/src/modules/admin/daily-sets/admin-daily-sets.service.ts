@@ -125,6 +125,8 @@ export class AdminDailySetsService {
         themeEn: dto.themeEn,
         status: resolvedStatus,
         factOfDayQuestionId: dto.factOfDayQuestionId ?? null,
+        factOfDayCaption: dto.factOfDayCaption ?? null,
+        factOfDayCaptionEn: dto.factOfDayCaptionEn ?? null,
         questions: {
           create: dto.questionIds.map((questionId, index) => ({
             questionId,
@@ -214,6 +216,8 @@ export class AdminDailySetsService {
     if (dto.date !== undefined) updateData.date = toUtcMidnight(dto.date);
     if (dto.status !== undefined) updateData.status = dto.status;
     if (dto.factOfDayQuestionId !== undefined) updateData.factOfDayQuestionId = dto.factOfDayQuestionId;
+    if (dto.factOfDayCaption !== undefined) updateData.factOfDayCaption = dto.factOfDayCaption;
+    if (dto.factOfDayCaptionEn !== undefined) updateData.factOfDayCaptionEn = dto.factOfDayCaptionEn;
 
     // Auto-publish if status is (or becomes) 'scheduled' and date is today or past
     const finalStatus = (updateData.status as string) ?? existing.status;
