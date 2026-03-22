@@ -9,7 +9,7 @@ type ShareResultParams = {
 
 export const shareResult = async ({ score, total, streak, results }: ShareResultParams): Promise<void> => {
   const squares = results.map((correct) => (correct ? '🟩' : '🟥')).join('');
-  const message = `Фронт фактов ${score}/${total} ${squares}\n🔥 Стрик: ${streak}\nhttps://factfront.app`;
+  const message = `Фронт фактов ${score}/${total} ${squares}\n🔥 Стрик: ${streak}\nhttps://factfront.org`;
 
   try {
     await Share.share({ message });
@@ -26,7 +26,7 @@ type ShareFactOfDayParams = {
 
 export const shareFactOfDay = async ({ statement, isTrue, wrongPercent }: ShareFactOfDayParams): Promise<void> => {
   const truthLabel = isTrue ? 'правда' : 'миф';
-  const message = `«${statement}» — ${truthLabel} или нет?\n\n${wrongPercent}% людей ошибаются 🤯\nА ты знал?\n\nПроверь себя → factfront.app`;
+  const message = `«${statement}» — ${truthLabel} или нет?\n\n${wrongPercent}% людей ошибаются 🤯\nА ты знал?\n\nПроверь себя → https://factfront.org`;
 
   try {
     await Share.share({ message });
@@ -36,7 +36,7 @@ export const shareFactOfDay = async ({ statement, isTrue, wrongPercent }: ShareF
 };
 
 export const shareFact = async (explanation: string, source: string): Promise<void> => {
-  const message = `💡 ${explanation}\n\n📖 ${source}\n\nВ приложении Фронт фактов`;
+  const message = `💡 ${explanation}\n\n📖 ${source}\n\nhttps://factfront.org`;
 
   try {
     await Share.share({ message });
