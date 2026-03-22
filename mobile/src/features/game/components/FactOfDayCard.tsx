@@ -35,11 +35,11 @@ export const FactOfDayCard: FC<FactOfDayCardProps> = React.memo(({ factOfDay }) 
   const handleShare = useCallback(() => {
     shareFactOfDay({
       statement,
-      userCorrect: factOfDay.userCorrect,
+      isTrue: factOfDay.isTrue,
       wrongPercent: factOfDay.wrongPercent,
     });
     analytics.logEvent('share_fact_of_day');
-  }, [statement, factOfDay.userCorrect, factOfDay.wrongPercent]);
+  }, [statement, factOfDay.isTrue, factOfDay.wrongPercent]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>

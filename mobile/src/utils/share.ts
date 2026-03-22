@@ -20,15 +20,13 @@ export const shareResult = async ({ score, total, streak, results }: ShareResult
 
 type ShareFactOfDayParams = {
   statement: string;
-  userCorrect: boolean;
+  isTrue: boolean;
   wrongPercent: number;
 };
 
-export const shareFactOfDay = async ({ statement, userCorrect, wrongPercent }: ShareFactOfDayParams): Promise<void> => {
-  const resultText = userCorrect
-    ? `Я угадал ✅ (только ${100 - wrongPercent}% знают!)`
-    : `Я тоже ошибся ❌ (${wrongPercent}% ошиблись!)`;
-  const message = `Факт дня 🧠\n"${statement}" — правда или миф?\n${resultText}\nfactfront.app`;
+export const shareFactOfDay = async ({ statement, isTrue, wrongPercent }: ShareFactOfDayParams): Promise<void> => {
+  const truthLabel = isTrue ? 'правда' : 'миф';
+  const message = `«${statement}» — ${truthLabel} или нет?\n\n${wrongPercent}% людей ошибаются 🤯\nА ты знал?\n\nПроверь себя → factfront.app`;
 
   try {
     await Share.share({ message });
