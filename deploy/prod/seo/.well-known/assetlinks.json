@@ -1,10 +1,16 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.factfront.app",
-      "sha256_cert_fingerprints": ["11:90:9D:0F:A0:94:2B:14:14:9E:D7:7B:D9:20:12:25:5E:88:11:DA:59:08:A3:68:6A:60:88:F0:AE:EE:68:0B"]
+      "sha256_cert_fingerprints": [
+        "0A:78:1D:3C:96:5C:A2:B4:2A:70:67:10:16:93:92:EF:1F:44:DC:6A:70:B7:25:2D:FF:96:35:D7:7F:A3:2B:D8",
+        "11:90:9D:0F:A0:94:2B:14:14:9E:D7:7B:D9:20:12:25:5E:88:11:DA:59:08:A3:68:6A:60:88:F0:AE:EE:68:0B"
+      ]
     }
   }
 ]
