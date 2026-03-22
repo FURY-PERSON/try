@@ -212,5 +212,12 @@
     "disableHint": "Убрать рекламу",
     "tapToDisable": "Нажмите, чтобы убрать рекламу",
     "adFreeCheer": "Кайфуем без рекламы ещё {{minutes}} мин!"
+  },
+  "factOfDay": {
+    "title": "Факт дня",
+    "wrongPercent": "{{percent}}% людей ответили неправильно!",
+    "youGotIt": "А ты угадал!",
+    "youMissed": "Ты тоже ошибся",
+    "share": "Поделиться"
   }
 }

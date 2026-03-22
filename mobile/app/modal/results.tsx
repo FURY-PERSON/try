@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
 import { DailyResultCard } from '@/features/game/components/DailyResultCard';
+import { FactOfDayCard } from '@/features/game/components/FactOfDayCard';
 import { useGameStore } from '@/features/game/stores/useGameStore';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { useAdsStore } from '@/stores/useAdsStore';
@@ -172,7 +173,13 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
-        <AnimatedEntrance delay={400} direction="up">
+        {!isReplay && submissionResult?.factOfDay && (
+          <AnimatedEntrance delay={400} direction="up">
+            <FactOfDayCard factOfDay={submissionResult.factOfDay} />
+          </AnimatedEntrance>
+        )}
+
+        <AnimatedEntrance delay={submissionResult?.factOfDay ? 500 : 400} direction="up">
           <DailyResultCard results={resultBools} />
         </AnimatedEntrance>
 

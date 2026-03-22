@@ -32,6 +32,7 @@ export type DailySetWithQuestions = {
   theme: string | null;
   themeEn: string | null;
   status: string;
+  factOfDayQuestionId?: string | null;
   questions: DailySetQuestion[];
   completed?: boolean;
   isLocked?: boolean;

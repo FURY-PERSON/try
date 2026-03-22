@@ -25,6 +25,7 @@ type AnalyticsEvent =
   | 'profile_updated'
   | 'settings_changed'
   | 'share_result'
+  | 'share_fact_of_day'
   | 'collection_start'
   | 'collection_complete'
   | 'collection_detail_viewed'

@@ -212,5 +212,12 @@
     "disableHint": "Disable ads",
     "tapToDisable": "Tap to disable ads",
     "adFreeCheer": "Enjoying {{minutes}} min ad-free!"
+  },
+  "factOfDay": {
+    "title": "Fact of the Day",
+    "wrongPercent": "{{percent}}% of people answered incorrectly!",
+    "youGotIt": "You got it right!",
+    "youMissed": "You missed it too",
+    "share": "Share"
   }
 }

@@ -15,6 +15,15 @@ export type DailySetProgress = {
 
 export type SwipeDirection = 'left' | 'right';
 
+export type FactOfDay = {
+  questionId: string;
+  statement: string;
+  statementEn: string;
+  isTrue: boolean;
+  wrongPercent: number;
+  userCorrect: boolean;
+};
+
 export type SubmissionResult = {
   score: number;
   correctAnswers: number;
@@ -26,4 +35,5 @@ export type SubmissionResult = {
   correctPercent: number;
   percentile: number;
   totalPlayers: number;
+  factOfDay?: FactOfDay | null;
 };
