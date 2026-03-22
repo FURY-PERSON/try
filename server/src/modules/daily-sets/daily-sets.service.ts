@@ -112,6 +112,7 @@ export class DailySetsService {
         theme: dailySet.theme,
         themeEn: dailySet.themeEn,
         status: dailySet.status,
+        factOfDayQuestionId: dailySet.factOfDayQuestionId,
         questions: dailySet.questions.map((dsq) => ({
           id: dsq.question.id,
           statement: dsq.question.statement,
@@ -215,11 +216,12 @@ export class DailySetsService {
     dailySetId: string,
     dto: SubmitDailySetDto,
   ) {
-    // Validate that the daily set exists — only fetch question IDs (not full question data)
+    // Validate that the daily set exists — fetch question IDs and factOfDayQuestionId
     const dailySet = await this.prisma.dailySet.findUnique({
       where: { id: dailySetId },
       select: {
         id: true,
+        factOfDayQuestionId: true,
         questions: {
           select: { questionId: true },
         },
@@ -430,6 +432,13 @@ export class DailySetsService {
         ? Math.round((lowerCount / totalPlayersToday) * 100)
         : 100;
 
+    // Build fact of the day data
+    const factOfDay = await this.buildFactOfDay(
+      dailySet.factOfDayQuestionId,
+      dailySet.questions.map((q) => q.questionId),
+      dto.results,
+    );
+
     return {
       score: leaderboardScore,
       correctAnswers,
@@ -441,6 +450,67 @@ export class DailySetsService {
       correctPercent,
       percentile,
       totalPlayers: totalPlayersToday,
+      factOfDay,
+    };
+  }
+
+  private async buildFactOfDay(
+    factOfDayQuestionId: string | null,
+    questionIds: string[],
+    userResults: Array<{ questionId: string; result: string }>,
+  ) {
+    // Determine which question to use as fact of the day
+    let targetQuestionId = factOfDayQuestionId;
+
+    if (!targetQuestionId) {
+      // Auto-select: question with lowest correct rate (most counterintuitive)
+      const questions = await this.prisma.question.findMany({
+        where: { id: { in: questionIds }, timesShown: { gt: 0 } },
+        select: { id: true, timesShown: true, timesCorrect: true },
+      });
+
+      if (questions.length === 0) return null;
+
+      let minRate = Infinity;
+      for (const q of questions) {
+        const rate = q.timesCorrect / q.timesShown;
+        if (rate < minRate) {
+          minRate = rate;
+          targetQuestionId = q.id;
+        }
+      }
+    }
+
+    if (!targetQuestionId) return null;
+
+    const question = await this.prisma.question.findUnique({
+      where: { id: targetQuestionId },
+      select: {
+        id: true,
+        statement: true,
+        statementEn: true,
+        isTrue: true,
+        timesShown: true,
+        timesCorrect: true,
+      },
+    });
+
+    if (!question || question.timesShown === 0) return null;
+
+    const wrongPercent = Math.round(
+      (1 - question.timesCorrect / question.timesShown) * 100,
+    );
+
+    const userResult = userResults.find((r) => r.questionId === targetQuestionId);
+    const userCorrect = userResult?.result === 'correct';
+
+    return {
+      questionId: question.id,
+      statement: question.statement,
+      statementEn: question.statementEn,
+      isTrue: question.isTrue,
+      wrongPercent,
+      userCorrect,
     };
   }
 }

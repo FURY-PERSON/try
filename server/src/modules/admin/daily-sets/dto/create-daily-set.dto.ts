@@ -49,4 +49,9 @@ export class CreateDailySetDto {
   @ArrayMinSize(15)
   @ArrayMaxSize(25)
   questionIds: string[];
+
+  @ApiPropertyOptional({ description: 'ID вопроса — факт дня' })
+  @IsOptional()
+  @IsString()
+  factOfDayQuestionId?: string;
 }

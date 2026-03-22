@@ -27,10 +27,14 @@ describe('DailySetsService', () => {
     question: {
       count: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
       update: jest.fn(),
+    },
+    userQuestionHistory: {
+      findMany: jest.fn().mockResolvedValue([]),
     },
     $transaction: jest.fn((fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx)),
   };
@@ -209,6 +213,7 @@ describe('DailySetsService', () => {
 
     const dailySet = {
       id: 'ds-1',
+      factOfDayQuestionId: null,
       questions: [
         { questionId: 'q-1', question: { id: 'q-1' } },
         { questionId: 'q-2', question: { id: 'q-2' } },

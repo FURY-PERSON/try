@@ -42,4 +42,9 @@ export class UpdateDailySetDto {
   @ArrayMinSize(15)
   @ArrayMaxSize(25)
   questionIds?: string[];
+
+  @ApiPropertyOptional({ description: 'ID вопроса — факт дня (null для сброса)' })
+  @IsOptional()
+  @IsString()
+  factOfDayQuestionId?: string | null;
 }

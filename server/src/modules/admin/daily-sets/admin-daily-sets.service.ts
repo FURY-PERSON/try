@@ -112,12 +112,19 @@ export class AdminDailySetsService {
       }
     }
 
+    if (dto.factOfDayQuestionId && !dto.questionIds.includes(dto.factOfDayQuestionId)) {
+      throw new BadRequestException(
+        'factOfDayQuestionId must be one of the questionIds',
+      );
+    }
+
     return this.prisma.dailySet.create({
       data: {
         date: dateValue, // already UTC midnight
         theme: dto.theme,
         themeEn: dto.themeEn,
         status: resolvedStatus,
+        factOfDayQuestionId: dto.factOfDayQuestionId ?? null,
         questions: {
           create: dto.questionIds.map((questionId, index) => ({
             questionId,
@@ -191,6 +198,7 @@ export class AdminDailySetsService {
     if (dto.themeEn !== undefined) updateData.themeEn = dto.themeEn;
     if (dto.date !== undefined) updateData.date = toUtcMidnight(dto.date);
     if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.factOfDayQuestionId !== undefined) updateData.factOfDayQuestionId = dto.factOfDayQuestionId;
 
     // Auto-publish if status is (or becomes) 'scheduled' and date is today or past
     const finalStatus = (updateData.status as string) ?? existing.status;
