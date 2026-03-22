@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -131,7 +131,11 @@ export default function ResultsModal() {
         style={styles.headerGradient}
       />
 
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <AnimatedEntrance delay={0} direction="up">
           <Animated.View style={[styles.scoreContainer, scoreAnimatedStyle]}>
             <Text style={[styles.score, { color: scoreColor }]}>
@@ -183,7 +187,7 @@ export default function ResultsModal() {
           <DailyResultCard results={resultBools} />
         </AnimatedEntrance>
 
-      </View>
+      </ScrollView>
 
       <AnimatedEntrance delay={600} direction="up">
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
@@ -214,12 +218,16 @@ const styles = StyleSheet.create({
     right: 0,
     height: s(300),
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: s(16),
     paddingHorizontal: s(32),
+    paddingVertical: s(16),
   },
   scoreContainer: {
     alignItems: 'center',
