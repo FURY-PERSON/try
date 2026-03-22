@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "com.factfront.app",
-      "sha256_cert_fingerprints": []
+      "sha256_cert_fingerprints": ["11:90:9D:0F:A0:94:2B:14:14:9E:D7:7B:D9:20:12:25:5E:88:11:DA:59:08:A3:68:6A:60:88:F0:AE:EE:68:0B"]
     }
   }
 ]
