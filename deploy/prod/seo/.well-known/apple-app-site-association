@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "97J2MY855C.com.factfront.app",
+        "paths": ["NOT /api/*", "NOT /admin/*", "NOT /privacy-policy/*", "/*"]
+      }
+    ]
+  }
+}
