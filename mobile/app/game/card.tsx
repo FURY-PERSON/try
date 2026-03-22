@@ -372,6 +372,7 @@ export default function CardScreen() {
                 source={sourceText}
                 sourceUrl={sourceUrlText ?? undefined}
                 isTrue={currentQuestion?.isTrue}
+                isFactOfDay={!isCollectionMode && !!dailyData?.factOfDayQuestionId && currentQuestion?.id === dailyData.factOfDayQuestionId}
               />
             </View>
 

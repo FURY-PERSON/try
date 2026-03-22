@@ -507,11 +507,11 @@ export class DailySetsService {
       }
     }
 
-    if (!question || question.timesShown === 0) return null;
+    if (!question) return null;
 
-    const wrongPercent = Math.round(
-      (1 - question.timesCorrect / question.timesShown) * 100,
-    );
+    const wrongPercent = question.timesShown > 0
+      ? Math.round((1 - question.timesCorrect / question.timesShown) * 100)
+      : 0;
 
     const userResult = userResults.find((r) => r.questionId === question!.id);
     const userCorrect = userResult?.result === 'correct';

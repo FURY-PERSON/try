@@ -76,6 +76,7 @@ export type FlipSwipeCardProps = {
   source?: string;
   sourceUrl?: string;
   isTrue?: boolean;
+  isFactOfDay?: boolean;
 };
 
 type FlipPhase = 'front' | 'flipping' | 'back';
@@ -91,6 +92,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   isSubmitting = false,
   nextStatement,
   nextCategoryName,
+  isFactOfDay,
 }, ref) => {
   const { colors, borderRadius, elevation, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -635,6 +637,19 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
             >
+              {isFactOfDay && (
+                <View
+                  style={[
+                    styles.categoryBadge,
+                    { backgroundColor: colors.gold + '20' },
+                  ]}
+                >
+                  <Text style={[styles.category, { color: colors.gold }]}>
+                    {t('factOfDay.title')} ⭐
+                  </Text>
+                </View>
+              )}
+
               {categoryName
                 ? <View
                 style={[

@@ -116,6 +116,7 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
   source: preSource,
   sourceUrl: preSourceUrl,
   isTrue: preIsTrue,
+  isFactOfDay,
 }, ref) => {
   const { colors, borderRadius, gradients } = useThemeContext();
   const { t } = useTranslation();
@@ -624,6 +625,12 @@ export const FlipSwipeCardAndroid = React.forwardRef<FlipSwipeCardRef, FlipSwipe
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled
               >
+                {isFactOfDay && (
+                  <View style={[styles.categoryBadge, { backgroundColor: colors.gold + '20' }]}>
+                    <Text style={[styles.category, { color: colors.gold }]}>{t('factOfDay.title')} ⭐</Text>
+                  </View>
+                )}
+
                 {categoryName
                   ? <View style={[styles.categoryBadge, dynamicStyles.categoryBadgeBg]}>
                     <Text style={[styles.category, dynamicStyles.categoryColor]}>{categoryName}</Text>
