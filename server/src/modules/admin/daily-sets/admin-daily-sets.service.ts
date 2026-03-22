@@ -256,6 +256,10 @@ export class AdminDailySetsService {
       throw new NotFoundException(`Daily set with id "${id}" not found`);
     }
 
+    await this.prisma.leaderboardEntry.deleteMany({
+      where: { dailySetId: id },
+    });
+
     await this.prisma.dailySet.delete({ where: { id } });
 
     return { deleted: true };
