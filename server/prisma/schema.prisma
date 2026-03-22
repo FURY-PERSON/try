@@ -92,13 +92,14 @@ model Question {
 }
 
 model DailySet {
-  id        String   @id @default(cuid())
-  date      DateTime @unique @db.Date
-  theme     String
-  themeEn   String
-  status    String   @default("draft")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  date                  DateTime @unique @db.Date
+  theme                 String
+  themeEn               String
+  status                String   @default("draft")
+  factOfDayQuestionId   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   questions DailySetQuestion[]
   leaderboardEntries LeaderboardEntry[]
