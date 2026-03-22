@@ -19,6 +19,8 @@ export type FactOfDay = {
   questionId: string;
   statement: string;
   statementEn: string;
+  explanation: string;
+  explanationEn: string;
   isTrue: boolean;
   wrongPercent: number;
   userCorrect: boolean;

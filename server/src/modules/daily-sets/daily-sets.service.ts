@@ -469,6 +469,8 @@ export class DailySetsService {
       id: true,
       statement: true,
       statementEn: true,
+      explanation: true,
+      explanationEn: true,
       isTrue: true,
       timesShown: true,
       timesCorrect: true,
@@ -478,6 +480,8 @@ export class DailySetsService {
       id: string;
       statement: string;
       statementEn: string;
+      explanation: string;
+      explanationEn: string;
       isTrue: boolean;
       timesShown: number;
       timesCorrect: number;
@@ -520,6 +524,8 @@ export class DailySetsService {
       questionId: question.id,
       statement: question.statement,
       statementEn: question.statementEn,
+      explanation: question.explanation,
+      explanationEn: question.explanationEn,
       isTrue: question.isTrue,
       wrongPercent,
       userCorrect,

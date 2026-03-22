@@ -24,6 +24,10 @@ export const FactOfDayCard: FC<FactOfDayCardProps> = React.memo(({ factOfDay }) 
     ? factOfDay.statementEn
     : factOfDay.statement;
 
+  const explanation = language === 'en' && factOfDay.explanationEn
+    ? factOfDay.explanationEn
+    : factOfDay.explanation;
+
   const caption = language === 'en' && factOfDay.captionEn
     ? factOfDay.captionEn
     : factOfDay.caption;
@@ -48,6 +52,12 @@ export const FactOfDayCard: FC<FactOfDayCardProps> = React.memo(({ factOfDay }) 
       <Text style={[styles.statement, { color: colors.textPrimary }]} numberOfLines={3}>
         &ldquo;{statement}&rdquo;
       </Text>
+
+      {explanation ? (
+        <Text style={[styles.explanation, { color: colors.textSecondary }]} numberOfLines={1}>
+          {explanation}
+        </Text>
+      ) : null}
 
       {caption ? (
         <Text style={[styles.caption, { color: colors.orange }]}>
@@ -105,6 +115,11 @@ const styles = StyleSheet.create({
     fontSize: s(15),
     fontFamily: fontFamily.semiBold,
     lineHeight: s(22),
+  },
+  explanation: {
+    fontSize: s(13),
+    fontFamily: fontFamily.regular,
+    lineHeight: s(18),
   },
   wrongPercent: {
     fontSize: s(15),
