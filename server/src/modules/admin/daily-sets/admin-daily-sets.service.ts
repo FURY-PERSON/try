@@ -193,6 +193,21 @@ export class AdminDailySetsService {
       });
     }
 
+    // Validate factOfDayQuestionId belongs to the set's questions
+    if (dto.factOfDayQuestionId) {
+      const effectiveQuestionIds = dto.questionIds ??
+        (await this.prisma.dailySetQuestion.findMany({
+          where: { dailySetId: id },
+          select: { questionId: true },
+        })).map((q) => q.questionId);
+
+      if (!effectiveQuestionIds.includes(dto.factOfDayQuestionId)) {
+        throw new BadRequestException(
+          'factOfDayQuestionId must be one of the questionIds',
+        );
+      }
+    }
+
     const updateData: Prisma.DailySetUpdateInput = {};
     if (dto.theme !== undefined) updateData.theme = dto.theme;
     if (dto.themeEn !== undefined) updateData.themeEn = dto.themeEn;

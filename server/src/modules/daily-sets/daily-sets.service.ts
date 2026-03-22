@@ -459,14 +459,34 @@ export class DailySetsService {
     questionIds: string[],
     userResults: Array<{ questionId: string; result: string }>,
   ) {
-    // Determine which question to use as fact of the day
-    let targetQuestionId = factOfDayQuestionId;
+    const selectFields = {
+      id: true,
+      statement: true,
+      statementEn: true,
+      isTrue: true,
+      timesShown: true,
+      timesCorrect: true,
+    } as const;
 
-    if (!targetQuestionId) {
+    let question: {
+      id: string;
+      statement: string;
+      statementEn: string;
+      isTrue: boolean;
+      timesShown: number;
+      timesCorrect: number;
+    } | null = null;
+
+    if (factOfDayQuestionId) {
+      question = await this.prisma.question.findUnique({
+        where: { id: factOfDayQuestionId },
+        select: selectFields,
+      });
+    } else {
       // Auto-select: question with lowest correct rate (most counterintuitive)
       const questions = await this.prisma.question.findMany({
         where: { id: { in: questionIds }, timesShown: { gt: 0 } },
-        select: { id: true, timesShown: true, timesCorrect: true },
+        select: selectFields,
       });
 
       if (questions.length === 0) return null;
@@ -476,24 +496,10 @@ export class DailySetsService {
         const rate = q.timesCorrect / q.timesShown;
         if (rate < minRate) {
           minRate = rate;
-          targetQuestionId = q.id;
+          question = q;
         }
       }
     }
-
-    if (!targetQuestionId) return null;
-
-    const question = await this.prisma.question.findUnique({
-      where: { id: targetQuestionId },
-      select: {
-        id: true,
-        statement: true,
-        statementEn: true,
-        isTrue: true,
-        timesShown: true,
-        timesCorrect: true,
-      },
-    });
 
     if (!question || question.timesShown === 0) return null;
 
@@ -501,7 +507,7 @@ export class DailySetsService {
       (1 - question.timesCorrect / question.timesShown) * 100,
     );
 
-    const userResult = userResults.find((r) => r.questionId === targetQuestionId);
+    const userResult = userResults.find((r) => r.questionId === question!.id);
     const userCorrect = userResult?.result === 'correct';
 
     return {
