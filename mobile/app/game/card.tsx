@@ -28,6 +28,8 @@ import { fontFamily } from '@/theme/typography';
 import { showToast } from '@/stores/useToastStore';
 import type { FlipSwipeCardRef } from '@/features/game/components/FlipSwipeCard';
 import type { DailySetQuestion } from '@/shared';
+import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
+import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { s, isTablet } from '@/utils/scale';
 
 // Static LinearGradient point objects
@@ -184,6 +186,10 @@ export default function CardScreen() {
     handleNextCard,
   } = useCardGame(questions, dailySetId);
 
+  const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
+  const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
+  const gameBonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(liveStreak, streakBonusPayload?.tiers) : 0;
+
   // Show swipe-to-answer hint on first ever game
   useEffect(() => {
     if (currentQuestion && currentIndex === 0 && !feedback && !hasSeenSwipeAnswerHint) {
@@ -333,6 +339,7 @@ export default function CardScreen() {
             progress={progress}
             streak={isReplay ? 0 : liveStreak}
             onClose={() => setShowExitConfirm(true)}
+            bonusPercent={isReplay ? 0 : gameBonusPercent}
           />
         </View>
 

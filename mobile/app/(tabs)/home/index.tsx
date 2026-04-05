@@ -45,6 +45,8 @@ import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
 import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CategoryWithCount, DifficultyProgress, HomeFeedCollection } from '@/shared';
+import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
+import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { s } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -87,6 +89,9 @@ export default function HomeScreen() {
   }, [showDisableAdsOnReturn]);
 
   const streak = feed?.userProgress?.streak ?? 0;
+  const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
+  const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
+  const bonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(streak, streakBonusPayload?.tiers) : 0;
   const daily = feed?.daily;
   const allCategories = feed?.categories ?? [];
   const allCollections = feed?.collections ?? [];
@@ -235,7 +240,7 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.headerRight}>
               <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
-              <StreakBadge days={streak} showIncrement={false} />
+              <StreakBadge days={streak} showIncrement={false} bonusPercent={bonusPercent} />
             </View>
           </View>
         </AnimatedEntrance>

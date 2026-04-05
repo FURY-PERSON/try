@@ -23,6 +23,7 @@ const SupportPage = lazy(() => import('@/pages/SupportPage').then((m) => ({ defa
 const AdminSupportPage = lazy(() => import('@/pages/AdminSupportPage').then((m) => ({ default: m.AdminSupportPage })));
 const AdminSupportDetailPage = lazy(() => import('@/pages/AdminSupportDetailPage').then((m) => ({ default: m.AdminSupportDetailPage })));
 const AdminLogsPage = lazy(() => import('@/pages/AdminLogsPage').then((m) => ({ default: m.AdminLogsPage })));
+const GameSettingsPage = lazy(() => import('@/pages/GameSettingsPage').then((m) => ({ default: m.GameSettingsPage })));
 
 function PageFallback() {
   return (
@@ -65,6 +66,7 @@ export function App() {
         <Route path="notifications" element={<Suspense fallback={<PageFallback />}><NotificationsPage /></Suspense>} />
         <Route path="reference" element={<Suspense fallback={<PageFallback />}><ReferencePage /></Suspense>} />
         <Route path="feature-flags" element={<Suspense fallback={<PageFallback />}><FeatureFlagsPage /></Suspense>} />
+        <Route path="game-settings" element={<Suspense fallback={<PageFallback />}><GameSettingsPage /></Suspense>} />
         <Route path="support-requests" element={<Suspense fallback={<PageFallback />}><AdminSupportPage /></Suspense>} />
         <Route path="support-requests/:id" element={<Suspense fallback={<PageFallback />}><AdminSupportDetailPage /></Suspense>} />
         <Route path="logs" element={<Suspense fallback={<PageFallback />}><AdminLogsPage /></Suspense>} />

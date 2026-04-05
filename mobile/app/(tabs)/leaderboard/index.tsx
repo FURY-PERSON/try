@@ -15,6 +15,8 @@ import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
+import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
+import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import type { LeaderboardMode, LeaderboardPeriod } from '@/shared';
 import { s } from '@/utils/scale';
 
@@ -32,6 +34,9 @@ export default function LeaderboardScreen() {
   const { data, isLoading, isError, error, refetch, isRefetching } = useLeaderboard(period, mode);
   const { data: feed } = useHomeFeed();
   const streak = feed?.userProgress?.streak ?? 0;
+  const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
+  const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
+  const bonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(streak, streakBonusPayload?.tiers) : 0;
   const currentUserId = data?.currentUserId;
   const entries = data?.entries ?? [];
 
@@ -48,7 +53,7 @@ export default function LeaderboardScreen() {
           </Text>
           <View style={styles.headerRight}>
             <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
-            <StreakBadge days={streak} />
+            <StreakBadge days={streak} bonusPercent={bonusPercent} />
           </View>
         </View>
       </AnimatedEntrance>

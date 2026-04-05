@@ -38,6 +38,9 @@ import { AdminSupportService } from './support/admin-support.service';
 import { AdminLogsController } from './logs/admin-logs.controller';
 import { AdminLogsService } from './logs/admin-logs.service';
 
+import { AdminGameConfigController } from './game-config/admin-game-config.controller';
+import { AdminGameConfigService } from './game-config/admin-game-config.service';
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'admin-jwt' }),
@@ -65,6 +68,7 @@ import { AdminLogsService } from './logs/admin-logs.service';
     UploadController,
     AdminSupportController,
     AdminLogsController,
+    AdminGameConfigController,
   ],
   providers: [
     AdminAuthService,
@@ -80,6 +84,7 @@ import { AdminLogsService } from './logs/admin-logs.service';
     UploadService,
     AdminSupportService,
     AdminLogsService,
+    AdminGameConfigService,
   ],
   exports: [UploadService],
 })

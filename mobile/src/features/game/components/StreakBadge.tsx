@@ -29,6 +29,7 @@ type StreakBadgeProps = {
   animated?: boolean;
   size?: 'sm' | 'md';
   showIncrement?: boolean;
+  bonusPercent?: number;
 };
 
 type StreakTier = {
@@ -206,6 +207,29 @@ const PlusOneFloat: FC<{ color: string }> = ({ color }) => {
   );
 };
 
+const BonusFloat: FC<{ percent: number; color: string }> = ({ percent, color }) => {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(1);
+  const scale = useSharedValue(0.5);
+
+  useEffect(() => {
+    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    translateY.value = withTiming(-32, { duration: 800 });
+    opacity.value = withDelay(400, withTiming(0, { duration: 400 }));
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Animated.Text style={[styles.plusOne, { color }, style]}>
+      +{percent}%
+    </Animated.Text>
+  );
+};
+
 const InfernoGlowRing: FC<{ containerSize: number }> = ({ containerSize }) => {
   const glowProgress = useSharedValue(0);
 
@@ -346,10 +370,12 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
   animated = true,
   size = 'sm',
   showIncrement = true,
+  bonusPercent = 0,
 }) => {
   const prevDaysRef = useRef(days);
   const [tapBurstKey, setTapBurstKey] = useState(0);
   const [plusOneKey, setPlusOneKey] = useState(0);
+  const [bonusFloatKey, setBonusFloatKey] = useState(0);
   const { tier, color, rotationAmplitude, scalePulse, glowRadius } = getStreakTier(days);
 
   const isInferno = days >= 40;
@@ -413,8 +439,14 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       if (showIncrement) {
         setPlusOneKey((k) => k + 1);
       }
+      // Show bonus float on tier change when bonus is available
+      const prevTier = getStreakTier(prevDays).tier;
+      const newTier = getStreakTier(days).tier;
+      if (newTier > prevTier && bonusPercent > 0) {
+        setBonusFloatKey((k) => k + 1);
+      }
     }
-  }, [animated, days, rotation, burstScale, badgeOpacity, rotationAmplitude]);
+  }, [animated, days, rotation, burstScale, badgeOpacity, rotationAmplitude, bonusPercent]);
 
   const handlePress = useCallback(() => {
     if (days <= 0) return;
@@ -477,7 +509,11 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
     } else {
       setTapBurstKey((k) => k + 1);
     }
-  }, [days, tier, rotationAmplitude, tapScale, tapRotation, burstScale, burstTrigger]);
+
+    if (bonusPercent > 0) {
+      setBonusFloatKey((k) => k + 1);
+    }
+  }, [days, tier, rotationAmplitude, tapScale, tapRotation, burstScale, burstTrigger, bonusPercent]);
 
   const tapAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -581,6 +617,13 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
       {plusOneKey > 0 && (
         <View style={styles.plusOneContainer} pointerEvents="none" key={plusOneKey}>
           <PlusOneFloat color={isInferno ? '#FFD700' : color} />
+        </View>
+      )}
+
+      {/* Floating bonus percent on tap or tier change */}
+      {bonusFloatKey > 0 && bonusPercent > 0 && (
+        <View style={styles.plusOneContainer} pointerEvents="none" key={`bonus-${bonusFloatKey}`}>
+          <BonusFloat percent={bonusPercent} color={isInferno ? '#FFD700' : color} />
         </View>
       )}
 

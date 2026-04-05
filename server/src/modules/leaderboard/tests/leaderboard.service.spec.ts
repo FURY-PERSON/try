@@ -88,9 +88,9 @@ describe('LeaderboardService', () => {
 
   describe('getWeeklyLeaderboard', () => {
     it('returns aggregated results from UserQuestionHistory', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
-      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
-      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([])                    // top100 query
+        .mockResolvedValueOnce([{ count: BigInt(0) }]); // totalPlayers query
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getWeeklyLeaderboard('u-1');
@@ -102,9 +102,9 @@ describe('LeaderboardService', () => {
 
   describe('getMonthlyLeaderboard', () => {
     it('returns empty when no activity in current month', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
-      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
-      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([])                    // top100 query
+        .mockResolvedValueOnce([{ count: BigInt(0) }]); // totalPlayers query
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getMonthlyLeaderboard('u-1');
@@ -116,9 +116,9 @@ describe('LeaderboardService', () => {
 
   describe('getYearlyLeaderboard', () => {
     it('returns empty when no activity in current year', async () => {
-      mockPrisma.$queryRawUnsafe.mockResolvedValue([]);
-      mockPrisma.$queryRaw.mockResolvedValue([{ count: BigInt(0) }]);
-      mockPrisma.user.findMany.mockResolvedValue([]);
+      mockPrisma.$queryRaw
+        .mockResolvedValueOnce([])                    // top100 query
+        .mockResolvedValueOnce([{ count: BigInt(0) }]); // totalPlayers query
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       const result = await service.getYearlyLeaderboard('u-1');

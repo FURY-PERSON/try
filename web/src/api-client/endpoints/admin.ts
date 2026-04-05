@@ -288,6 +288,16 @@ export function createAdminEndpoints(http: AxiosInstance) {
       },
     },
 
+    // ── Game Config ──
+    gameConfig: {
+      getStreakBonus() {
+        return http.get<ApiResponse<{ enabled: boolean; tiers: { minStreak: number; bonusPercent: number }[] }>>('/api/admin/game-config/streak-bonus');
+      },
+      updateStreakBonus(dto: { enabled: boolean; tiers: { minStreak: number; bonusPercent: number }[] }) {
+        return http.put<ApiResponse<{ enabled: boolean; tiers: { minStreak: number; bonusPercent: number }[] }>>('/api/admin/game-config/streak-bonus', dto);
+      },
+    },
+
     // ── Feature Flags ──
     featureFlags: {
       list() {

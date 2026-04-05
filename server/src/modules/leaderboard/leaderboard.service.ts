@@ -241,80 +241,175 @@ export class LeaderboardService {
     userId: string,
     dateFilter: { gte: Date; lte: Date },
   ): Promise<LeaderboardResponse> {
-    // Find users who have activity in the period
-    const activeUserIds = await this.prisma.$queryRaw<{ userId: string }[]>`
-      SELECT DISTINCT "userId"
-      FROM "UserQuestionHistory"
-      WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+    // Calculate best streak per user within the period using islands-and-gaps
+    const streakData = await this.prisma.$queryRaw<
+      { userId: string; bestStreak: number }[]
+    >`
+      WITH ordered AS (
+        SELECT
+          "userId",
+          "result",
+          ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "answeredAt") AS rn,
+          ROW_NUMBER() OVER (PARTITION BY "userId", "result" ORDER BY "answeredAt") AS grp_rn
+        FROM "UserQuestionHistory"
+        WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+      ),
+      streaks AS (
+        SELECT
+          "userId",
+          COUNT(*)::int AS streak_length
+        FROM ordered
+        WHERE "result" = 'correct'
+        GROUP BY "userId", (rn - grp_rn)
+      )
+      SELECT
+        "userId",
+        MAX(streak_length)::int AS "bestStreak"
+      FROM streaks
+      GROUP BY "userId"
+      HAVING MAX(streak_length) > 0
+      ORDER BY "bestStreak" DESC
+      LIMIT ${TOP_LIMIT}
     `;
 
-    if (activeUserIds.length === 0) {
+    if (streakData.length === 0) {
       const userContext = await this.buildUnrankedStreakContext(userId);
       return { entries: [], userPosition: null, totalPlayers: 0, userContext, currentUserId: userId };
     }
 
-    const ids = activeUserIds.map((r) => r.userId);
+    // Count total players with streaks in this period
+    const totalPlayersResult = await this.prisma.$queryRaw<{ count: number }[]>`
+      WITH ordered AS (
+        SELECT
+          "userId",
+          "result",
+          ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "answeredAt") AS rn,
+          ROW_NUMBER() OVER (PARTITION BY "userId", "result" ORDER BY "answeredAt") AS grp_rn
+        FROM "UserQuestionHistory"
+        WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+      ),
+      streaks AS (
+        SELECT
+          "userId",
+          COUNT(*)::int AS streak_length
+        FROM ordered
+        WHERE "result" = 'correct'
+        GROUP BY "userId", (rn - grp_rn)
+      )
+      SELECT COUNT(DISTINCT "userId")::int AS count
+      FROM streaks
+      WHERE streak_length > 0
+    `;
+    const totalPlayers = totalPlayersResult[0]?.count ?? 0;
 
-    // Use stored bestAnswerStreak for users active in the period
-    // (streak is a continuous metric — period only filters who appears)
-    const [top100, totalPlayers] = await Promise.all([
-      this.prisma.user.findMany({
-        where: { id: { in: ids }, bestAnswerStreak: { gt: 0 } },
-        select: {
-          id: true,
-          nickname: true,
-          avatarEmoji: true,
-          currentAnswerStreak: true,
-          bestAnswerStreak: true,
-        },
-        orderBy: [
-          { bestAnswerStreak: 'desc' },
-          { currentAnswerStreak: 'desc' },
-        ],
-        take: TOP_LIMIT,
-      }),
-      this.prisma.user.count({ where: { id: { in: ids }, bestAnswerStreak: { gt: 0 } } }),
-    ]);
+    // Fetch user profiles
+    const userIds = streakData.map((r) => r.userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, nickname: true, avatarEmoji: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
-    const entries: LeaderboardEntryResult[] = top100.map((u, index) => ({
+    const entries: LeaderboardEntryResult[] = streakData.map((r, index) => ({
       rank: index + 1,
-      userId: u.id,
-      nickname: u.nickname,
-      avatarEmoji: u.avatarEmoji,
+      userId: r.userId,
+      nickname: userMap.get(r.userId)?.nickname ?? null,
+      avatarEmoji: userMap.get(r.userId)?.avatarEmoji ?? null,
       correctAnswers: 0,
       totalQuestions: 0,
       score: 0,
       totalTimeSeconds: 0,
-      currentStreak: u.currentAnswerStreak,
-      bestStreak: u.bestAnswerStreak,
+      bestStreak: r.bestStreak,
     }));
 
     // Find current user position
     let userPosition: number | null = null;
-    const userInTop = top100.findIndex((u) => u.id === userId);
+    const userInTop = streakData.findIndex((r) => r.userId === userId);
 
     if (userInTop !== -1) {
       userPosition = userInTop + 1;
     } else {
-      const currentUser = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, nickname: true, avatarEmoji: true, currentAnswerStreak: true, bestAnswerStreak: true },
-      });
-      if (currentUser && currentUser.bestAnswerStreak > 0 && ids.includes(userId)) {
-        const higherCount = await this.prisma.user.count({
-          where: { id: { in: ids }, bestAnswerStreak: { gt: currentUser.bestAnswerStreak } },
-        });
-        userPosition = higherCount + 1;
+      // Calculate user's best streak in this period
+      const userStreakResult = await this.prisma.$queryRaw<{ bestStreak: number }[]>`
+        WITH ordered AS (
+          SELECT
+            "result",
+            ROW_NUMBER() OVER (ORDER BY "answeredAt") AS rn,
+            ROW_NUMBER() OVER (PARTITION BY "result" ORDER BY "answeredAt") AS grp_rn
+          FROM "UserQuestionHistory"
+          WHERE "userId" = ${userId}
+            AND "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+        ),
+        streaks AS (
+          SELECT COUNT(*)::int AS streak_length
+          FROM ordered
+          WHERE "result" = 'correct'
+          GROUP BY (rn - grp_rn)
+        )
+        SELECT COALESCE(MAX(streak_length), 0)::int AS "bestStreak"
+        FROM streaks
+      `;
+      const userBestStreak = userStreakResult[0]?.bestStreak ?? 0;
+      if (userBestStreak > 0) {
+        const higherCount = streakData.filter((r) => r.bestStreak > userBestStreak).length;
+        // More accurate count via SQL for users outside top 100
+        const higherCountResult = await this.prisma.$queryRaw<{ count: number }[]>`
+          WITH ordered AS (
+            SELECT
+              "userId",
+              "result",
+              ROW_NUMBER() OVER (PARTITION BY "userId" ORDER BY "answeredAt") AS rn,
+              ROW_NUMBER() OVER (PARTITION BY "userId", "result" ORDER BY "answeredAt") AS grp_rn
+            FROM "UserQuestionHistory"
+            WHERE "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+          ),
+          streaks AS (
+            SELECT
+              "userId",
+              COUNT(*)::int AS streak_length
+            FROM ordered
+            WHERE "result" = 'correct'
+            GROUP BY "userId", (rn - grp_rn)
+          ),
+          best_streaks AS (
+            SELECT "userId", MAX(streak_length) AS best
+            FROM streaks
+            GROUP BY "userId"
+          )
+          SELECT COUNT(*)::int AS count
+          FROM best_streaks
+          WHERE best > ${userBestStreak}
+        `;
+        userPosition = (higherCountResult[0]?.count ?? 0) + 1;
       }
     }
 
-    // Build user context if not in top list
+    // Build user context
     let userContext: LeaderboardEntryResult[] | undefined;
     if (userPosition && userPosition > 5 && userInTop === -1) {
       const currentUser = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, nickname: true, avatarEmoji: true, currentAnswerStreak: true, bestAnswerStreak: true },
+        select: { id: true, nickname: true, avatarEmoji: true },
       });
+      const userStreakResult = await this.prisma.$queryRaw<{ bestStreak: number }[]>`
+        WITH ordered AS (
+          SELECT
+            "result",
+            ROW_NUMBER() OVER (ORDER BY "answeredAt") AS rn,
+            ROW_NUMBER() OVER (PARTITION BY "result" ORDER BY "answeredAt") AS grp_rn
+          FROM "UserQuestionHistory"
+          WHERE "userId" = ${userId}
+            AND "answeredAt" >= ${dateFilter.gte} AND "answeredAt" <= ${dateFilter.lte}
+        ),
+        streaks AS (
+          SELECT COUNT(*)::int AS streak_length
+          FROM ordered
+          WHERE "result" = 'correct'
+          GROUP BY (rn - grp_rn)
+        )
+        SELECT COALESCE(MAX(streak_length), 0)::int AS "bestStreak"
+        FROM streaks
+      `;
       if (currentUser) {
         userContext = [{
           rank: userPosition,
@@ -325,8 +420,7 @@ export class LeaderboardService {
           totalQuestions: 0,
           score: 0,
           totalTimeSeconds: 0,
-          currentStreak: currentUser.currentAnswerStreak,
-          bestStreak: currentUser.bestAnswerStreak,
+          bestStreak: userStreakResult[0]?.bestStreak ?? 0,
         }];
       }
     } else if (!userPosition) {

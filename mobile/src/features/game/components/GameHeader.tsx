@@ -17,11 +17,12 @@ type GameHeaderProps = {
   progress: number;
   streak: number;
   onClose?: () => void;
+  bonusPercent?: number;
 };
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export const GameHeader: FC<GameHeaderProps> = React.memo(({ progress, streak, onClose }) => {
+export const GameHeader: FC<GameHeaderProps> = React.memo(({ progress, streak, onClose, bonusPercent }) => {
   const { colors, spacing, borderRadius } = useThemeContext();
   const router = useRouter();
   const closeScale = useSharedValue(1);
@@ -64,7 +65,7 @@ export const GameHeader: FC<GameHeaderProps> = React.memo(({ progress, streak, o
       <View style={styles.progressContainer}>
         <ProgressBar progress={progress} variant="primary" height={8} />
       </View>
-      <StreakBadge days={streak} />
+      <StreakBadge days={streak} bonusPercent={bonusPercent} />
     </View>
   );
 });

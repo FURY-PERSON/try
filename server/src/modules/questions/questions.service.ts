@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { GameConfigService } from '@/modules/game-config/game-config.service';
 import { QuestionFilterDto } from './dto/question-filter.dto';
 import { AnswerQuestionDto } from './dto/answer-question.dto';
 import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
 
 @Injectable()
 export class QuestionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gameConfigService: GameConfigService,
+  ) {}
 
   async getRandomQuestion(userId: string, filters: QuestionFilterDto) {
     // Use anti-repeat module to get excluded IDs instead of expensive correlated subqueries
@@ -96,7 +100,16 @@ export class QuestionsService {
     bestStreak = Math.max(bestStreak, currentStreak);
     bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
-    const answerScore = isCorrect ? 1 : 0;
+    const streakBonusPercent = isCorrect
+      ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
+      : 0;
+
+    const score = QuestionsService.calculateScore(
+      question.difficulty,
+      dto.timeSpentSeconds,
+      isCorrect,
+      streakBonusPercent,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.create({
@@ -105,7 +118,7 @@ export class QuestionsService {
           questionId,
           result,
           timeSpentSeconds: dto.timeSpentSeconds,
-          score: answerScore,
+          score,
         },
       });
 
@@ -129,16 +142,10 @@ export class QuestionsService {
           bestStreak,
           currentAnswerStreak,
           bestAnswerStreak,
-          totalScore: { increment: answerScore },
+          totalScore: { increment: score },
         },
       });
     });
-
-    const score = this.calculateScore(
-      question.difficulty,
-      dto.timeSpentSeconds,
-      isCorrect,
-    );
 
     return {
       correct: isCorrect,
@@ -153,19 +160,25 @@ export class QuestionsService {
     };
   }
 
-  private calculateScore(
+  static calculateScore(
     difficulty: number,
     timeSpentSeconds: number,
     isCorrect: boolean,
+    streakBonusPercent = 0,
   ): number {
     if (!isCorrect) {
       return 0;
     }
 
-    const baseScore = 100;
-    const difficultyBonus = difficulty * 20;
-    const timeBonus = Math.max(0, 60 - timeSpentSeconds) * 2;
+    const baseScore = 1;
+    const difficultyBonus = Math.floor(difficulty / 2);
+    const timeBonus = Math.floor(Math.max(0, 60 - timeSpentSeconds) / 20);
+    const rawScore = baseScore + difficultyBonus + timeBonus;
 
-    return baseScore + difficultyBonus + timeBonus;
+    if (streakBonusPercent > 0) {
+      return rawScore + Math.floor((rawScore * streakBonusPercent) / 100);
+    }
+
+    return rawScore;
   }
 }

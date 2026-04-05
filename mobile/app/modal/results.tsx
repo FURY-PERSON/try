@@ -27,6 +27,8 @@ import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { shareResult } from '@/utils/share';
 import { getResultMessage } from '@/features/game/utils';
+import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
+import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { analytics } from '@/services/analytics';
 import { s } from '@/utils/scale';
 
@@ -103,6 +105,10 @@ export default function ResultsModal() {
           : colors.orange;
 
   const streak = submissionResult?.streak ?? 0;
+  const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
+  const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
+  const currentStreak = submissionResult?.streak ?? streak;
+  const bonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(currentStreak, streakBonusPayload?.tiers) : 0;
 
   const handleShare = useCallback(() => {
     shareResult({
@@ -173,7 +179,7 @@ export default function ResultsModal() {
 
         {!isReplay && (
           <AnimatedEntrance delay={300} direction="up">
-            <StreakBadge days={submissionResult?.streak ?? streak} size="md" />
+            <StreakBadge days={currentStreak} size="md" bonusPercent={bonusPercent} />
           </AnimatedEntrance>
         )}
 

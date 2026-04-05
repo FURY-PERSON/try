@@ -90,7 +90,8 @@
     "continue": "Далее",
     "exitTitle": "Выйти из игры?",
     "exitDesc": "Прогресс будет сохранён",
-    "exitSave": "Выйти и сохранить"
+    "exitSave": "Выйти и сохранить",
+    "streakBonus": "+{{percent}}% очков"
   },
   "fact": {
     "title": "Объяснение",

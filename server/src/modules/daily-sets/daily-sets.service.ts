@@ -4,15 +4,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { GameConfigService } from '@/modules/game-config/game-config.service';
 import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
+import { QuestionsService } from '@/modules/questions/questions.service';
 
 const CARDS_PER_DAILY_SET = 20;
 
 @Injectable()
 export class DailySetsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gameConfigService: GameConfigService,
+  ) {}
 
   async getTodaySet(userId: string) {
     const today = new Date();
@@ -302,6 +307,16 @@ export class DailySetsService {
       (r) => !alreadySavedIds.has(r.questionId),
     );
 
+    // Load question difficulties for score calculation
+    const questionIds = newResults.map((r) => r.questionId);
+    const questions = questionIds.length > 0
+      ? await this.prisma.question.findMany({
+          where: { id: { in: questionIds } },
+          select: { id: true, difficulty: true },
+        })
+      : [];
+    const difficultyMap = new Map(questions.map((q) => [q.id, q.difficulty]));
+
     // Calculate streak and score only for NEW results (not already processed by answerQuestion)
     // Streak and totalScore for already-saved answers were updated in real-time by answerQuestion
     let currentStreak = user.currentStreak;
@@ -310,35 +325,60 @@ export class DailySetsService {
     let bestAnswerStreak = user.bestAnswerStreak;
     let newResultsScore = 0;
 
-    const newHistoryData = newResults.map((r) => {
-      let answerScore = 0;
-      if (r.result === 'correct') {
+    const newHistoryData: Array<{
+      userId: string;
+      questionId: string;
+      result: string;
+      timeSpentSeconds: number;
+      score: number;
+    }> = [];
+
+    for (const r of newResults) {
+      const difficulty = difficultyMap.get(r.questionId) ?? 1;
+      const isCorrect = r.result === 'correct';
+
+      if (isCorrect) {
         currentStreak++;
         currentAnswerStreak++;
-        answerScore = 1;
-        newResultsScore += answerScore;
       } else {
         currentStreak = 0;
         currentAnswerStreak = 0;
       }
+
+      const streakBonusPercent = isCorrect
+        ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
+        : 0;
+
+      const answerScore = QuestionsService.calculateScore(
+        difficulty,
+        r.timeSpentSeconds,
+        isCorrect,
+        streakBonusPercent,
+      );
+
+      newResultsScore += answerScore;
       bestStreak = Math.max(bestStreak, currentStreak);
       bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
-      return {
+      newHistoryData.push({
         userId,
         questionId: r.questionId,
         result: r.result,
         timeSpentSeconds: r.timeSpentSeconds,
         score: answerScore,
-      };
-    });
+      });
+    }
 
-    // LeaderboardEntry score = new results score + already-saved correct count
-    // (already-saved scores were added to User.totalScore by answerQuestion, so don't increment again)
-    const alreadySavedCorrectCount = dto.results.filter(
-      (r) => alreadySavedIds.has(r.questionId) && r.result === 'correct',
-    ).length;
-    const leaderboardScore = newResultsScore + alreadySavedCorrectCount;
+    // LeaderboardEntry score = new results score + already-saved scores
+    const alreadySavedScores = await this.prisma.userQuestionHistory.aggregate({
+      where: {
+        userId,
+        questionId: { in: [...alreadySavedIds] },
+        answeredAt: { gte: todayStart, lt: tomorrowStart },
+      },
+      _sum: { score: true },
+    });
+    const leaderboardScore = newResultsScore + (alreadySavedScores._sum.score ?? 0);
 
     try {
       await this.prisma.$transaction(async (tx) => {

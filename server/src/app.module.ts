@@ -16,6 +16,7 @@ import { ReferenceModule } from './modules/reference/reference.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AiModule } from './modules/ai/ai.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { GameConfigModule } from './modules/game-config/game-config.module';
 import { SupportModule } from './modules/support/support.module';
 import { LogsModule } from './modules/logs/logs.module';
 
@@ -61,6 +62,7 @@ import { LogsModule } from './modules/logs/logs.module';
     AdminModule,
     AiModule,
     FeatureFlagsModule,
+    GameConfigModule,
     SupportModule,
     LogsModule,
   ],

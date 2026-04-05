@@ -90,7 +90,8 @@
     "continue": "Next",
     "exitTitle": "Exit game?",
     "exitDesc": "Your progress will be saved",
-    "exitSave": "Exit & Save"
+    "exitSave": "Exit & Save",
+    "streakBonus": "+{{percent}}% points"
   },
   "fact": {
     "title": "Explanation",
