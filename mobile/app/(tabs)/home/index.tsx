@@ -47,6 +47,8 @@ import { CARDS_PER_DAILY_SET } from '@/shared';
 import type { CategoryWithCount, DifficultyProgress, HomeFeedCollection } from '@/shared';
 import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
 import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
+import { ShieldBadge } from '@/features/shield/components/ShieldBadge';
+import { ShieldInfoModal } from '@/features/shield/components/ShieldInfoModal';
 import { s } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -77,6 +79,7 @@ export default function HomeScreen() {
   }, [refetchFeed, refetchDaily]);
   const [loadingCollection, setLoadingCollection] = useState<string | null>(null);
   const [showDisableAds, setShowDisableAds] = useState(false);
+  const [showShieldInfo, setShowShieldInfo] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
   const showDisableAdsOnReturn = useAdsStore((s) => s.showDisableAdsOnReturn);
 
@@ -89,6 +92,14 @@ export default function HomeScreen() {
   }, [showDisableAdsOnReturn]);
 
   const streak = feed?.userProgress?.streak ?? 0;
+  const [shieldCount, setShieldCount] = useState(0);
+
+  // Sync shield count from feed
+  useEffect(() => {
+    if (feed?.userProgress?.shields != null) {
+      setShieldCount(feed.userProgress.shields);
+    }
+  }, [feed?.userProgress?.shields]);
   const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
   const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
   const bonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(streak, streakBonusPayload?.tiers) : 0;
@@ -239,6 +250,7 @@ export default function HomeScreen() {
               {t('home.title')}
             </Text>
             <View style={styles.headerRight}>
+              <ShieldBadge count={shieldCount} onPress={() => setShowShieldInfo(true)} />
               <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
               <StreakBadge days={streak} showIncrement={false} bonusPercent={bonusPercent} />
             </View>
@@ -305,6 +317,9 @@ export default function HomeScreen() {
               <>
                 <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
                   {t('home.dailyDesc', { count: dailyData?.questions?.length ?? CARDS_PER_DAILY_SET })}
+                </Text>
+                <Text style={[styles.shieldBonusText, { color: '#3B82F6' }]}>
+                  {t('shield.dailyBonus')}
                 </Text>
                 <Button
                   label={t('common.play')}
@@ -456,6 +471,12 @@ export default function HomeScreen() {
       </ScrollView>
 
 
+      <ShieldInfoModal
+        visible={showShieldInfo}
+        onClose={() => setShowShieldInfo(false)}
+        shieldCount={shieldCount}
+        onShieldsEarned={setShieldCount}
+      />
       <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
   );
@@ -712,6 +733,11 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     lineHeight: s(20),
     marginBottom: s(16),
+  },
+  shieldBonusText: {
+    fontSize: s(13),
+    fontFamily: fontFamily.semiBold,
+    marginBottom: s(12),
   },
   lockText: {
     fontSize: s(15),
