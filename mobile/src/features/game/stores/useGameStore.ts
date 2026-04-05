@@ -14,6 +14,9 @@ type GameStoreState = {
   // Current server streak (passed from home screen on game start)
   currentStreak: number;
 
+  // Shield state for current game session
+  shieldActive: boolean;
+
   // Collection session tracking
   sessionId: string | null;
   collectionType: CollectionType;
@@ -34,6 +37,8 @@ type GameStoreState = {
   setTotalCards: (total: number) => void;
   setSubmissionResult: (result: SubmissionResult) => void;
   resetDailyProgress: () => void;
+  activateShield: () => void;
+  deactivateShield: () => void;
 };
 
 const initialProgress: DailySetProgress = {
@@ -50,6 +55,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
   currentCardStartTime: null,
   submissionResult: null,
   currentStreak: 0,
+  shieldActive: false,
   sessionId: null,
   collectionType: 'daily' as CollectionType,
   collectionQuestions: [],
@@ -67,6 +73,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       isPlaying: true,
       submissionResult: null,
       currentStreak: streak ?? get().currentStreak,
+      shieldActive: false,
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],
@@ -93,6 +100,7 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       isPlaying: true,
       submissionResult: null,
       currentStreak: streak ?? get().currentStreak,
+      shieldActive: false,
       sessionId,
       collectionType,
       collectionQuestions: questions,
@@ -143,10 +151,19 @@ export const useGameStore = create<GameStoreState>()((set, get) => ({
       currentCardStartTime: null,
       submissionResult: null,
       currentStreak: 0,
+      shieldActive: false,
       sessionId: null,
       collectionType: 'daily',
       collectionQuestions: [],
       isReplay: false,
     });
+  },
+
+  activateShield: () => {
+    set({ shieldActive: true });
+  },
+
+  deactivateShield: () => {
+    set({ shieldActive: false });
   },
 }));
