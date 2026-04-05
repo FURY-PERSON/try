@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { GameConfigService } from '@/modules/game-config/game-config.service';
+import { ShieldsService } from '@/modules/shields/shields.service';
 import { Prisma } from '@prisma/client';
 import { SubmitDailySetDto } from './dto/submit-daily-set.dto';
 import { updateQuestionStatsBatch } from '@/modules/shared/update-question-stats';
@@ -17,6 +18,7 @@ export class DailySetsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gameConfigService: GameConfigService,
+    private readonly shieldsService: ShieldsService,
   ) {}
 
   async getTodaySet(userId: string) {
@@ -333,6 +335,9 @@ export class DailySetsService {
       score: number;
     }> = [];
 
+    let shieldsUsedCount = 0;
+    let shieldMilestonesEarned = 0;
+
     for (const r of newResults) {
       const difficulty = difficultyMap.get(r.questionId) ?? 1;
       const isCorrect = r.result === 'correct';
@@ -340,6 +345,13 @@ export class DailySetsService {
       if (isCorrect) {
         currentStreak++;
         currentAnswerStreak++;
+        // Shield milestone: +1 shield for every 10 in streak
+        if (currentAnswerStreak > 0 && currentAnswerStreak % 10 === 0) {
+          shieldMilestonesEarned++;
+        }
+      } else if (r.shieldUsed && user.shields - shieldsUsedCount > 0) {
+        // Shield protects streak
+        shieldsUsedCount++;
       } else {
         currentStreak = 0;
         currentAnswerStreak = 0;
@@ -369,6 +381,9 @@ export class DailySetsService {
       });
     }
 
+    // Calculate daily set shield bonus (≥50% correct → +3 shields)
+    const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
+
     // LeaderboardEntry score = new results score + already-saved scores
     const alreadySavedScores = await this.prisma.userQuestionHistory.aggregate({
       where: {
@@ -388,6 +403,9 @@ export class DailySetsService {
           await updateQuestionStatsBatch(tx, newResults);
         }
 
+        // Calculate shield changes
+        const totalShieldsChange = -shieldsUsedCount + shieldMilestonesEarned + dailySetShieldBonus;
+
         // Update user stats (streak already current from answerQuestion, update only for new results)
         await tx.user.update({
           where: { id: userId },
@@ -402,6 +420,7 @@ export class DailySetsService {
               ? { totalCorrectAnswers: { increment: newResults.filter((r) => r.result === 'correct').length } }
               : {}),
             totalScore: { increment: newResultsScore },
+            ...(totalShieldsChange !== 0 ? { shields: { increment: totalShieldsChange } } : {}),
           },
         });
 
@@ -483,6 +502,12 @@ export class DailySetsService {
       dto.results,
     );
 
+    // Get updated shields balance
+    const updatedUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { shields: true },
+    });
+
     return {
       score: leaderboardScore,
       correctAnswers,
@@ -495,6 +520,8 @@ export class DailySetsService {
       percentile,
       totalPlayers: totalPlayersToday,
       factOfDay,
+      shieldsEarned: dailySetShieldBonus + shieldMilestonesEarned,
+      totalShields: updatedUser?.shields ?? 0,
     };
   }
 

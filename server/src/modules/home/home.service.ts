@@ -21,7 +21,7 @@ export class HomeService {
       this.getDifficultyProgress(answeredSet),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { currentStreak: true, nickname: true, avatarEmoji: true },
+        select: { currentStreak: true, nickname: true, avatarEmoji: true, shields: true },
       }),
     ]);
 
@@ -33,6 +33,7 @@ export class HomeService {
       userProgress: {
         dailyCompleted: daily.isLocked,
         streak: user?.currentStreak ?? 0,
+        shields: user?.shields ?? 0,
         nickname: user?.nickname ?? null,
         avatarEmoji: user?.avatarEmoji ?? null,
       },

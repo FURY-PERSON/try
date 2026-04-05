@@ -3,6 +3,8 @@ import {
   IsString,
   IsEnum,
   IsInt,
+  IsBoolean,
+  IsOptional,
   Min,
   IsArray,
   ValidateNested,
@@ -35,6 +37,15 @@ export class GameResultDto {
   @IsInt()
   @Min(0)
   timeSpentSeconds: number;
+
+  @ApiProperty({
+    description: 'Whether a shield was used on this question',
+    required: false,
+    example: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  shieldUsed?: boolean;
 }
 
 export class SubmitDailySetDto {

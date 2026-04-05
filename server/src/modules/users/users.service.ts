@@ -14,6 +14,7 @@ export interface UserStats {
   correctPercent: number;
   avgScore: number;
   activityMap: Record<string, number>;
+  shields: number;
 }
 
 @Injectable()
@@ -35,7 +36,7 @@ export class UsersService {
     );
 
     return this.prisma.user.create({
-      data: { deviceId, nickname, avatarEmoji },
+      data: { deviceId, nickname, avatarEmoji, shields: 5 },
     });
   }
 
@@ -88,6 +89,7 @@ export class UsersService {
             totalScore: true,
             currentAnswerStreak: true,
             bestAnswerStreak: true,
+            shields: true,
           },
         }),
         this.prisma.$queryRaw<[{ count: bigint }]>`
@@ -149,6 +151,7 @@ export class UsersService {
       correctPercent,
       avgScore: Math.round(avgScore * 10) / 10,
       activityMap,
+      shields: user.shields,
     };
   }
 

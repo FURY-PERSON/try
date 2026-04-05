@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { GameConfigService } from '@/modules/game-config/game-config.service';
+import { ShieldsService } from '@/modules/shields/shields.service';
 import { QuestionFilterDto } from './dto/question-filter.dto';
 import { AnswerQuestionDto } from './dto/answer-question.dto';
 import { getExcludedQuestionIds } from '@/modules/shared/anti-repeat';
@@ -10,6 +11,7 @@ export class QuestionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly gameConfigService: GameConfigService,
+    private readonly shieldsService: ShieldsService,
   ) {}
 
   async getRandomQuestion(userId: string, filters: QuestionFilterDto) {
@@ -90,15 +92,26 @@ export class QuestionsService {
     let currentAnswerStreak = user?.currentAnswerStreak ?? 0;
     let bestAnswerStreak = user?.bestAnswerStreak ?? 0;
 
+    let shieldUsed = false;
+
     if (isCorrect) {
       currentStreak++;
       currentAnswerStreak++;
+    } else if (dto.useShield && (user?.shields ?? 0) > 0) {
+      // Shield protects streak from resetting
+      shieldUsed = true;
     } else {
       currentStreak = 0;
       currentAnswerStreak = 0;
     }
     bestStreak = Math.max(bestStreak, currentStreak);
     bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+
+    // Award shield for streak milestones (every 10)
+    let shieldMilestoneEarned = false;
+    if (isCorrect && currentAnswerStreak > 0 && currentAnswerStreak % 10 === 0) {
+      shieldMilestoneEarned = true;
+    }
 
     const streakBonusPercent = isCorrect
       ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
@@ -110,6 +123,8 @@ export class QuestionsService {
       isCorrect,
       streakBonusPercent,
     );
+
+    let remainingShields = user?.shields ?? 0;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.create({
@@ -133,6 +148,22 @@ export class QuestionsService {
         WHERE "id" = ${questionId}
       `;
 
+      // Atomically deduct shield if used
+      if (shieldUsed) {
+        const deducted = await this.shieldsService.useShieldInTransaction(tx, userId);
+        if (!deducted) {
+          // Shield was not available (race condition), reset streak
+          shieldUsed = false;
+          currentStreak = 0;
+          currentAnswerStreak = 0;
+          bestStreak = Math.max(user?.bestStreak ?? 0, currentStreak);
+          bestAnswerStreak = Math.max(user?.bestAnswerStreak ?? 0, currentAnswerStreak);
+        }
+      }
+
+      let shieldsIncrement = 0;
+      if (shieldMilestoneEarned) shieldsIncrement += 1;
+
       await tx.user.update({
         where: { id: userId },
         data: {
@@ -143,8 +174,16 @@ export class QuestionsService {
           currentAnswerStreak,
           bestAnswerStreak,
           totalScore: { increment: score },
+          ...(shieldsIncrement > 0 ? { shields: { increment: shieldsIncrement } } : {}),
         },
       });
+
+      // Read updated shields balance
+      const updatedUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { shields: true },
+      });
+      remainingShields = updatedUser?.shields ?? 0;
     });
 
     return {
@@ -157,6 +196,9 @@ export class QuestionsService {
       sourceEn: question.sourceEn,
       sourceUrl: question.sourceUrl,
       sourceUrlEn: question.sourceUrlEn,
+      shieldUsed,
+      remainingShields,
+      streakPreserved: shieldUsed,
     };
   }
 

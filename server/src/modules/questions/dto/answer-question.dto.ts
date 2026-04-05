@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsInt, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class AnswerQuestionDto {
   @ApiProperty({
@@ -17,4 +17,12 @@ export class AnswerQuestionDto {
   @IsInt()
   @Min(0)
   timeSpentSeconds: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether to use a shield to protect streak on wrong answer',
+    example: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  useShield?: boolean;
 }
