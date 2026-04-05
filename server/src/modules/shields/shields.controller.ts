@@ -29,7 +29,7 @@ export class ShieldsController {
 
   @Post('reward')
   @UseGuards(DeviceAuthGuard)
-  @Throttle({ default: { limit: 1, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Earn shields by watching a rewarded video' })
   @ApiHeader({ name: 'x-device-id', required: true })
   @ApiResponse({ status: 201, description: 'Shields rewarded successfully' })

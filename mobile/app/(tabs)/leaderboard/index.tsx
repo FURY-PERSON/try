@@ -176,9 +176,9 @@ const styles = StyleSheet.create({
     gap: s(4),
   },
   largeTitle: {
-    fontSize: s(32),
+    fontSize: s(24),
     fontFamily: fontFamily.bold,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   segmentedControl: {
     flexDirection: 'row',
