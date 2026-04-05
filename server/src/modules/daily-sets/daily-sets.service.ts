@@ -390,6 +390,10 @@ export class DailySetsService {
     });
     const leaderboardScore = newResultsScore + (alreadySavedScores._sum.score ?? 0);
 
+    // +3 shields for ≥50% correct in daily set
+    const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
+    const totalShieldsChange = -shieldsUsedCount + dailySetShieldBonus;
+
     try {
       await this.prisma.$transaction(async (tx) => {
         // Save question history only for answers not already saved via submitAnswer
@@ -397,10 +401,6 @@ export class DailySetsService {
           await tx.userQuestionHistory.createMany({ data: newHistoryData });
           await updateQuestionStatsBatch(tx, newResults);
         }
-
-        // +3 shields for ≥50% correct in daily set
-        const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
-        const totalShieldsChange = -shieldsUsedCount + dailySetShieldBonus;
 
         // Update user stats (streak already current from answerQuestion, update only for new results)
         await tx.user.update({
