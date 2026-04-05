@@ -105,23 +105,37 @@ export const useCardGame = (
         feedbackRef.current = newFeedback;
         setFeedback(newFeedback);
 
+        // Check shield state before any side effects
+        const shieldWasActive = useGameStore.getState().shieldActive;
+        const shieldUsed = !isCorrect && shieldWasActive;
+
+        if (shieldUsed) {
+          // Shield absorbs the hit — streak preserved
+          useGameStore.getState().deactivateShield();
+        }
+
         setPendingResult({
           questionId: currentQuestion.id,
           correct: isCorrect,
           score,
           timeSpentMs,
+          shieldUsed,
         });
 
         // For daily sets: fire-and-forget per-question submit for server-side tracking.
         // The full result set is re-submitted via submitDailySet() at the end anyway.
         if (collectionType === 'daily') {
-          gameApi.submitAnswer(currentQuestion.id, userAnswer, timeSpentSeconds).catch(() => {
+          gameApi.submitAnswer(currentQuestion.id, userAnswer, timeSpentSeconds, shieldUsed).catch(() => {
             // Silent — included in final submitDailySet()
           });
         }
 
-        // Update live streak based on answer
-        setLiveStreak((prev) => (answeredCorrectly ? prev + 1 : 0));
+        // Update live streak based on answer (shield protects streak)
+        setLiveStreak((prev) => {
+          if (answeredCorrectly) return prev + 1;
+          if (shieldUsed) return prev; // Shield protected
+          return 0;
+        });
 
         // Defer analytics so JS thread is free during flip animation
         const analyticsData = {
@@ -267,6 +281,7 @@ export const useCardGame = (
             questionId: r.questionId,
             result: r.correct ? ('correct' as const) : ('incorrect' as const),
             timeSpentSeconds: Math.round(r.timeSpentMs / 1000),
+            ...(r.shieldUsed ? { shieldUsed: true } : {}),
           }))
         : null;
 

@@ -30,6 +30,8 @@ import type { FlipSwipeCardRef } from '@/features/game/components/FlipSwipeCard'
 import type { DailySetQuestion } from '@/shared';
 import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
 import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
+import { ShieldButton } from '@/features/shield/components/ShieldButton';
+import { ShieldWatchVideoModal } from '@/features/shield/components/ShieldWatchVideoModal';
 import { s, isTablet } from '@/utils/scale';
 
 // Static LinearGradient point objects
@@ -62,6 +64,13 @@ export default function CardScreen() {
   const hasSeenSwipeContinueHint = useAppStore((s) => s.hasSeenSwipeContinueHint);
   const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
   const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
+
+  // Shield state — read initial count from cached home feed
+  const shieldActive = useGameStore((s) => s.shieldActive);
+  const activateShield = useGameStore((s) => s.activateShield);
+  const cachedFeed = queryClient.getQueryData<{ userProgress?: { shields?: number } }>(['home', 'feed']);
+  const [shieldCount, setShieldCount] = useState(cachedFeed?.userProgress?.shields ?? 0);
+  const [showShieldVideoModal, setShowShieldVideoModal] = useState(false);
 
   // Undo: show previous card explanation
   const [showPreviousCard, setShowPreviousCard] = useState(false);
@@ -185,6 +194,20 @@ export default function CardScreen() {
     handleSwipe,
     handleNextCard,
   } = useCardGame(questions, dailySetId);
+
+  const handleShieldPress = useCallback(() => {
+    if (feedback || isSubmitting) return;
+    if (shieldActive) return;
+    if (shieldCount <= 0) {
+      setShowShieldVideoModal(true);
+      return;
+    }
+    activateShield();
+  }, [feedback, isSubmitting, shieldActive, shieldCount, activateShield]);
+
+  const handleShieldsEarned = useCallback((total: number) => {
+    setShieldCount(total);
+  }, []);
 
   const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
   const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
@@ -357,6 +380,14 @@ export default function CardScreen() {
               <Feather name="rotate-ccw" size={16} color={colors.textSecondary} />
             </Pressable>
           )}
+          <View style={styles.shieldContainer}>
+            <ShieldButton
+              count={shieldCount}
+              active={shieldActive}
+              onPress={handleShieldPress}
+              disabled={!!feedback || isSubmitting}
+            />
+          </View>
         </View>
 
         {currentQuestion ? (
@@ -544,6 +575,12 @@ export default function CardScreen() {
         </View>
       </OverlayModal>
 
+      <ShieldWatchVideoModal
+        visible={showShieldVideoModal}
+        onClose={() => setShowShieldVideoModal(false)}
+        onShieldsEarned={handleShieldsEarned}
+      />
+
       <SwipeHintOverlay
         variant={swipeHintVariant}
         visible={showSwipeHint}
@@ -572,6 +609,10 @@ const styles = StyleSheet.create({
     marginTop: s(4),
     height: s(28),
     gap: s(8),
+  },
+  shieldContainer: {
+    position: 'absolute',
+    right: s(20),
   },
   counterText: {
     fontSize: s(15),

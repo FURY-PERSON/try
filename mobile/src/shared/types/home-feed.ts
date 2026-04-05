@@ -36,6 +36,7 @@ export type HomeFeed = {
   userProgress: {
     dailyCompleted: boolean;
     streak: number;
+    shields: number;
     nickname: string | null;
     avatarEmoji: string | null;
   };

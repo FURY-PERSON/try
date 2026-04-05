@@ -40,10 +40,11 @@ export const gameApi = {
     questionId: string,
     userAnswer: boolean,
     timeSpentSeconds: number,
+    useShield?: boolean,
   ): Promise<SubmitAnswerResponse['data']> {
     const response = await apiClient.post<SubmitAnswerResponse>(
       `/v1/questions/${questionId}/answer`,
-      { userAnswer, timeSpentSeconds },
+      { userAnswer, timeSpentSeconds, ...(useShield ? { useShield: true } : {}) },
     );
     return response.data.data;
   },

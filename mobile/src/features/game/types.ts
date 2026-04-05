@@ -3,6 +3,7 @@ export type CardResult = {
   correct: boolean;
   score: number;
   timeSpentMs: number;
+  shieldUsed?: boolean;
 };
 
 export type DailySetProgress = {
