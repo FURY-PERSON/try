@@ -225,7 +225,7 @@ const BonusFloat: FC<{ percent: number; color: string }> = ({ percent, color }) 
 
   return (
     <Animated.Text style={[styles.plusOne, { color }, style]}>
-      +{percent}%
+      +{percent}% к очкам
     </Animated.Text>
   );
 };
@@ -436,14 +436,11 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
         withSpring(1.3, { damping: 8, stiffness: 400 }),
         withSpring(1, { damping: 12, stiffness: 200 }),
       );
-      if (showIncrement) {
-        setPlusOneKey((k) => k + 1);
-      }
-      // Show bonus float on tier change when bonus is available
-      const prevTier = getStreakTier(prevDays).tier;
-      const newTier = getStreakTier(days).tier;
-      if (newTier > prevTier && bonusPercent > 0) {
+      if (bonusPercent > 0) {
+        // Show bonus float instead of +1 when bonus is active
         setBonusFloatKey((k) => k + 1);
+      } else if (showIncrement) {
+        setPlusOneKey((k) => k + 1);
       }
     }
   }, [animated, days, rotation, burstScale, badgeOpacity, rotationAmplitude, bonusPercent]);
