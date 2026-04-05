@@ -19,6 +19,7 @@ import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module
 import { GameConfigModule } from './modules/game-config/game-config.module';
 import { SupportModule } from './modules/support/support.module';
 import { LogsModule } from './modules/logs/logs.module';
+import { ShieldsModule } from './modules/shields/shields.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { LogsModule } from './modules/logs/logs.module';
     GameConfigModule,
     SupportModule,
     LogsModule,
+    ShieldsModule,
   ],
   providers: [
     // Apply throttler guard globally
