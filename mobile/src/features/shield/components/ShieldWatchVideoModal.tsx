@@ -27,18 +27,19 @@ export const ShieldWatchVideoModal: FC<ShieldWatchVideoModalProps> = ({
   const { showForReward, isReady } = useRewardedAd();
 
   const handleWatch = useCallback(async () => {
-    const shown = await showForReward();
+    // In dev (no ad SDK), skip ad and reward directly; in prod, require rewarded video
+    const shown = isReady ? await showForReward() : __DEV__;
     if (shown) {
       try {
         const result = await shieldsApi.rewardShield();
         onShieldsEarned(result.totalShields);
-        showToast(t('shield.earned', { count: result.shieldsAdded }));
+        showToast(t('shield.earned', { count: result.shieldsAdded }), 'success');
         onClose();
       } catch {
         showToast(t('error.generic'));
       }
     }
-  }, [showForReward, onShieldsEarned, onClose, t]);
+  }, [showForReward, isReady, onShieldsEarned, onClose, t]);
 
   return (
     <OverlayModal visible={visible} onClose={onClose}>
@@ -56,18 +57,18 @@ export const ShieldWatchVideoModal: FC<ShieldWatchVideoModalProps> = ({
         </Text>
         <Pressable
           onPress={handleWatch}
-          disabled={!isReady}
+          disabled={!isReady && !__DEV__}
           style={[
             styles.watchBtn,
-            { backgroundColor: isReady ? colors.primary : colors.surfaceVariant },
+            { backgroundColor: (isReady || __DEV__) ? colors.primary : colors.surfaceVariant },
           ]}
         >
           <MaterialCommunityIcons
-            name="television-play"
+            name="shield-plus-outline"
             size={20}
-            color={isReady ? '#FFFFFF' : colors.textTertiary}
+            color={(isReady || __DEV__) ? '#FFFFFF' : colors.textTertiary}
           />
-          <Text style={[styles.watchBtnText, { color: isReady ? '#FFFFFF' : colors.textTertiary }]}>
+          <Text style={[styles.watchBtnText, { color: (isReady || __DEV__) ? '#FFFFFF' : colors.textTertiary }]}>
             {t('shield.watchVideo')}
           </Text>
         </Pressable>

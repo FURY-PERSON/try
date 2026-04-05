@@ -67,16 +67,21 @@ export default function CardScreen() {
   const markSwipeAnswerHintSeen = useAppStore((s) => s.markSwipeAnswerHintSeen);
   const markSwipeContinueHintSeen = useAppStore((s) => s.markSwipeContinueHintSeen);
 
-  // Shield state — read initial count from cached home feed
+  // Shield state — read from home feed cache, track locally for instant updates
   const shieldActive = useGameStore((s) => s.shieldActive);
   const activateShield = useGameStore((s) => s.activateShield);
   const cachedFeed = queryClient.getQueryData<{ userProgress?: { shields?: number } }>(['home', 'feed']);
-  const [shieldCount, setShieldCount] = useState(cachedFeed?.userProgress?.shields ?? 0);
+  const serverShields = cachedFeed?.userProgress?.shields ?? 0;
+  const [shieldOffset, setShieldOffset] = useState(0); // local adjustments (usage / reward)
+  const shieldCount = Math.max(0, serverShields + shieldOffset);
   const [showShieldVideoModal, setShowShieldVideoModal] = useState(false);
   const [showShieldAbsorb, setShowShieldAbsorb] = useState(false);
   const [showShieldGuideline, setShowShieldGuideline] = useState(false);
   const hasSeenShieldGuideline = useAppStore((s) => s.hasSeenShieldGuideline);
   const markShieldGuidelineSeen = useAppStore((s) => s.markShieldGuidelineSeen);
+  const hasSeenShieldIntro = useAppStore((s) => s.hasSeenShieldIntro);
+  const markShieldIntroSeen = useAppStore((s) => s.markShieldIntroSeen);
+  const [showShieldIntro, setShowShieldIntro] = useState(false);
   const prevStreakRef = useRef(currentStreak);
 
   // Undo: show previous card explanation
@@ -214,8 +219,9 @@ export default function CardScreen() {
   }, [feedback, isSubmitting, shieldActive, shieldCount, activateShield]);
 
   const handleShieldsEarned = useCallback((total: number) => {
-    setShieldCount(total);
-  }, []);
+    // total is the new server balance — compute offset from server cache
+    setShieldOffset(total - serverShields);
+  }, [serverShields]);
 
   const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
   const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
@@ -225,7 +231,7 @@ export default function CardScreen() {
   useEffect(() => {
     if (feedback && lastShieldUsed) {
       setShowShieldAbsorb(true);
-      setShieldCount((prev) => Math.max(0, prev - 1));
+      setShieldOffset((prev) => prev - 1);
     }
   }, [feedback, lastShieldUsed]);
 
@@ -237,6 +243,17 @@ export default function CardScreen() {
     }
     prevStreakRef.current = liveStreak;
   }, [liveStreak, hasSeenShieldGuideline, markShieldGuidelineSeen, currentIndex]);
+
+  // Shield intro: show once on first game when shield button appears
+  useEffect(() => {
+    if (!hasSeenShieldIntro && currentQuestion && currentIndex === 0 && !feedback) {
+      const timer = setTimeout(() => {
+        setShowShieldIntro(true);
+        markShieldIntroSeen();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [hasSeenShieldIntro, currentQuestion, currentIndex, feedback, markShieldIntroSeen]);
 
   // Show swipe-to-answer hint on first ever game
   useEffect(() => {
@@ -405,18 +422,18 @@ export default function CardScreen() {
               <Feather name="rotate-ccw" size={16} color={colors.textSecondary} />
             </Pressable>
           )}
-          <View style={styles.shieldContainer}>
-            <ShieldButton
-              count={shieldCount}
-              active={shieldActive}
-              onPress={handleShieldPress}
-              disabled={!!feedback || isSubmitting}
-            />
-          </View>
         </View>
 
         {currentQuestion ? (
           <View style={styles.cardArea}>
+            <View style={styles.shieldFloating}>
+              <ShieldButton
+                count={shieldCount}
+                active={shieldActive}
+                onPress={handleShieldPress}
+                disabled={!!feedback || isSubmitting}
+              />
+            </View>
             <View style={styles.padded}>
               <FlipSwipeCard
                 ref={cardRef}
@@ -602,6 +619,7 @@ export default function CardScreen() {
 
       <ShieldAbsorbAnimation
         visible={showShieldAbsorb}
+        gentle={!!(feedback && feedback.userAnsweredCorrectly)}
         onComplete={() => setShowShieldAbsorb(false)}
       />
 
@@ -615,6 +633,27 @@ export default function CardScreen() {
         visible={showShieldGuideline}
         onClose={() => setShowShieldGuideline(false)}
       />
+
+      {/* Shield intro — shown once on first ever game */}
+      <OverlayModal visible={showShieldIntro} onClose={() => setShowShieldIntro(false)}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface, borderRadius: 20 }]}>
+          <MaterialCommunityIcons name="shield-outline" size={48} color="#3B82F6" />
+          <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+            {t('shield.title')}
+          </Text>
+          <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
+            {t('shield.description')}
+          </Text>
+          <Pressable
+            onPress={() => setShowShieldIntro(false)}
+            style={[styles.modalButton, { backgroundColor: colors.primary, flex: undefined, width: '100%' }]}
+          >
+            <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>
+              {t('shield.got')}
+            </Text>
+          </Pressable>
+        </View>
+      </OverlayModal>
 
       <SwipeHintOverlay
         variant={swipeHintVariant}
@@ -645,9 +684,11 @@ const styles = StyleSheet.create({
     height: s(28),
     gap: s(8),
   },
-  shieldContainer: {
+  shieldFloating: {
     position: 'absolute',
-    right: s(20),
+    right: s(24),
+    top: s(-8),
+    zIndex: 10,
   },
   counterText: {
     fontSize: s(15),

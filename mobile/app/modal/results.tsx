@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -177,6 +177,27 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
+        {!isReplay && collectionType === 'daily' && (
+          <AnimatedEntrance delay={250} direction="up">
+            <View style={[
+              styles.shieldBonusBanner,
+              { backgroundColor: percent >= 0.5 ? '#3B82F615' : colors.surfaceVariant },
+            ]}>
+              <MaterialCommunityIcons
+                name={percent >= 0.5 ? 'shield-check' : 'shield-off-outline'}
+                size={s(20)}
+                color={percent >= 0.5 ? '#3B82F6' : colors.textTertiary}
+              />
+              <Text style={[
+                styles.shieldBonusText,
+                { color: percent >= 0.5 ? '#3B82F6' : colors.textTertiary },
+              ]}>
+                {percent >= 0.5 ? t('shield.dailyBonusEarned') : t('shield.dailyBonusFailed')}
+              </Text>
+            </View>
+          </AnimatedEntrance>
+        )}
+
         {!isReplay && (
           <AnimatedEntrance delay={300} direction="up">
             <StreakBadge days={currentStreak} size="md" bonusPercent={bonusPercent} />
@@ -266,6 +287,20 @@ const styles = StyleSheet.create({
   replayBannerText: {
     fontSize: s(14),
     fontFamily: fontFamily.semiBold,
+  },
+  shieldBonusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: s(8),
+    paddingVertical: s(10),
+    paddingHorizontal: s(16),
+    borderRadius: s(12),
+  },
+  shieldBonusText: {
+    fontSize: s(14),
+    fontFamily: fontFamily.semiBold,
+    flexShrink: 1,
   },
   footer: {
     paddingHorizontal: s(20),

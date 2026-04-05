@@ -10,6 +10,8 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { AdFreeIcon } from '@/components/ads/AdFreeIcon';
 import { DisableAdsModal } from '@/components/ads/DisableAdsModal';
 import { StreakBadge } from '@/features/game/components/StreakBadge';
+import { ShieldBadge } from '@/features/shield/components/ShieldBadge';
+import { ShieldInfoModal } from '@/features/shield/components/ShieldInfoModal';
 import { LeaderboardList } from '@/features/leaderboard/components/LeaderboardList';
 import { useLeaderboard } from '@/features/leaderboard/hooks/useLeaderboard';
 import { useHomeFeed } from '@/features/home/hooks/useHomeFeed';
@@ -30,10 +32,18 @@ export default function LeaderboardScreen() {
   const [mode, setMode] = useState<LeaderboardMode>('score');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [showDisableAds, setShowDisableAds] = useState(false);
+  const [showShieldInfo, setShowShieldInfo] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
   const { data, isLoading, isError, error, refetch, isRefetching } = useLeaderboard(period, mode);
   const { data: feed } = useHomeFeed();
   const streak = feed?.userProgress?.streak ?? 0;
+  const [shieldCount, setShieldCount] = useState(feed?.userProgress?.shields ?? 0);
+
+  React.useEffect(() => {
+    if (feed?.userProgress?.shields != null) {
+      setShieldCount(feed.userProgress.shields);
+    }
+  }, [feed?.userProgress?.shields]);
   const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
   const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
   const bonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(streak, streakBonusPayload?.tiers) : 0;
@@ -52,6 +62,9 @@ export default function LeaderboardScreen() {
             {t('leaderboard.title')}
           </Text>
           <View style={styles.headerRight}>
+            <View style={{ marginRight: s(4) }}>
+              <ShieldBadge count={shieldCount} onPress={() => setShowShieldInfo(true)} />
+            </View>
             <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
             <StreakBadge days={streak} bonusPercent={bonusPercent} />
           </View>
@@ -138,6 +151,12 @@ export default function LeaderboardScreen() {
         )}
       </View>
 
+      <ShieldInfoModal
+        visible={showShieldInfo}
+        onClose={() => setShowShieldInfo(false)}
+        shieldCount={shieldCount}
+        onShieldsEarned={setShieldCount}
+      />
       <DisableAdsModal visible={showDisableAds} onClose={() => setShowDisableAds(false)} />
     </Screen>
   );
@@ -154,6 +173,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: s(4),
   },
   largeTitle: {
     fontSize: s(32),

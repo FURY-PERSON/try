@@ -105,12 +105,11 @@ export const useCardGame = (
         feedbackRef.current = newFeedback;
         setFeedback(newFeedback);
 
-        // Check shield state before any side effects
+        // Shield applies to exactly one fact — consumed on any answer
         const shieldWasActive = useGameStore.getState().shieldActive;
-        const shieldUsed = !isCorrect && shieldWasActive;
+        const shieldUsed = shieldWasActive;
 
         if (shieldUsed) {
-          // Shield absorbs the hit — streak preserved
           useGameStore.getState().deactivateShield();
         }
 
@@ -221,6 +220,7 @@ export const useCardGame = (
         questionId: string;
         result: 'correct' | 'incorrect';
         timeSpentSeconds: number;
+        shieldUsed?: boolean;
       }>,
     ) => {
       try {
@@ -299,6 +299,7 @@ export const useCardGame = (
             ? ('correct' as const)
             : ('incorrect' as const),
           timeSpentSeconds: Math.round(pendingResult.timeSpentMs / 1000),
+          ...(pendingResult.shieldUsed ? { shieldUsed: true } : {}),
         };
         const capturedQuestionId = pendingResult.questionId;
         collectionsApi.saveProgress(sessionId, [progressResult])

@@ -92,14 +92,14 @@ export class QuestionsService {
     let currentAnswerStreak = user?.currentAnswerStreak ?? 0;
     let bestAnswerStreak = user?.bestAnswerStreak ?? 0;
 
-    let shieldUsed = false;
+    // Shield applies to exactly one fact — consumed on any answer
+    let shieldUsed = dto.useShield && (user?.shields ?? 0) > 0;
 
     if (isCorrect) {
       currentStreak++;
       currentAnswerStreak++;
-    } else if (dto.useShield && (user?.shields ?? 0) > 0) {
-      // Shield protects streak from resetting
-      shieldUsed = true;
+    } else if (shieldUsed) {
+      // Shield protects streak from resetting on wrong answer
     } else {
       currentStreak = 0;
       currentAnswerStreak = 0;
@@ -107,11 +107,7 @@ export class QuestionsService {
     bestStreak = Math.max(bestStreak, currentStreak);
     bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
 
-    // Award shield for streak milestones (every 10)
-    let shieldMilestoneEarned = false;
-    if (isCorrect && currentAnswerStreak > 0 && currentAnswerStreak % 10 === 0) {
-      shieldMilestoneEarned = true;
-    }
+    // Shields are earned only via rewarded video — no free milestones
 
     const streakBonusPercent = isCorrect
       ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
@@ -152,17 +148,17 @@ export class QuestionsService {
       if (shieldUsed) {
         const deducted = await this.shieldsService.useShieldInTransaction(tx, userId);
         if (!deducted) {
-          // Shield was not available (race condition), reset streak
+          // Shield was not available (race condition)
           shieldUsed = false;
-          currentStreak = 0;
-          currentAnswerStreak = 0;
-          bestStreak = Math.max(user?.bestStreak ?? 0, currentStreak);
-          bestAnswerStreak = Math.max(user?.bestAnswerStreak ?? 0, currentAnswerStreak);
+          if (!isCorrect) {
+            // Only reset streak if wrong answer and shield failed
+            currentStreak = 0;
+            currentAnswerStreak = 0;
+            bestStreak = Math.max(user?.bestStreak ?? 0, currentStreak);
+            bestAnswerStreak = Math.max(user?.bestAnswerStreak ?? 0, currentAnswerStreak);
+          }
         }
       }
-
-      let shieldsIncrement = 0;
-      if (shieldMilestoneEarned) shieldsIncrement += 1;
 
       await tx.user.update({
         where: { id: userId },
@@ -174,7 +170,6 @@ export class QuestionsService {
           currentAnswerStreak,
           bestAnswerStreak,
           totalScore: { increment: score },
-          ...(shieldsIncrement > 0 ? { shields: { increment: shieldsIncrement } } : {}),
         },
       });
 

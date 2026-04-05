@@ -195,8 +195,8 @@ export class CollectionsService {
       throw new NotFoundException('User not found');
     }
 
-    // Use pre-game streak snapshot if saveProgress() already updated DB values
-    const streakStart = session.preGameStreak ?? {
+    // Use currentStreakState (updated by saveProgress) or fall back to DB values
+    const streakStart = session.currentStreakState ?? session.preGameStreak ?? {
       currentStreak: user.currentStreak,
       bestStreak: user.bestStreak,
       currentAnswerStreak: user.currentAnswerStreak,
@@ -206,33 +206,58 @@ export class CollectionsService {
     // If all questions in the session were previously answered, skip streak updates
     const shouldUpdateStreak = session.hasNewQuestions;
 
+    // Only process streak/shields for answers NOT already handled by saveProgress
+    const unsavedResults = dto.results.filter(
+      (r) => !session.savedQuestionIds.has(r.questionId),
+    );
+
     // Calculate streaks and score in a single pass
     let currentStreak = streakStart.currentStreak;
     let bestStreak = streakStart.bestStreak;
     let currentAnswerStreak = streakStart.currentAnswerStreak;
     let bestAnswerStreak = streakStart.bestAnswerStreak;
     let score = 0;
+    let submitShieldsUsed = 0;
+
+    // Score for already-saved results (no streak recalculation)
+    for (const r of dto.results) {
+      if (session.savedQuestionIds.has(r.questionId)) {
+        if (r.result === 'correct') {
+          score += 1 + Math.floor(currentAnswerStreak / 5);
+        }
+      }
+    }
 
     const historyData = dto.results.map((r) => {
       let historyScore = 0;
-      if (r.result === 'correct') {
-        if (shouldUpdateStreak) {
-          currentStreak++;
-          currentAnswerStreak++;
+      const isUnsaved = !session.savedQuestionIds.has(r.questionId);
+
+      if (isUnsaved) {
+        // Shield consumed on any answer; protects streak on wrong answer
+        const hasShield = r.shieldUsed && (user.shields - submitShieldsUsed) > 0;
+        if (hasShield) submitShieldsUsed++;
+
+        if (r.result === 'correct') {
+          if (shouldUpdateStreak) {
+            currentStreak++;
+            currentAnswerStreak++;
+          }
+          score += 1 + Math.floor(currentAnswerStreak / 5);
+          historyScore = 1;
+        } else if (hasShield) {
+          // Shield protects streak — no reset
+        } else {
+          if (shouldUpdateStreak) {
+            currentStreak = 0;
+            currentAnswerStreak = 0;
+          }
         }
-        // Display score: 1 base + streak bonus (floor(streak / 5))
-        score += 1 + Math.floor(currentAnswerStreak / 5);
-        // History score: always 0 or 1 for consistent leaderboard ranking
-        historyScore = 1;
+        if (shouldUpdateStreak) {
+          bestStreak = Math.max(bestStreak, currentStreak);
+          bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+        }
       } else {
-        if (shouldUpdateStreak) {
-          currentStreak = 0;
-          currentAnswerStreak = 0;
-        }
-      }
-      if (shouldUpdateStreak) {
-        bestStreak = Math.max(bestStreak, currentStreak);
-        bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+        historyScore = r.result === 'correct' ? 1 : 0;
       }
 
       return {
@@ -266,6 +291,9 @@ export class CollectionsService {
         totalGamesPlayed: { increment: 1 },
         lastPlayedDate: new Date(),
       };
+      if (submitShieldsUsed > 0) {
+        userData.shields = { decrement: submitShieldsUsed };
+      }
       if (shouldUpdateStreak) {
         userData.currentStreak = currentStreak;
         userData.bestStreak = bestStreak;
@@ -373,14 +401,16 @@ export class CollectionsService {
       score: r.result === 'correct' ? 1 : 0,
     }));
 
+    // Always fetch user for shields balance check
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     // Capture pre-game streak on first call
     if (!session.preGameStreak) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
       session.preGameStreak = {
         currentStreak: user.currentStreak,
         bestStreak: user.bestStreak,
@@ -394,14 +424,21 @@ export class CollectionsService {
     const shouldUpdateStreak = session.hasNewQuestions;
 
     let newStreakState = session.currentStreakState!;
+    let shieldsUsedCount = 0;
     if (shouldUpdateStreak) {
       // Calculate updated streak from new results
       let { currentStreak, bestStreak, currentAnswerStreak, bestAnswerStreak } =
         session.currentStreakState!;
       for (const r of newResults) {
+        // Shield consumed on any answer; protects streak on wrong answer
+        const hasShield = r.shieldUsed && (user!.shields - shieldsUsedCount) > 0;
+        if (hasShield) shieldsUsedCount++;
+
         if (r.result === 'correct') {
           currentStreak++;
           currentAnswerStreak++;
+        } else if (hasShield) {
+          // Shield protects streak
         } else {
           currentStreak = 0;
           currentAnswerStreak = 0;
@@ -420,10 +457,17 @@ export class CollectionsService {
     await this.prisma.$transaction(async (tx) => {
       await tx.userQuestionHistory.createMany({ data: historyData });
       await updateQuestionStatsBatch(tx, newResults);
+      const userData: Record<string, unknown> = {};
       if (shouldUpdateStreak) {
+        Object.assign(userData, newStreakState);
+      }
+      if (shieldsUsedCount > 0) {
+        userData.shields = { decrement: shieldsUsedCount };
+      }
+      if (Object.keys(userData).length > 0) {
         await tx.user.update({
           where: { id: userId },
-          data: newStreakState,
+          data: userData,
         });
       }
     });

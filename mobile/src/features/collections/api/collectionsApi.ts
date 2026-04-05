@@ -22,6 +22,7 @@ type GameResult = {
   questionId: string;
   result: 'correct' | 'incorrect';
   timeSpentSeconds: number;
+  shieldUsed?: boolean;
 };
 
 export type { CollectionListItem, CollectionDetail };

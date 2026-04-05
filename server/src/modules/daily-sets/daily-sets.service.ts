@@ -336,22 +336,20 @@ export class DailySetsService {
     }> = [];
 
     let shieldsUsedCount = 0;
-    let shieldMilestonesEarned = 0;
 
     for (const r of newResults) {
       const difficulty = difficultyMap.get(r.questionId) ?? 1;
       const isCorrect = r.result === 'correct';
 
+      // Shield applies to one fact — consumed on any answer
+      const hasShield = r.shieldUsed && user.shields - shieldsUsedCount > 0;
+      if (hasShield) shieldsUsedCount++;
+
       if (isCorrect) {
         currentStreak++;
         currentAnswerStreak++;
-        // Shield milestone: +1 shield for every 10 in streak
-        if (currentAnswerStreak > 0 && currentAnswerStreak % 10 === 0) {
-          shieldMilestonesEarned++;
-        }
-      } else if (r.shieldUsed && user.shields - shieldsUsedCount > 0) {
-        // Shield protects streak
-        shieldsUsedCount++;
+      } else if (hasShield) {
+        // Shield protects streak on wrong answer
       } else {
         currentStreak = 0;
         currentAnswerStreak = 0;
@@ -381,9 +379,6 @@ export class DailySetsService {
       });
     }
 
-    // Calculate daily set shield bonus (≥50% correct → +3 shields)
-    const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
-
     // LeaderboardEntry score = new results score + already-saved scores
     const alreadySavedScores = await this.prisma.userQuestionHistory.aggregate({
       where: {
@@ -403,8 +398,9 @@ export class DailySetsService {
           await updateQuestionStatsBatch(tx, newResults);
         }
 
-        // Calculate shield changes
-        const totalShieldsChange = -shieldsUsedCount + shieldMilestonesEarned + dailySetShieldBonus;
+        // +3 shields for ≥50% correct in daily set
+        const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
+        const totalShieldsChange = -shieldsUsedCount + dailySetShieldBonus;
 
         // Update user stats (streak already current from answerQuestion, update only for new results)
         await tx.user.update({
@@ -520,7 +516,7 @@ export class DailySetsService {
       percentile,
       totalPlayers: totalPlayersToday,
       factOfDay,
-      shieldsEarned: dailySetShieldBonus + shieldMilestonesEarned,
+      shieldsEarned: dailySetShieldBonus,
       totalShields: updatedUser?.shields ?? 0,
     };
   }

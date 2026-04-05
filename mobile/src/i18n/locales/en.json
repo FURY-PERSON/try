@@ -224,17 +224,19 @@
   "shield": {
     "title": "Shields",
     "description": "A shield protects your streak from resetting on a wrong answer. Activate the shield before answering!",
-    "watchVideo": "Watch video for +2 🛡️",
+    "watchVideo": "Watch video for +2 shields",
     "noShields": "No shields left",
     "noShieldsDesc": "Watch a short video to get more shields",
-    "earned": "+{{count}} 🛡️",
-    "dailyBonus": "+3 🛡️ for ≥50% correct",
+    "earned": "+{{count}} shields earned",
+    "dailyBonus": "+3 shields for completing",
+    "dailyBonusEarned": "+3 shields earned!",
+    "dailyBonusFailed": "No shields earned — less than half answered correctly. Come back tomorrow!",
     "activated": "Shield activated",
     "absorbed": "Shield protected your streak!",
     "streakGuideTitle": "Streak = more points!",
     "streakGuideDesc": "The longer your correct answer streak, the bigger the score bonus. A wrong answer resets your streak.",
     "shieldGuideTitle": "Use a shield!",
-    "shieldGuideDesc": "Tap 🛡️ before answering to protect your streak. If you get it wrong, your streak won't reset.",
+    "shieldGuideDesc": "Tap the shield before answering to protect your streak. If you get it wrong, your streak won't reset.",
     "got": "Got it"
   }
 }

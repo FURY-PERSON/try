@@ -1,4 +1,4 @@
-import { IsArray, ValidateNested, IsString, IsEnum, IsInt, Min, ArrayMinSize } from 'class-validator';
+import { IsArray, ValidateNested, IsString, IsEnum, IsInt, IsBoolean, IsOptional, Min, ArrayMinSize } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -15,6 +15,11 @@ export class CollectionResultDto {
   @IsInt()
   @Min(0)
   timeSpentSeconds: number;
+
+  @ApiProperty({ required: false, description: 'Whether a shield was used on this question' })
+  @IsBoolean()
+  @IsOptional()
+  shieldUsed?: boolean;
 }
 
 export class SubmitCollectionDto {

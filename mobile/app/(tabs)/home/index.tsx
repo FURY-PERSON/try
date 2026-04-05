@@ -20,7 +20,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
 import { Card } from '@/components/ui/Card';
@@ -122,7 +122,10 @@ export default function HomeScreen() {
     }
   }, [feed?.userProgress]);
 
-  const collections = allCollections;
+  const collections = useMemo(
+    () => [...allCollections].sort((a, b) => Number(a.isCompleted ?? false) - Number(b.isCompleted ?? false)),
+    [allCollections],
+  );
 
   // Track scroll analytics only once per session to avoid excessive logging
   const categoriesScrolledRef = useRef(false);
@@ -250,7 +253,9 @@ export default function HomeScreen() {
               {t('home.title')}
             </Text>
             <View style={styles.headerRight}>
-              <ShieldBadge count={shieldCount} onPress={() => setShowShieldInfo(true)} />
+              <View style={{ marginRight: s(4) }}>
+                <ShieldBadge count={shieldCount} onPress={() => setShowShieldInfo(true)} />
+              </View>
               <AdFreeIcon onPress={() => setShowDisableAds(true)} hideHint={userScrolled} />
               <StreakBadge days={streak} showIncrement={false} bonusPercent={bonusPercent} />
             </View>
@@ -318,9 +323,12 @@ export default function HomeScreen() {
                 <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
                   {t('home.dailyDesc', { count: dailyData?.questions?.length ?? CARDS_PER_DAILY_SET })}
                 </Text>
-                <Text style={[styles.shieldBonusText, { color: '#3B82F6' }]}>
-                  {t('shield.dailyBonus')}
-                </Text>
+                <View style={styles.shieldBonusRow}>
+                  <MaterialCommunityIcons name="shield-outline" size={s(16)} color="#3B82F6" />
+                  <Text style={[styles.shieldBonusText, { color: '#3B82F6' }]}>
+                    {t('shield.dailyBonus')}
+                  </Text>
+                </View>
                 <Button
                   label={t('common.play')}
                   variant="primary"
@@ -702,11 +710,12 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: s(4),
   },
   largeTitle: {
-    fontSize: s(32),
+    fontSize: s(24),
     fontFamily: fontFamily.bold,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   skeletons: {
     marginTop: s(24),
@@ -734,10 +743,15 @@ const styles = StyleSheet.create({
     lineHeight: s(20),
     marginBottom: s(16),
   },
+  shieldBonusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(4),
+    marginBottom: s(12),
+  },
   shieldBonusText: {
     fontSize: s(13),
     fontFamily: fontFamily.semiBold,
-    marginBottom: s(12),
   },
   lockText: {
     fontSize: s(15),
