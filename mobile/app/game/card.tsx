@@ -32,6 +32,8 @@ import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
 import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { ShieldButton } from '@/features/shield/components/ShieldButton';
 import { ShieldWatchVideoModal } from '@/features/shield/components/ShieldWatchVideoModal';
+import { ShieldAbsorbAnimation } from '@/features/shield/components/ShieldAbsorbAnimation';
+import { ShieldGuideline } from '@/features/shield/components/ShieldGuideline';
 import { s, isTablet } from '@/utils/scale';
 
 // Static LinearGradient point objects
@@ -71,6 +73,11 @@ export default function CardScreen() {
   const cachedFeed = queryClient.getQueryData<{ userProgress?: { shields?: number } }>(['home', 'feed']);
   const [shieldCount, setShieldCount] = useState(cachedFeed?.userProgress?.shields ?? 0);
   const [showShieldVideoModal, setShowShieldVideoModal] = useState(false);
+  const [showShieldAbsorb, setShowShieldAbsorb] = useState(false);
+  const [showShieldGuideline, setShowShieldGuideline] = useState(false);
+  const hasSeenShieldGuideline = useAppStore((s) => s.hasSeenShieldGuideline);
+  const markShieldGuidelineSeen = useAppStore((s) => s.markShieldGuidelineSeen);
+  const prevStreakRef = useRef(currentStreak);
 
   // Undo: show previous card explanation
   const [showPreviousCard, setShowPreviousCard] = useState(false);
@@ -193,6 +200,7 @@ export default function CardScreen() {
     liveStreak,
     handleSwipe,
     handleNextCard,
+    lastShieldUsed,
   } = useCardGame(questions, dailySetId);
 
   const handleShieldPress = useCallback(() => {
@@ -212,6 +220,23 @@ export default function CardScreen() {
   const streakBonusPayload = useFeatureFlagPayload<{ tiers: { minStreak: number; bonusPercent: number }[] }>('streak_bonus');
   const isStreakBonusEnabled = useFeatureFlag('streak_bonus');
   const gameBonusPercent = isStreakBonusEnabled ? getStreakBonusPercent(liveStreak, streakBonusPayload?.tiers) : 0;
+
+  // Shield absorb animation: trigger when feedback shows and shield was used
+  useEffect(() => {
+    if (feedback && lastShieldUsed) {
+      setShowShieldAbsorb(true);
+      setShieldCount((prev) => Math.max(0, prev - 1));
+    }
+  }, [feedback, lastShieldUsed]);
+
+  // Shield guideline: show when streak was 0 and now > 0 for first time
+  useEffect(() => {
+    if (!hasSeenShieldGuideline && liveStreak > 0 && prevStreakRef.current === 0 && currentIndex > 0) {
+      setShowShieldGuideline(true);
+      markShieldGuidelineSeen();
+    }
+    prevStreakRef.current = liveStreak;
+  }, [liveStreak, hasSeenShieldGuideline, markShieldGuidelineSeen, currentIndex]);
 
   // Show swipe-to-answer hint on first ever game
   useEffect(() => {
@@ -575,10 +600,20 @@ export default function CardScreen() {
         </View>
       </OverlayModal>
 
+      <ShieldAbsorbAnimation
+        visible={showShieldAbsorb}
+        onComplete={() => setShowShieldAbsorb(false)}
+      />
+
       <ShieldWatchVideoModal
         visible={showShieldVideoModal}
         onClose={() => setShowShieldVideoModal(false)}
         onShieldsEarned={handleShieldsEarned}
+      />
+
+      <ShieldGuideline
+        visible={showShieldGuideline}
+        onClose={() => setShowShieldGuideline(false)}
       />
 
       <SwipeHintOverlay

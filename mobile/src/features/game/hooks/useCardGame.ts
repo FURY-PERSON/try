@@ -333,6 +333,7 @@ export const useCardGame = (
     isComplete,
     progress: currentIndex / dailyProgress.totalCards,
     liveStreak,
+    lastShieldUsed: pendingResult?.shieldUsed ?? false,
     handleSwipe,
     handleNextCard,
   };

@@ -13,6 +13,7 @@ type AppState = {
   lastActiveAt: string | null;
   hasSeenSwipeAnswerHint: boolean;
   hasSeenSwipeContinueHint: boolean;
+  hasSeenShieldGuideline: boolean;
 
   initializeDevice: () => Promise<{ isReturningUser: boolean }>;
   completeOnboarding: () => void;
@@ -20,6 +21,7 @@ type AppState = {
   setLastActiveAt: (date: string) => void;
   markSwipeAnswerHintSeen: () => void;
   markSwipeContinueHintSeen: () => void;
+  markShieldGuidelineSeen: () => void;
 };
 
 export const useAppStore = create<AppState>()(
@@ -31,6 +33,7 @@ export const useAppStore = create<AppState>()(
       lastActiveAt: null,
       hasSeenSwipeAnswerHint: false,
       hasSeenSwipeContinueHint: false,
+      hasSeenShieldGuideline: false,
 
       initializeDevice: async () => {
         // 1. Check Keychain/Keystore (persists across app reinstalls on iOS)
@@ -77,6 +80,10 @@ export const useAppStore = create<AppState>()(
 
       markSwipeContinueHintSeen: () => {
         set({ hasSeenSwipeContinueHint: true });
+      },
+
+      markShieldGuidelineSeen: () => {
+        set({ hasSeenShieldGuideline: true });
       },
     }),
     {
