@@ -214,6 +214,10 @@ export default function ResultsModal() {
           <DailyResultCard results={resultBools} />
         </AnimatedEntrance>
 
+        <AnimatedEntrance delay={submissionResult?.factOfDay ? 550 : 450} direction="up">
+          <AdBanner placement="results" size="LARGE" />
+        </AnimatedEntrance>
+
       </ScrollView>
 
       <AnimatedEntrance delay={600} direction="up">
@@ -226,10 +230,6 @@ export default function ResultsModal() {
           />
         </View>
       </AnimatedEntrance>
-
-      <View style={[styles.adOverlay, { bottom: insets.bottom + 80 }]} pointerEvents="box-none">
-        <AdBanner placement="results" size="LARGE" />
-      </View>
     </Screen>
   );
 }
@@ -305,10 +305,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: s(20),
     gap: s(12),
-  },
-  adOverlay: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
   },
 });
