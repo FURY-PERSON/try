@@ -195,21 +195,24 @@ export class CollectionsService {
       throw new NotFoundException('User not found');
     }
 
-    // Use currentStreakState (updated by saveProgress) or fall back to DB values
-    const streakStart = session.currentStreakState ?? session.preGameStreak ?? {
-      currentStreak: user.currentStreak,
-      bestStreak: user.bestStreak,
-      currentAnswerStreak: user.currentAnswerStreak,
-      bestAnswerStreak: user.bestAnswerStreak,
-    };
+    // Use currentStreakState (updated by saveProgress) or fall back to DB values.
+    // For collection-type sessions, saveProgress does NOT update streaks,
+    // so we always start from DB values.
+    const streakStart = (session.type !== 'collection' ? session.currentStreakState : null)
+      ?? session.preGameStreak
+      ?? {
+        currentStreak: user.currentStreak,
+        bestStreak: user.bestStreak,
+        currentAnswerStreak: user.currentAnswerStreak,
+        bestAnswerStreak: user.bestAnswerStreak,
+      };
 
     // If all questions in the session were previously answered, skip streak updates
     const shouldUpdateStreak = session.hasNewQuestions;
 
-    // Only process streak/shields for answers NOT already handled by saveProgress
-    const unsavedResults = dto.results.filter(
-      (r) => !session.savedQuestionIds.has(r.questionId),
-    );
+    // For collection-type sessions, saveProgress doesn't calculate streaks,
+    // so we must process ALL results for streak calculation (not just unsaved).
+    const streakProcessAll = session.type === 'collection';
 
     // Calculate streaks and score in a single pass
     let currentStreak = streakStart.currentStreak;
@@ -219,22 +222,15 @@ export class CollectionsService {
     let score = 0;
     let submitShieldsUsed = 0;
 
-    // Score for already-saved results (no streak recalculation)
-    for (const r of dto.results) {
-      if (session.savedQuestionIds.has(r.questionId)) {
-        if (r.result === 'correct') {
-          score += 1 + Math.floor(currentAnswerStreak / 5);
-        }
-      }
-    }
-
     const historyData = dto.results.map((r) => {
       let historyScore = 0;
       const isUnsaved = !session.savedQuestionIds.has(r.questionId);
+      const shouldProcessStreak = isUnsaved || streakProcessAll;
 
-      if (isUnsaved) {
+      if (shouldProcessStreak) {
         // Shield consumed on any answer; protects streak on wrong answer
-        const hasShield = r.shieldUsed && (user.shields - submitShieldsUsed) > 0;
+        // Only consume shields for unsaved results to avoid double-spending
+        const hasShield = isUnsaved && r.shieldUsed && (user.shields - submitShieldsUsed) > 0;
         if (hasShield) submitShieldsUsed++;
 
         if (r.result === 'correct') {
@@ -257,6 +253,10 @@ export class CollectionsService {
           bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
         }
       } else {
+        // Already-saved result from saveProgress (non-collection types)
+        if (r.result === 'correct') {
+          score += 1 + Math.floor(currentAnswerStreak / 5);
+        }
         historyScore = r.result === 'correct' ? 1 : 0;
       }
 
@@ -284,26 +284,36 @@ export class CollectionsService {
         }
       }
 
-      // Update user stats; only update streak fields if session has new questions
-      const userData: Record<string, unknown> = {
-        totalCorrectAnswers: { increment: correctAnswers },
-        totalScore: { increment: score },
-        totalGamesPlayed: { increment: 1 },
-        lastPlayedDate: new Date(),
-      };
-      if (submitShieldsUsed > 0) {
-        userData.shields = { decrement: submitShieldsUsed };
-      }
+      // Update user stats; use GREATEST for best streaks to prevent
+      // overwriting higher values from concurrent saveProgress calls.
+      const shieldsDecrement = submitShieldsUsed > 0 ? submitShieldsUsed : 0;
       if (shouldUpdateStreak) {
-        userData.currentStreak = currentStreak;
-        userData.bestStreak = bestStreak;
-        userData.currentAnswerStreak = currentAnswerStreak;
-        userData.bestAnswerStreak = bestAnswerStreak;
+        await tx.$executeRaw`
+          UPDATE "User"
+          SET
+            "currentStreak" = ${currentStreak},
+            "currentAnswerStreak" = ${currentAnswerStreak},
+            "bestStreak" = GREATEST("bestStreak", ${bestStreak}),
+            "bestAnswerStreak" = GREATEST("bestAnswerStreak", ${bestAnswerStreak}),
+            "totalCorrectAnswers" = "totalCorrectAnswers" + ${correctAnswers},
+            "totalScore" = "totalScore" + ${score},
+            "totalGamesPlayed" = "totalGamesPlayed" + 1,
+            "lastPlayedDate" = NOW(),
+            "shields" = "shields" - ${shieldsDecrement}
+          WHERE "id" = ${userId}
+        `;
+      } else {
+        await tx.$executeRaw`
+          UPDATE "User"
+          SET
+            "totalCorrectAnswers" = "totalCorrectAnswers" + ${correctAnswers},
+            "totalScore" = "totalScore" + ${score},
+            "totalGamesPlayed" = "totalGamesPlayed" + 1,
+            "lastPlayedDate" = NOW(),
+            "shields" = "shields" - ${shieldsDecrement}
+          WHERE "id" = ${userId}
+        `;
       }
-      await tx.user.update({
-        where: { id: userId },
-        data: userData,
-      });
 
       // Record collection progress
       await tx.userCollectionProgress.create({
@@ -454,32 +464,46 @@ export class CollectionsService {
       };
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.userQuestionHistory.createMany({ data: historyData });
-      await updateQuestionStatsBatch(tx, newResults);
-      const userData: Record<string, unknown> = {};
-      if (shouldUpdateStreak) {
-        Object.assign(userData, newStreakState);
-      }
-      if (shieldsUsedCount > 0) {
-        userData.shields = { decrement: shieldsUsedCount };
-      }
-      if (Object.keys(userData).length > 0) {
-        await tx.user.update({
-          where: { id: userId },
-          data: userData,
-        });
-      }
-    });
-
-    // Update session state after successful transaction
+    // Update session state BEFORE awaiting the transaction so that concurrent
+    // saveProgress calls (fire-and-forget from client) read the latest streak
+    // and don't re-process the same questions.
+    const previousStreakState = session.currentStreakState
+      ? { ...session.currentStreakState }
+      : null;
     if (shouldUpdateStreak) {
       session.currentStreakState = newStreakState;
     }
-
-    // Track saved question IDs to avoid duplicates
     for (const r of newResults) {
       session.savedQuestionIds.add(r.questionId);
+    }
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.userQuestionHistory.createMany({ data: historyData });
+        await updateQuestionStatsBatch(tx, newResults);
+        const userData: Record<string, unknown> = {};
+        if (shouldUpdateStreak) {
+          Object.assign(userData, newStreakState);
+        }
+        if (shieldsUsedCount > 0) {
+          userData.shields = { decrement: shieldsUsedCount };
+        }
+        if (Object.keys(userData).length > 0) {
+          await tx.user.update({
+            where: { id: userId },
+            data: userData,
+          });
+        }
+      });
+    } catch (error) {
+      // Rollback session state on transaction failure
+      if (shouldUpdateStreak && previousStreakState) {
+        session.currentStreakState = previousStreakState;
+      }
+      for (const r of newResults) {
+        session.savedQuestionIds.delete(r.questionId);
+      }
+      throw error;
     }
 
     return { saved: newResults.length };

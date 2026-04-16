@@ -280,145 +280,161 @@ export class DailySetsService {
       0,
     );
 
-    // Get user for streak calculation
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Check which questions were already saved via submitAnswer to avoid duplicates
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
-
-    const alreadySaved = await this.prisma.userQuestionHistory.findMany({
-      where: {
-        userId,
-        questionId: { in: dto.results.map((r) => r.questionId) },
-        answeredAt: { gte: todayStart, lt: tomorrowStart },
-      },
-      select: { questionId: true },
-    });
-    const alreadySavedIds = new Set(alreadySaved.map((a) => a.questionId));
-
-    const newResults = dto.results.filter(
-      (r) => !alreadySavedIds.has(r.questionId),
-    );
-
-    // Load question difficulties for score calculation
-    const questionIds = newResults.map((r) => r.questionId);
-    const questions = questionIds.length > 0
-      ? await this.prisma.question.findMany({
-          where: { id: { in: questionIds } },
-          select: { id: true, difficulty: true },
-        })
-      : [];
-    const difficultyMap = new Map(questions.map((q) => [q.id, q.difficulty]));
-
-    // Calculate streak and score only for NEW results (not already processed by answerQuestion)
-    // Streak and totalScore for already-saved answers were updated in real-time by answerQuestion
-    let currentStreak = user.currentStreak;
-    let bestStreak = user.bestStreak;
-    let currentAnswerStreak = user.currentAnswerStreak;
-    let bestAnswerStreak = user.bestAnswerStreak;
-    let newResultsScore = 0;
-
-    const newHistoryData: Array<{
-      userId: string;
-      questionId: string;
-      result: string;
-      timeSpentSeconds: number;
-      score: number;
-    }> = [];
-
-    let shieldsUsedCount = 0;
-
-    for (const r of newResults) {
-      const difficulty = difficultyMap.get(r.questionId) ?? 1;
-      const isCorrect = r.result === 'correct';
-
-      // Shield applies to one fact — consumed on any answer
-      const hasShield = r.shieldUsed && user.shields - shieldsUsedCount > 0;
-      if (hasShield) shieldsUsedCount++;
-
-      if (isCorrect) {
-        currentStreak++;
-        currentAnswerStreak++;
-      } else if (hasShield) {
-        // Shield protects streak on wrong answer
-      } else {
-        currentStreak = 0;
-        currentAnswerStreak = 0;
-      }
-
-      const streakBonusPercent = isCorrect
-        ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
-        : 0;
-
-      const answerScore = QuestionsService.calculateScore(
-        difficulty,
-        r.timeSpentSeconds,
-        isCorrect,
-        streakBonusPercent,
-      );
-
-      newResultsScore += answerScore;
-      bestStreak = Math.max(bestStreak, currentStreak);
-      bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
-
-      newHistoryData.push({
-        userId,
-        questionId: r.questionId,
-        result: r.result,
-        timeSpentSeconds: r.timeSpentSeconds,
-        score: answerScore,
-      });
-    }
-
-    // LeaderboardEntry score = new results score + already-saved scores
-    const alreadySavedScores = await this.prisma.userQuestionHistory.aggregate({
-      where: {
-        userId,
-        questionId: { in: [...alreadySavedIds] },
-        answeredAt: { gte: todayStart, lt: tomorrowStart },
-      },
-      _sum: { score: true },
-    });
-    const leaderboardScore = newResultsScore + (alreadySavedScores._sum.score ?? 0);
-
     // +3 shields for ≥50% correct in daily set
     const dailySetShieldBonus = (correctAnswers / dto.results.length) >= 0.5 ? 3 : 0;
-    const totalShieldsChange = -shieldsUsedCount + dailySetShieldBonus;
+
+    // Pre-load question difficulties for score calculation (all questions)
+    const allQuestionIds = dto.results.map((r) => r.questionId);
+    const allQuestions = await this.prisma.question.findMany({
+      where: { id: { in: allQuestionIds } },
+      select: { id: true, difficulty: true },
+    });
+    const difficultyMap = new Map(allQuestions.map((q) => [q.id, q.difficulty]));
+
+    let leaderboardScore = 0;
+    let currentStreak = 0;
+    let bestStreak = 0;
+    let currentAnswerStreak = 0;
+    let bestAnswerStreak = 0;
 
     try {
       await this.prisma.$transaction(async (tx) => {
+        // Lock user row to prevent concurrent answerQuestion from committing
+        // while we read + write streak, avoiding lost-update race condition.
+        const [user] = await tx.$queryRaw<Array<{
+          id: string;
+          currentStreak: number;
+          bestStreak: number;
+          currentAnswerStreak: number;
+          bestAnswerStreak: number;
+          shields: number;
+          totalScore: number;
+        }>>`
+          SELECT "id", "currentStreak", "bestStreak", "currentAnswerStreak",
+                 "bestAnswerStreak", "shields", "totalScore"
+          FROM "User" WHERE "id" = ${userId} FOR UPDATE
+        `;
+
+        if (!user) {
+          throw new NotFoundException('User not found');
+        }
+
+        // Check which questions were already saved via submitAnswer to avoid duplicates
+        const todayStart = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+
+        const alreadySaved = await tx.userQuestionHistory.findMany({
+          where: {
+            userId,
+            questionId: { in: allQuestionIds },
+            answeredAt: { gte: todayStart, lt: tomorrowStart },
+          },
+          select: { questionId: true },
+        });
+        const alreadySavedIds = new Set(alreadySaved.map((a) => a.questionId));
+
+        const newResults = dto.results.filter(
+          (r) => !alreadySavedIds.has(r.questionId),
+        );
+
+        // Calculate streak and score only for NEW results (not already processed by answerQuestion)
+        // Streak and totalScore for already-saved answers were updated in real-time by answerQuestion
+        currentStreak = user.currentStreak;
+        bestStreak = user.bestStreak;
+        currentAnswerStreak = user.currentAnswerStreak;
+        bestAnswerStreak = user.bestAnswerStreak;
+        let newResultsScore = 0;
+
+        const newHistoryData: Array<{
+          userId: string;
+          questionId: string;
+          result: string;
+          timeSpentSeconds: number;
+          score: number;
+        }> = [];
+
+        let shieldsUsedCount = 0;
+
+        for (const r of newResults) {
+          const difficulty = difficultyMap.get(r.questionId) ?? 1;
+          const isCorrect = r.result === 'correct';
+
+          // Shield applies to one fact — consumed on any answer
+          const hasShield = r.shieldUsed && user.shields - shieldsUsedCount > 0;
+          if (hasShield) shieldsUsedCount++;
+
+          if (isCorrect) {
+            currentStreak++;
+            currentAnswerStreak++;
+          } else if (hasShield) {
+            // Shield protects streak on wrong answer
+          } else {
+            currentStreak = 0;
+            currentAnswerStreak = 0;
+          }
+
+          const streakBonusPercent = isCorrect
+            ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
+            : 0;
+
+          const answerScore = QuestionsService.calculateScore(
+            difficulty,
+            r.timeSpentSeconds,
+            isCorrect,
+            streakBonusPercent,
+          );
+
+          newResultsScore += answerScore;
+          bestStreak = Math.max(bestStreak, currentStreak);
+          bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
+
+          newHistoryData.push({
+            userId,
+            questionId: r.questionId,
+            result: r.result,
+            timeSpentSeconds: r.timeSpentSeconds,
+            score: answerScore,
+          });
+        }
+
+        // LeaderboardEntry score = new results score + already-saved scores
+        const alreadySavedScores = await tx.userQuestionHistory.aggregate({
+          where: {
+            userId,
+            questionId: { in: [...alreadySavedIds] },
+            answeredAt: { gte: todayStart, lt: tomorrowStart },
+          },
+          _sum: { score: true },
+        });
+        leaderboardScore = newResultsScore + (alreadySavedScores._sum.score ?? 0);
+
+        const totalShieldsChange = -shieldsUsedCount + dailySetShieldBonus;
+
         // Save question history only for answers not already saved via submitAnswer
         if (newHistoryData.length > 0) {
           await tx.userQuestionHistory.createMany({ data: newHistoryData });
           await updateQuestionStatsBatch(tx, newResults);
         }
 
-        // Update user stats (streak already current from answerQuestion, update only for new results)
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            currentStreak,
-            bestStreak,
-            currentAnswerStreak,
-            bestAnswerStreak,
-            lastPlayedDate: new Date(),
-            totalGamesPlayed: { increment: 1 },
-            ...(newResults.length > 0
-              ? { totalCorrectAnswers: { increment: newResults.filter((r) => r.result === 'correct').length } }
-              : {}),
-            totalScore: { increment: newResultsScore },
-            ...(totalShieldsChange !== 0 ? { shields: { increment: totalShieldsChange } } : {}),
-          },
-        });
+        // Update user stats. Use GREATEST for best streaks to prevent
+        // overwriting higher values from concurrent answerQuestion calls.
+        const newCorrectFromNew = newResults.filter((r) => r.result === 'correct').length;
+        await tx.$executeRaw`
+          UPDATE "User"
+          SET
+            "currentStreak" = ${currentStreak},
+            "currentAnswerStreak" = ${currentAnswerStreak},
+            "bestStreak" = GREATEST("bestStreak", ${bestStreak}),
+            "bestAnswerStreak" = GREATEST("bestAnswerStreak", ${bestAnswerStreak}),
+            "lastPlayedDate" = NOW(),
+            "totalGamesPlayed" = "totalGamesPlayed" + 1,
+            "totalCorrectAnswers" = "totalCorrectAnswers" + ${newCorrectFromNew},
+            "totalScore" = "totalScore" + ${newResultsScore},
+            "shields" = "shields" + ${totalShieldsChange}
+          WHERE "id" = ${userId}
+        `;
 
         // Create leaderboard entry
         await tx.leaderboardEntry.create({

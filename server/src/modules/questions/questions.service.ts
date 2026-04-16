@@ -82,35 +82,17 @@ export class QuestionsService {
     const isCorrect = dto.userAnswer === question.isTrue;
     const result = isCorrect ? 'correct' : 'incorrect';
 
-    // Get user for streak calculation
+    // Get user for shield check and streak bonus calculation
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
-    let currentStreak = user?.currentStreak ?? 0;
-    let bestStreak = user?.bestStreak ?? 0;
-    let currentAnswerStreak = user?.currentAnswerStreak ?? 0;
-    let bestAnswerStreak = user?.bestAnswerStreak ?? 0;
-
     // Shield applies to exactly one fact — consumed on any answer
     let shieldUsed = dto.useShield && (user?.shields ?? 0) > 0;
 
-    if (isCorrect) {
-      currentStreak++;
-      currentAnswerStreak++;
-    } else if (shieldUsed) {
-      // Shield protects streak from resetting on wrong answer
-    } else {
-      currentStreak = 0;
-      currentAnswerStreak = 0;
-    }
-    bestStreak = Math.max(bestStreak, currentStreak);
-    bestAnswerStreak = Math.max(bestAnswerStreak, currentAnswerStreak);
-
-    // Shields are earned only via rewarded video — no free milestones
-
+    const currentAnswerStreak = user?.currentAnswerStreak ?? 0;
     const streakBonusPercent = isCorrect
-      ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak)
+      ? await this.gameConfigService.getStreakBonusPercent(currentAnswerStreak + 1)
       : 0;
 
     const score = QuestionsService.calculateScore(
@@ -150,28 +132,33 @@ export class QuestionsService {
         if (!deducted) {
           // Shield was not available (race condition)
           shieldUsed = false;
-          if (!isCorrect) {
-            // Only reset streak if wrong answer and shield failed
-            currentStreak = 0;
-            currentAnswerStreak = 0;
-            bestStreak = Math.max(user?.bestStreak ?? 0, currentStreak);
-            bestAnswerStreak = Math.max(user?.bestAnswerStreak ?? 0, currentAnswerStreak);
-          }
         }
       }
 
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          totalGamesPlayed: { increment: 1 },
-          ...(isCorrect ? { totalCorrectAnswers: { increment: 1 } } : {}),
-          currentStreak,
-          bestStreak,
-          currentAnswerStreak,
-          bestAnswerStreak,
-          totalScore: { increment: score },
-        },
-      });
+      // Atomic streak update using raw SQL — reads current DB values at UPDATE time,
+      // preventing lost-update race condition with concurrent submitDailySet.
+      const shieldProtected = !isCorrect && shieldUsed;
+      await tx.$executeRaw`
+        UPDATE "User"
+        SET
+          "currentStreak" = CASE
+            WHEN ${isCorrect} THEN "currentStreak" + 1
+            WHEN ${shieldProtected} THEN "currentStreak"
+            ELSE 0 END,
+          "currentAnswerStreak" = CASE
+            WHEN ${isCorrect} THEN "currentAnswerStreak" + 1
+            WHEN ${shieldProtected} THEN "currentAnswerStreak"
+            ELSE 0 END,
+          "bestStreak" = GREATEST("bestStreak", CASE
+            WHEN ${isCorrect} THEN "currentStreak" + 1
+            ELSE "currentStreak" END),
+          "bestAnswerStreak" = GREATEST("bestAnswerStreak", CASE
+            WHEN ${isCorrect} THEN "currentAnswerStreak" + 1
+            ELSE "currentAnswerStreak" END),
+          "totalCorrectAnswers" = "totalCorrectAnswers" + ${correctIncrement},
+          "totalScore" = "totalScore" + ${score}
+        WHERE "id" = ${userId}
+      `;
 
       // Read updated shields balance
       const updatedUser = await tx.user.findUnique({

@@ -246,6 +246,7 @@ export const useCardGame = (
         console.warn('Failed to submit collection');
       } finally {
         queryClient.invalidateQueries({ queryKey: ['user', 'stats'] });
+        queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
         queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
         queryClient.invalidateQueries({ queryKey: ['category'] });
         queryClient.invalidateQueries({ queryKey: ['collection'] });

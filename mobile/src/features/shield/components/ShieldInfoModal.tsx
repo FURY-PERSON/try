@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { useRewardedAd } from '@/components/ads/RewardedAdManager';
+import { useQueryClient } from '@tanstack/react-query';
 import { useThemeContext } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { fontFamily } from '@/theme/typography';
@@ -27,6 +28,7 @@ export const ShieldInfoModal: FC<ShieldInfoModalProps> = ({
   const { colors } = useThemeContext();
   const { t } = useTranslation();
   const { showForReward, isReady } = useRewardedAd();
+  const queryClient = useQueryClient();
 
   const handleWatch = useCallback(async () => {
     const shown = isReady ? await showForReward() : __DEV__;
@@ -34,12 +36,13 @@ export const ShieldInfoModal: FC<ShieldInfoModalProps> = ({
       try {
         const result = await shieldsApi.rewardShield();
         onShieldsEarned(result.totalShields);
+        queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
         showToast(t('shield.earned', { count: result.shieldsAdded }), 'success');
       } catch {
         showToast(t('error.generic'));
       }
     }
-  }, [showForReward, isReady, onShieldsEarned, t]);
+  }, [showForReward, isReady, onShieldsEarned, queryClient, t]);
 
   return (
     <OverlayModal visible={visible} onClose={onClose}>
