@@ -1,6 +1,5 @@
-import React, { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Animated from 'react-native-reanimated';
 import {
   LevelPlayBannerAdView,
   LevelPlayAdSize,
@@ -11,7 +10,6 @@ import { adManager } from '@/services/ads';
 import { analytics } from '@/services/analytics';
 import { useAdsStore } from '@/stores/useAdsStore';
 import type { FC } from 'react';
-import type { ViewStyle } from 'react-native';
 
 // Fibonacci-based delays in seconds: 1, 2, 5, 13, 34
 const RETRY_DELAYS_S = [1, 2, 5, 13, 34];
@@ -21,19 +19,32 @@ export type BannerSize = 'BANNER' | 'LARGE' | 'MEDIUM_RECTANGLE';
 type UnityBannerProps = {
   placement: string;
   size?: BannerSize;
-  containerStyle: ViewStyle[];
   onAdLoaded: (adNetwork: string) => void;
   onAdFailed: () => void;
 };
 
-export const UnityBanner: FC<UnityBannerProps> = ({ placement, size = 'BANNER', containerStyle, onAdLoaded, onAdFailed }) => {
+const AD_SIZES: Record<BannerSize, LevelPlayAdSize> = {
+  BANNER: LevelPlayAdSize.BANNER,
+  LARGE: LevelPlayAdSize.LARGE,
+  MEDIUM_RECTANGLE: LevelPlayAdSize.MEDIUM_RECTANGLE,
+};
+
+export const UnityBanner: FC<UnityBannerProps> = ({ placement, size = 'BANNER', onAdLoaded, onAdFailed }) => {
   const bannerAdViewRef = useRef<LevelPlayBannerAdViewMethods>(null);
   const retriesRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadStartedRef = useRef(false);
+  const mountedRef = useRef(true);
+  const onAdLoadedRef = useRef(onAdLoaded);
+  const onAdFailedRef = useRef(onAdFailed);
 
-  // Clear pending retry timer on unmount to prevent calling loadAd on an unmounted component
+  useEffect(() => { onAdLoadedRef.current = onAdLoaded; }, [onAdLoaded]);
+  useEffect(() => { onAdFailedRef.current = onAdFailed; }, [onAdFailed]);
+
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (retryTimerRef.current) {
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
@@ -41,52 +52,80 @@ export const UnityBanner: FC<UnityBannerProps> = ({ placement, size = 'BANNER', 
     };
   }, []);
 
+  const safeLoadAd = useCallback(() => {
+    if (!mountedRef.current) return;
+    try {
+      bannerAdViewRef.current?.loadAd();
+    } catch (e) {
+      console.warn(`[UnityBanner:${placement}] loadAd threw:`, e);
+    }
+  }, [placement]);
+
   const scheduleRetry = useCallback(() => {
+    if (!mountedRef.current) return;
     if (retriesRef.current >= RETRY_DELAYS_S.length) {
       analytics.logEvent('ad_banner_failed', { placement, provider: useAdsStore.getState().detectedProvider ?? 'unknown' });
-      onAdFailed();
+      onAdFailedRef.current();
       return;
     }
     const delaySec = RETRY_DELAYS_S[retriesRef.current]!;
     retriesRef.current += 1;
     retryTimerRef.current = setTimeout(() => {
-      bannerAdViewRef.current?.loadAd();
+      safeLoadAd();
     }, delaySec * 1000);
-  }, [onAdFailed]);
+  }, [placement, safeLoadAd]);
 
-  const adSize = LevelPlayAdSize[size];
-  const listener: LevelPlayBannerAdViewListener = {
+  const listener = useMemo<LevelPlayBannerAdViewListener>(() => ({
     onAdLoaded: (adInfo) => {
+      if (!mountedRef.current) return;
       console.log(`[UnityBanner:${placement}] loaded, network=${adInfo?.adNetwork}`);
       retriesRef.current = 0;
-      onAdLoaded(adInfo?.adNetwork ?? 'unknown');
+      onAdLoadedRef.current(adInfo?.adNetwork ?? 'unknown');
     },
     onAdLoadFailed: (error) => {
+      if (!mountedRef.current) return;
       console.warn(`[UnityBanner:${placement}] load failed (retry ${retriesRef.current}/${RETRY_DELAYS_S.length}):`, error);
       scheduleRetry();
     },
     onAdDisplayed: () => { console.log(`[UnityBanner:${placement}] displayed`); },
-    onAdDisplayFailed: (error) => { console.warn(`[UnityBanner:${placement}] display failed:`, error); onAdFailed(); },
+    onAdDisplayFailed: (error) => {
+      if (!mountedRef.current) return;
+      console.warn(`[UnityBanner:${placement}] display failed:`, error);
+      onAdFailedRef.current();
+    },
     onAdClicked: () => {},
     onAdExpanded: () => {},
     onAdCollapsed: () => {},
     onAdLeftApplication: () => {},
-  };
+  }), [placement, scheduleRetry]);
+
+  const adSize = AD_SIZES[size];
+  const adUnitId = useMemo(() => adManager.getBannerUnitId(), []);
+  const nativeStyle = useMemo(() => ({ width: adSize.width, height: adSize.height }), [adSize]);
+
+  const handleLayout = useCallback(() => {
+    if (loadStartedRef.current) return;
+    loadStartedRef.current = true;
+    console.log(`[UnityBanner:${placement}] onLayout, loading ad... unitId=${adUnitId}`);
+    safeLoadAd();
+  }, [placement, adUnitId, safeLoadAd]);
+
+  if (!adSize || !adUnitId) {
+    return null;
+  }
 
   return (
-    <Animated.View style={containerStyle}>
-      <View style={styles.banner}>
-        <LevelPlayBannerAdView
-          ref={bannerAdViewRef}
-          adUnitId={adManager.getBannerUnitId()}
-          adSize={adSize}
-          placementName={placement}
-          listener={listener}
-          onLayout={() => { console.log(`[UnityBanner:${placement}] onLayout, loading ad... unitId=${adManager.getBannerUnitId()}`); bannerAdViewRef.current?.loadAd(); }}
-          style={{ width: adSize.width, height: adSize.height }}
-        />
-      </View>
-    </Animated.View>
+    <View style={styles.banner}>
+      <LevelPlayBannerAdView
+        ref={bannerAdViewRef}
+        adUnitId={adUnitId}
+        adSize={adSize}
+        placementName={placement}
+        listener={listener}
+        onLayout={handleLayout}
+        style={nativeStyle}
+      />
+    </View>
   );
 };
 

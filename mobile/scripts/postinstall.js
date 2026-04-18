@@ -1,99 +1,150 @@
 const fs = require('fs');
 const path = require('path');
 
-// Patch expo-localization: add @unknown default to Swift switch
-const file = path.join(__dirname, '..', 'node_modules', 'expo-localization', 'ios', 'LocalizationModule.swift');
-if (fs.existsSync(file)) {
-  let content = fs.readFileSync(file, 'utf8');
-  if (!content.includes('@unknown default')) {
-    content = content.replace(
-      `case .iso8601:\n      return "iso8601"\n    }`,
-      `case .iso8601:\n      return "iso8601"\n    @unknown default:\n      return "gregory"\n    }`
-    );
-    fs.writeFileSync(file, content);
-    console.log('Patched expo-localization Swift switch');
-  }
-}
-
-// Patch unity-levelplay-mediation: disable Fabric (New Architecture) for native view components
-// to fix EXC_BAD_ACCESS crash on real iOS devices with static frameworks.
-// Views will use old-arch interop layer (supported by React Native automatically).
+// Patch unity-levelplay-mediation: strip all #ifdef RCT_NEW_ARCH_ENABLED blocks,
+// keeping the #else branch (old-arch code). This forces old-arch interop mode
+// which React Native supports automatically.
+// Needed because LevelPlay's Fabric code uses codegen types that don't compile
+// with RN 0.83+ prebuilt binaries.
 const levelplayDir = path.join(__dirname, '..', 'node_modules', 'unity-levelplay-mediation', 'ios');
 
-function stripFabricFromHeader(fileName) {
-  const filePath = path.join(levelplayDir, fileName);
-  if (!fs.existsSync(filePath)) return;
-  let content = fs.readFileSync(filePath, 'utf8');
-  if (!content.includes('RCT_NEW_ARCH_ENABLED')) return;
-  // Replace: #ifdef RCT_NEW_ARCH_ENABLED ... @interface X : RCTViewComponentView #else @interface X : UIView #endif
-  // With just: @interface X : UIView
-  content = content.replace(
-    /#ifdef RCT_NEW_ARCH_ENABLED\n#import <React\/RCTViewComponentView\.h>\n@interface (\w+) : RCTViewComponentView\n#else\n@interface \1 : UIView\n#endif/,
-    '@interface $1 : UIView'
-  );
-  fs.writeFileSync(filePath, content);
-  console.log(`Patched ${fileName}: forced UIView (disabled Fabric)`);
-}
-
-function stripFabricFromImpl(fileName) {
+function stripNewArchBlocks(fileName) {
   const filePath = path.join(levelplayDir, fileName);
   if (!fs.existsSync(filePath)) return;
   let content = fs.readFileSync(filePath, 'utf8');
   if (!content.includes('RCT_NEW_ARCH_ENABLED')) return;
 
-  // 1. Remove Fabric imports block (#ifdef RCT_NEW_ARCH_ENABLED ... #import ... using namespace ... @interface with Fabric protocol ... #else @interface ... #endif)
+  const result = [];
+  const lines = content.split('\n');
+  let inIfdef = false;   // inside #ifdef RCT_NEW_ARCH_ENABLED (true branch)
+  let inElse = false;    // inside #else (old-arch branch — keep this)
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+
+    if (trimmed === '#ifdef RCT_NEW_ARCH_ENABLED') {
+      inIfdef = true;
+      inElse = false;
+      continue;
+    }
+
+    if (inIfdef && !inElse && trimmed === '#else') {
+      inElse = true;
+      continue;
+    }
+
+    if ((inIfdef || inElse) && trimmed === '#endif') {
+      inIfdef = false;
+      inElse = false;
+      continue;
+    }
+
+    // Keep the line if we're NOT in the ifdef true-branch
+    if (!inIfdef || inElse) {
+      result.push(lines[i]);
+    }
+  }
+
+  const newContent = result.join('\n');
+  if (newContent !== content) {
+    fs.writeFileSync(filePath, newContent);
+    console.log(`Patched ${fileName}: stripped RCT_NEW_ARCH_ENABLED blocks`);
+  }
+}
+
+stripNewArchBlocks('LevelPlayBannerAdView.h');
+stripNewArchBlocks('LevelPlayNativeAdView.h');
+stripNewArchBlocks('LevelPlayBannerAdView.mm');
+stripNewArchBlocks('LevelPlayNativeAdView.mm');
+
+// Remove dead C++ helper functions that were only used by Fabric event emitters.
+// These use std::string which doesn't compile in ObjC mode without proper includes.
+function removeCppHelpers(fileName) {
+  const filePath = path.join(levelplayDir, fileName);
+  if (!fs.existsSync(filePath)) return;
+  let content = fs.readFileSync(filePath, 'utf8');
+
+  // Remove #pragma mark - Event Helpers block and all static std:: functions before @implementation
+  const original = content;
   content = content.replace(
-    /#ifdef RCT_NEW_ARCH_ENABLED\n(?:#import <react\/renderer\/components\/.*\n)*(?:#import <React\/RCTConversions\.h>\n)?\n?using namespace facebook::react;\n\n@interface (\w+)\(\)\s*<[^>]+>\n@property[^;]+;\n#else\n@interface \1\(\)<([^>]+)>\n#endif/,
-    '@interface $1()<$2>'
+    /#pragma mark - Event Helpers[\s\S]*?(?=\/\*\*\n Class for implementing|@implementation)/,
+    ''
   );
 
-  // 2. Remove #ifdef RCT_NEW_ARCH_ENABLED blocks (initWithFrame, updateProps, etc.)
-  // This handles multi-line blocks between #ifdef RCT_NEW_ARCH_ENABLED and #endif
-  content = content.replace(
-    /\n#ifdef RCT_NEW_ARCH_ENABLED\n- \(instancetype\)initWithFrame[\s\S]*?#endif\n/g,
-    '\n'
-  );
+  if (content !== original) {
+    fs.writeFileSync(filePath, content);
+    console.log(`Patched ${fileName}: removed dead C++ helper functions`);
+  }
+}
 
-  // 3. Remove trailing Cls function block
-  content = content.replace(
-    /\n#ifdef RCT_NEW_ARCH_ENABLED\nextern "C"[\s\S]*?#endif\n?/g,
-    '\n'
-  );
+removeCppHelpers('LevelPlayBannerAdView.mm');
+removeCppHelpers('LevelPlayNativeAdView.mm');
 
+// Add stub Cls functions returning nil — needed because RCTThirdPartyFabricComponentsProvider
+// references these symbols. Returning nil makes Fabric fall back to old-arch ViewManager interop.
+function addStubCls(fileName, clsName) {
+  const filePath = path.join(levelplayDir, fileName);
+  if (!fs.existsSync(filePath)) return;
+  let content = fs.readFileSync(filePath, 'utf8');
+  if (content.includes(clsName)) return;
+  content += `
+// Stub: return nil so Fabric falls back to old-arch ViewManager interop.
+#import <React/RCTComponentViewProtocol.h>
+extern "C" Class<RCTComponentViewProtocol> ${clsName}(void) { return nil; }
+`;
   fs.writeFileSync(filePath, content);
-  console.log(`Patched ${fileName}: stripped Fabric code paths`);
+  console.log(`Patched ${fileName}: added stub ${clsName}`);
 }
 
-stripFabricFromHeader('LevelPlayBannerAdView.h');
-stripFabricFromHeader('LevelPlayNativeAdView.h');
-stripFabricFromImpl('LevelPlayBannerAdView.mm');
-stripFabricFromImpl('LevelPlayNativeAdView.mm');
+addStubCls('LevelPlayBannerAdView.mm', 'LevelPlayBannerAdViewCls');
+addStubCls('LevelPlayNativeAdView.mm', 'LevelPlayNativeAdViewCls');
 
-// Add stub Cls functions returning nil — Fabric will fall back to old-arch ViewManager interop
-const bannerMM = path.join(levelplayDir, 'LevelPlayBannerAdView.mm');
-if (fs.existsSync(bannerMM)) {
-  let content = fs.readFileSync(bannerMM, 'utf8');
-  if (!content.includes('LevelPlayBannerAdViewCls')) {
-    content += `
-// Stub Cls functions: return nil so Fabric falls back to old-arch ViewManager interop.
-// Needed because RCTThirdPartyFabricComponentsProvider references these symbols.
-#import <React/RCTComponentViewProtocol.h>
-extern "C" Class<RCTComponentViewProtocol> LevelPlayBannerAdViewCls(void) { return nil; }
-`;
-    fs.writeFileSync(bannerMM, content);
-    console.log('Patched LevelPlayBannerAdView.mm: added stub LevelPlayBannerAdViewCls');
+// Strip codegenConfig.ios.componentProvider from unity-levelplay-mediation/package.json.
+// Codegen uses it to register LevelPlayBannerAdView/NativeAdView into
+// RCTThirdPartyComponentsProvider.mm as NSClassFromString(...), but the actual ObjC
+// classes are plain UIView subclasses (not RCTViewComponentView), so Fabric trips on
+// "Exception in HostFunction: <unknown>" while rendering. Removing the provider entry
+// lets the automatic Fabric<->legacy ViewManager interop layer handle these views.
+function stripComponentProvider() {
+  const pkgPath = path.join(
+    __dirname,
+    '..',
+    'node_modules',
+    'unity-levelplay-mediation',
+    'package.json',
+  );
+  if (!fs.existsSync(pkgPath)) return;
+  const raw = fs.readFileSync(pkgPath, 'utf8');
+  const pkg = JSON.parse(raw);
+  const ios = pkg.codegenConfig && pkg.codegenConfig.ios;
+  if (ios && ios.componentProvider) {
+    delete ios.componentProvider;
+    if (Object.keys(ios).length === 0) {
+      delete pkg.codegenConfig.ios;
+    }
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+    console.log('Patched unity-levelplay-mediation/package.json: stripped codegenConfig.ios.componentProvider');
   }
 }
 
-const nativeMM = path.join(levelplayDir, 'LevelPlayNativeAdView.mm');
-if (fs.existsSync(nativeMM)) {
-  let content = fs.readFileSync(nativeMM, 'utf8');
-  if (!content.includes('LevelPlayNativeAdViewCls')) {
-    content += `
-#import <React/RCTComponentViewProtocol.h>
-extern "C" Class<RCTComponentViewProtocol> LevelPlayNativeAdViewCls(void) { return nil; }
-`;
-    fs.writeFileSync(nativeMM, content);
-    console.log('Patched LevelPlayNativeAdView.mm: added stub LevelPlayNativeAdViewCls');
+stripComponentProvider();
+
+// Purge the stale generated provider so next pod install regenerates it without LevelPlay entries.
+function purgeGeneratedProvider() {
+  const providerPath = path.join(
+    __dirname,
+    '..',
+    'ios',
+    'build',
+    'generated',
+    'ios',
+    'ReactCodegen',
+    'RCTThirdPartyComponentsProvider.mm',
+  );
+  if (fs.existsSync(providerPath)) {
+    fs.unlinkSync(providerPath);
+    console.log('Purged stale RCTThirdPartyComponentsProvider.mm; re-run pod install to regenerate.');
   }
 }
+
+purgeGeneratedProvider();

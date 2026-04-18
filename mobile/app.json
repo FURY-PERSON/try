@@ -23,7 +23,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.factfront.app",
       "buildNumber": "1",
-      "associatedDomains": ["applinks:factfront.org"],
+      "associatedDomains": [
+        "applinks:factfront.org"
+      ],
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
@@ -282,7 +284,10 @@
               "host": "factfront.org"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "navigationBarColor": "#00000000",
@@ -303,14 +308,7 @@
       "expo-secure-store",
       "expo-font",
       "expo-navigation-bar",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ],
+      "expo-build-properties",
       [
         "expo-notifications",
         {
@@ -328,7 +326,8 @@
           "resizeMode": "cover"
         }
       ],
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

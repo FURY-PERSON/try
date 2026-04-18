@@ -1,33 +1,37 @@
+# Set by expo-router. This enables Fabric-only features from react-native-screens
+ENV['RNS_GAMMA_ENABLED'] ||= '1'
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
 require 'json'
+require 'fileutils'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-ENV['RCT_NEW_ARCH_ENABLED'] = podfile_properties['newArchEnabled'] == 'true' ? '1' : '0'
-ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] = podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+def ccache_enabled?(podfile_properties)
+  return ENV['USE_CCACHE'] == '1' if ENV['USE_CCACHE']
+  podfile_properties['apple.ccacheEnabled'] == 'true'
+end
 
+ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] ||= podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
+ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true'
+ENV['RCT_USE_PREBUILT_RNCORE'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true'
+ENV['RCT_HERMES_V1_ENABLED'] ||= '1' if podfile_properties['expo.useHermesV1'] == 'true'
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
-install! 'cocoapods',
-  :deterministic_uuids => false
 
 prepare_react_native_project!
 
+$RNFirebaseAsStaticFramework = true
+
 target 'Frontfaktov' do
-  pod 'react-native-config', :path => '../node_modules/react-native-config'
-  pod 'FirebaseCore', :modular_headers => true
-  pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'FirebaseInstallations', :modular_headers => true
-  pod 'FirebaseSessions', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'GoogleDataTransport', :modular_headers => true
-  pod 'nanopb', :modular_headers => true
-
-  # LevelPlay mediation adapters
-  pod 'IronSourceUnityAdsAdapter', '~> 5.5.0'
-  pod 'IronSourceYandexAdapter', '~> 5.5.0'
-
   use_expo_modules!
+
+  post_integrate do |installer|
+    begin
+      expo_patch_react_imports!(installer)
+    rescue => e
+      Pod::UI.warn e
+    end
+  end
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];
@@ -36,7 +40,8 @@ target 'Frontfaktov' do
       'node',
       '--no-warnings',
       '--eval',
-      'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+      'require(\'expo/bin/autolinking\')',
+      'expo-modules-autolinking',
       'react-native-config',
       '--json',
       '--platform',
@@ -46,13 +51,15 @@ target 'Frontfaktov' do
 
   config = use_native_modules!(config_command)
 
-  use_frameworks! :linkage => podfile_properties['ios.useFrameworks'].to_sym if podfile_properties['ios.useFrameworks']
-  use_frameworks! :linkage => ENV['USE_FRAMEWORKS'].to_sym if ENV['USE_FRAMEWORKS']
+  use_frameworks! :linkage => :static
+
+  # LevelPlay mediation adapters
+  pod 'IronSourceUnityAdsAdapter', '~> 5.5.0'
+  pod 'IronSourceYandexAdapter', '~> 5.5.0'
 
   use_react_native!(
     :path => config[:reactNativePath],
     :hermes_enabled => podfile_properties['expo.jsEngine'] == nil || podfile_properties['expo.jsEngine'] == 'hermes',
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
     :privacy_file_aggregation_enabled => podfile_properties['apple.privacyManifestAggregationEnabled'] != 'false',
   )
@@ -62,18 +69,41 @@ target 'Frontfaktov' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      :ccache_enabled => podfile_properties['apple.ccacheEnabled'] == 'true',
+      :ccache_enabled => ccache_enabled?(podfile_properties),
     )
 
-    # This is necessary for Xcode 14, because it signs resource bundles by default
-    # when building for devices.
-    installer.target_installation_results.pod_target_installation_results
-      .each do |pod_name, target_installation_result|
-      target_installation_result.resource_bundle_targets.each do |resource_bundle_target|
-        resource_bundle_target.build_configurations.each do |config|
-          config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+    installer.pods_project.targets.each do |target|
+      # Firebase Swift pods need DEFINES_MODULE for proper module import
+      if ['FirebaseCoreInternal', 'GoogleUtilities'].include?(target.name)
+        target.build_configurations.each do |config|
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+        end
+      end
+
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++20'
+      end
+    end
+
+    # Create a modulemap for React-Core in a SEPARATE directory (not in header
+    # search path) so only RNFB sees it via -fmodule-map-file flag.
+    # This avoids RNScreens "shadowed module" error while letting RNFB import React.
+    react_headers = File.join(installer.sandbox.headers_root, 'Public', 'React-Core', 'React')
+    rnfb_mm_dir = File.join(installer.sandbox.root, 'rnfb-react-module')
+    FileUtils.mkdir_p(rnfb_mm_dir)
+    modulemap_path = File.join(rnfb_mm_dir, 'module.modulemap')
+    File.write(modulemap_path, "module React {\n  umbrella \"#{react_headers}\"\n  export *\n}\n")
+
+    installer.pods_project.targets.each do |target|
+      if target.name.start_with?('RNFB')
+        target.build_configurations.each do |config|
+          flags = config.build_settings['OTHER_CFLAGS'] || ['$(inherited)']
+          flags = [flags] if flags.is_a?(String)
+          flags << "-fmodule-map-file=#{modulemap_path}"
+          config.build_settings['OTHER_CFLAGS'] = flags
         end
       end
     end
+    Pod::UI.puts "Created RNFB-only React modulemap"
   end
 end

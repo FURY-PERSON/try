@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, Component, type ReactNode } from 'react';
 import { View, StyleSheet, Platform, type LayoutChangeEvent, Alert } from 'react-native';
-import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
 import { analytics } from '@/services/analytics';
 import { useFeatureFlag } from '@/features/feature-flags/hooks/useFeatureFlag';
@@ -9,12 +9,25 @@ import { UnityBanner, type BannerSize } from './UnityBanner';
 import type { FC } from 'react';
 import { s } from '@/utils/scale';
 
-class AdErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+const failedPlacements = new Set<string>();
+
+class AdErrorBoundary extends Component<
+  { children: ReactNode; placement: string; onFail?: () => void },
+  { hasError: boolean }
+> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(error: Error) { console.error('[AdErrorBoundary]', error.message); }
+  componentDidCatch(error: Error) {
+    failedPlacements.add(this.props.placement);
+    this.props.onFail?.();
+    if (__DEV__) {
+      console.log('[AdErrorBoundary] suppressed native ad error:', this.props.placement, error?.message);
+    }
+  }
   render() { return this.state.hasError ? null : this.props.children; }
 }
+
+export const hasAdPlacementFailed = (placement: string): boolean => failedPlacements.has(placement);
 
 const BANNER_CONTAINER_HEIGHTS: Record<BannerSize, number> = {
   BANNER: 66,
@@ -76,14 +89,14 @@ export const AdBanner: FC<AdBannerProps> = ({ placement, size = 'BANNER' }) => {
     opacity: withTiming(loaded.value && !errored.value ? 1 : 0, { duration: 300 }),
   }));
 
-  if (!adsEnabled || isAdFree || !bannerEnabled || provider !== 'unity' || !sdkReady) {
+  if (!adsEnabled || isAdFree || !bannerEnabled || provider !== 'unity' || !sdkReady || hasAdPlacementFailed(placement)) {
     if (__DEV__) {
-      console.log(`[AdBanner:${placement}] hidden — adsEnabled=${adsEnabled} isAdFree=${isAdFree} bannerEnabled=${bannerEnabled} provider=${provider} sdkReady=${sdkReady}`);
+      console.log(`[AdBanner:${placement}] hidden — adsEnabled=${adsEnabled} isAdFree=${isAdFree} bannerEnabled=${bannerEnabled} provider=${provider} sdkReady=${sdkReady} failed=${hasAdPlacementFailed(placement)}`);
     }
     return null;
   }
 
-  const containerStyle = [
+  const staticContainerStyle = [
     styles.container,
     {
       backgroundColor: colors.surface,
@@ -91,19 +104,19 @@ export const AdBanner: FC<AdBannerProps> = ({ placement, size = 'BANNER' }) => {
       borderColor: colors.border,
     },
     elevation.sm,
-    animatedStyle,
   ];
 
   const banner = resolvedSize !== null ? (
-    <AdErrorBoundary>
-      <UnityBanner
-        placement={placement}
-        size={finalSize}
-        containerStyle={containerStyle}
-        onAdLoaded={handleAdLoaded}
-        onAdFailed={handleAdFailed}
-      />
-    </AdErrorBoundary>
+    <Animated.View style={[staticContainerStyle, animatedStyle]}>
+      <AdErrorBoundary placement={placement} onFail={handleAdFailed}>
+        <UnityBanner
+          placement={placement}
+          size={finalSize}
+          onAdLoaded={handleAdLoaded}
+          onAdFailed={handleAdFailed}
+        />
+      </AdErrorBoundary>
+    </Animated.View>
   ) : null;
 
   // Adaptive: keep flex wrapper to measure, render banner inside after measurement
