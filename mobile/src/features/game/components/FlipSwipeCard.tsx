@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
   withSequence,
   runOnJS,
   interpolate,
@@ -142,11 +141,22 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     translateY.value = 0;
     flipProgress.value = 0; // instant snap, no animation
     phase.value = 'front';
-    isProgrammatic.value = false;
     isCorrectShared.value = false;
     backScrollRef.current?.scrollTo({ y: 0, animated: false });
     entranceProgress.value = 0;
-    entranceProgress.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) });
+    // Hold isProgrammatic=true (set in dismiss callback) throughout entrance —
+    // it keeps cardBorderStyle and fact/fake overlays in default state so stale
+    // shared values can't flash on the incoming card. Released when entrance
+    // finishes.
+    entranceProgress.value = withTiming(
+      1,
+      { duration: 300, easing: Easing.out(Easing.cubic) },
+      (finished) => {
+        if (finished) {
+          isProgrammatic.value = false;
+        }
+      },
+    );
     // Hide 4th card immediately on transition start
     setFourthCardReady(false);
     // Delay by one frame so the UI thread applies translateX=0 (main card
@@ -193,7 +203,7 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     const peakX = direction === 'right' ? swipeThreshold * 1.2 : -swipeThreshold * 1.2;
     translateX.value = withSequence(
       withTiming(peakX, { duration: 150, easing: Easing.out(Easing.cubic) }),
-      withSpring(0, { damping: 26, stiffness: 200 }),
+      withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) }),
     );
     callOnSwipe(direction);
   }, [swipeThreshold, callOnSwipe, isSubmittingShared, isProgrammatic, translateX]);
@@ -203,10 +213,22 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
       screenWidth * 1.5,
       { duration: 200, easing: Easing.in(Easing.cubic) },
       (finished) => {
-        if (finished) runOnJS(callOnDismiss)();
+        if (finished) {
+          // Reset flip/feedback state on UI thread before React re-renders.
+          // isProgrammatic stays true until the entrance animation completes —
+          // it gates cardBorderStyle / factOverlayStyle / fakeOverlayStyle, so
+          // any stale translateX from this dismiss won't paint a colored border
+          // or "fact/fake" overlay on the next card during the transition frame.
+          // translateX is left at fly-out position; useEffect snaps it to 0.
+          flipProgress.value = 0;
+          isCorrectShared.value = false;
+          phase.value = 'front';
+          isProgrammatic.value = true;
+          runOnJS(callOnDismiss)();
+        }
       },
     );
-  }, [screenWidth, callOnDismiss, translateX]);
+  }, [screenWidth, callOnDismiss, translateX, flipProgress, isCorrectShared, phase, isProgrammatic]);
 
   useImperativeHandle(ref, () => ({
     programmaticSwipe,
@@ -219,6 +241,13 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
   // Memoize gesture to prevent native handler re-attach on every render (same pattern as Android)
   const gesture = useMemo(() => Gesture.Pan()
     .activeOffsetX([-15, 15])
+    .onBegin(() => {
+      // Clear the transition guard as soon as the user starts interacting — lets
+      // border/overlay worklets respond to the swipe even if entrance hasn't finished.
+      if (phase.value === 'front') {
+        isProgrammatic.value = false;
+      }
+    })
     .onUpdate((event) => {
       if (phase.value === 'flipping') return;
       if (phase.value === 'front' && isSubmittingShared.value) return;
@@ -230,32 +259,27 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
       if (phase.value === 'front' && isSubmittingShared.value) return;
 
       const amplifiedX = event.translationX * SWIPE_SPEED_MULTIPLIER;
-      const amplifiedVelocityX = event.velocityX * SWIPE_SPEED_MULTIPLIER;
 
       const snapBack = { duration: 200, easing: Easing.out(Easing.cubic) };
       const flipReturn = { duration: FLIP_DURATION, easing: Easing.inOut(Easing.ease) };
 
-      // Dynamic inertia: 0 at ≤800 px/s, scales up to 1 at ≥1600 px/s
-      const absVel = Math.abs(event.velocityX);
-      const inertiaFactor = Math.min(1, Math.max(0, (absVel - 800) / 800));
+      const timingToZero = () =>
+        withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
 
-      const springToZero = (vel: number) =>
-        withSpring(0, { velocity: vel, damping: 18, stiffness: 120, mass: 1 });
-
-      const answerSpring = (vel: number) =>
-        withSpring(0, { velocity: vel, damping: 26, stiffness: 200, mass: 1 });
+      const answerTiming = () =>
+        withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
 
       if (phase.value === 'front') {
         if (amplifiedX > swipeThreshold) {
-          translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
+          translateX.value = answerTiming();
           translateY.value = withTiming(0, flipReturn);
           runOnJS(callOnSwipe)('right');
         } else if (amplifiedX < -swipeThreshold) {
-          translateX.value = answerSpring(amplifiedVelocityX * inertiaFactor);
+          translateX.value = answerTiming();
           translateY.value = withTiming(0, flipReturn);
           runOnJS(callOnSwipe)('left');
         } else {
-          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
+          translateX.value = timingToZero();
           translateY.value = withTiming(0, snapBack);
         }
       } else if (phase.value === 'back') {
@@ -265,21 +289,30 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
             flyDir * screenWidth * 1.5,
             { duration: 200, easing: Easing.in(Easing.cubic) },
             (finished) => {
-              if (finished) runOnJS(callOnDismiss)();
+              if (finished) {
+                flipProgress.value = 0;
+                isCorrectShared.value = false;
+                phase.value = 'front';
+                isProgrammatic.value = true;
+                runOnJS(callOnDismiss)();
+              }
             },
           );
           translateY.value = withTiming(0, { duration: 200 });
         } else {
-          translateX.value = springToZero(amplifiedVelocityX * inertiaFactor);
+          translateX.value = timingToZero();
           translateY.value = withTiming(0, snapBack);
         }
       }
     }), [swipeThreshold, dismissThreshold, screenWidth, callOnSwipe, callOnDismiss]);
 
-  // Card transform (translate + rotate from drag)
+  // Card transform: drag (translate/rotate) combined with entrance (scale/offset).
+  // One combined style — two separate useAnimatedStyle hooks both writing `transform`
+  // would overwrite each other.
   const halfScreen = screenWidth / 2;
   const cardDragStyle = useAnimatedStyle(() => {
     'worklet';
+    const ep = entranceProgress.value;
     const rotation = interpolate(
       translateX.value,
       [-halfScreen, 0, halfScreen],
@@ -289,7 +322,8 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     return {
       transform: [
         { translateX: translateX.value },
-        { translateY: translateY.value },
+        { translateY: translateY.value + (12 - ep * 12) },
+        { scale: 0.96 + ep * 0.04 },
         { rotateZ: `${rotation}deg` },
       ],
     };
@@ -431,18 +465,6 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
     };
   });
 
-  // Main card entrance — animate from stack position to full size
-  const mainEntranceStyle = useAnimatedStyle(() => {
-    'worklet';
-    const ep = entranceProgress.value;
-    return {
-      transform: [
-        { scale: 0.96 + ep * 0.04 },
-        { translateY: 12 - ep * 12 },
-      ],
-    };
-  });
-
   const remainingCards = totalCards - cardIndex;
 
   const handleSourcePress = () => {
@@ -581,7 +603,6 @@ const FlipSwipeCardInner = React.forwardRef<FlipSwipeCardRef, FlipSwipeCardProps
           style={[
             styles.card,
             dynamicStyles.card,
-            mainEntranceStyle,
             cardDragStyle,
           ]}
         >

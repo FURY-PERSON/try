@@ -6,7 +6,6 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  withSpring,
   withDelay,
   interpolateColor,
 } from 'react-native-reanimated';
@@ -192,7 +191,7 @@ const PlusOneFloat: FC<{ color: string }> = ({ color }) => {
   const scale = useSharedValue(0.5);
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    scale.value = withTiming(1, { duration: 220 });
     translateY.value = withTiming(-32, { duration: 800 });
     opacity.value = withDelay(400, withTiming(0, { duration: 400 }));
   }, []);
@@ -213,7 +212,7 @@ const BonusFloat: FC<{ percent: number; color: string }> = ({ percent, color }) 
   const scale = useSharedValue(0.5);
 
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 10, stiffness: 300 });
+    scale.value = withTiming(1, { duration: 220 });
     translateY.value = withTiming(-32, { duration: 800 });
     opacity.value = withDelay(400, withTiming(0, { duration: 400 }));
   }, []);
@@ -433,8 +432,8 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
 
     if (days > prevDays && prevDays > 0) {
       burstScale.value = withSequence(
-        withSpring(1.3, { damping: 8, stiffness: 400 }),
-        withSpring(1, { damping: 12, stiffness: 200 }),
+        withTiming(1.3, { duration: 150 }),
+        withTiming(1, { duration: 250 }),
       );
       if (bonusPercent > 0) {
         // Show bonus float instead of +1 when bonus is active
@@ -459,18 +458,10 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
     const isAndroid = Platform.OS === 'android';
     const bounceScale = 1.15 + tier * 0.05;
 
-    if (isAndroid) {
-      // Android: use withTiming to avoid spring jank
-      tapScale.value = withSequence(
-        withTiming(bounceScale, { duration: 120 }),
-        withTiming(1, { duration: 200 }),
-      );
-    } else {
-      tapScale.value = withSequence(
-        withSpring(bounceScale, { damping: 6, stiffness: 400 }),
-        withSpring(1, { damping: 10, stiffness: 200 }),
-      );
-    }
+    tapScale.value = withSequence(
+      withTiming(bounceScale, { duration: 120 }),
+      withTiming(1, { duration: 200 }),
+    );
 
     if (tier >= 2) {
       const amp = rotationAmplitude * 1.5;
@@ -483,17 +474,10 @@ export const StreakBadge: FC<StreakBadgeProps> = ({
     }
 
     if (tier >= 4) {
-      if (isAndroid) {
-        burstScale.value = withSequence(
-          withTiming(1.25, { duration: 150 }),
-          withTiming(1, { duration: 250 }),
-        );
-      } else {
-        burstScale.value = withSequence(
-          withSpring(1.25, { damping: 8, stiffness: 400 }),
-          withSpring(1, { damping: 12, stiffness: 200 }),
-        );
-      }
+      burstScale.value = withSequence(
+        withTiming(1.25, { duration: 150 }),
+        withTiming(1, { duration: 250 }),
+      );
     }
 
     if (tier >= 7) {

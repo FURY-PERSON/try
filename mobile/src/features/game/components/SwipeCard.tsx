@@ -4,11 +4,11 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
   interpolate,
   Extrapolation,
+  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
@@ -88,8 +88,8 @@ const SwipeCardInner: FC<SwipeCardProps> = ({
         translateX.value = withTiming(-screenWidth * 1.5, { duration: 300 });
         runOnJS(callOnSwipe)('left');
       } else {
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
+        translateX.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
+        translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
       }
     }), [SWIPE_THRESHOLD, screenWidth, callOnSwipe]);
 

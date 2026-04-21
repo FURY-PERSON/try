@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle,
   withSequence,
   withTiming,
-  withSpring,
   withDelay,
   Easing,
 } from 'react-native-reanimated';
@@ -91,7 +90,7 @@ export const ShieldAbsorbAnimation: FC<ShieldAbsorbAnimationProps> = ({
       haptics.light();
 
       shieldScale.value = withSequence(
-        withSpring(1.1, { damping: 14, stiffness: 200 }),
+        withTiming(1.1, { duration: 220, easing: Easing.out(Easing.cubic) }),
         withDelay(400, withTiming(0.6, { duration: 400, easing: Easing.in(Easing.cubic) })),
       );
       shieldOpacity.value = withSequence(
@@ -115,8 +114,8 @@ export const ShieldAbsorbAnimation: FC<ShieldAbsorbAnimationProps> = ({
       haptics.heavy();
 
       shieldScale.value = withSequence(
-        withSpring(1.6, { damping: 5, stiffness: 500 }),
-        withSpring(1.3, { damping: 8, stiffness: 300 }),
+        withTiming(1.6, { duration: 160, easing: Easing.out(Easing.cubic) }),
+        withTiming(1.3, { duration: 180, easing: Easing.out(Easing.cubic) }),
         withDelay(300, withTiming(0, { duration: 300, easing: Easing.in(Easing.cubic) })),
       );
       shieldOpacity.value = withSequence(

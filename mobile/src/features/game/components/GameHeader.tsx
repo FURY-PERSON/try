@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -43,10 +43,10 @@ export const GameHeader: FC<GameHeaderProps> = React.memo(({ progress, streak, o
     <View style={[styles.container, { paddingHorizontal: spacing.screenPadding }]}>
       <AnimatedPressable
         onPressIn={() => {
-          closeScale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+          closeScale.value = withTiming(0.9, { duration: 120 });
         }}
         onPressOut={() => {
-          closeScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+          closeScale.value = withTiming(1, { duration: 120 });
         }}
         onPress={handleClose}
         accessibilityLabel="Close game"

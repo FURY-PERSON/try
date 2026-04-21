@@ -7,7 +7,6 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-  withSpring,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
@@ -152,14 +151,14 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
 
     // Bounce the timer badge
     timerBounce.value = withSequence(
-      withSpring(1.15, { damping: 8, stiffness: 400 }),
-      withSpring(1, { damping: 12, stiffness: 300 }),
+      withTiming(1.15, { duration: 140, easing: Easing.out(Easing.cubic) }),
+      withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) }),
     );
 
     // Pop in the cheer tooltip
     cheerScale.value = 0;
     cheerOpacity.value = 1;
-    cheerScale.value = withSpring(1, { damping: 10, stiffness: 350 });
+    cheerScale.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.cubic) });
 
     // Particles burst out
     particleOpacity.value = 1;
@@ -179,8 +178,10 @@ export const AdFreeIcon: FC<AdFreeIconProps> = ({ onPress, hideHint }) => {
     particleOpacity.value = withDelay(300, withTiming(0, { duration: 400 }));
 
     // Fade out cheer after a while
-    cheerOpacity.value = withDelay(2500, withTiming(0, { duration: 400 }, () => {
-      runOnJS(hideCheer)();
+    cheerOpacity.value = withDelay(2500, withTiming(0, { duration: 400 }, (finished) => {
+      if (finished) {
+        runOnJS(hideCheer)();
+      }
     }));
   };
 

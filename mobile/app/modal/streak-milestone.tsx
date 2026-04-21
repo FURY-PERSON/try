@@ -7,10 +7,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withDelay,
   withSequence,
   withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/components/layout/Screen';
@@ -49,17 +49,17 @@ export default function StreakMilestoneModal() {
     analytics.logEvent('streak_milestone', { days });
 
     // Fire entrance
-    fireScale.value = withSpring(1, { damping: 8, stiffness: 120 });
+    fireScale.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
     fireRotate.value = withSequence(
-      withDelay(300, withSpring(-5, { damping: 4 })),
-      withSpring(5, { damping: 4 }),
-      withSpring(0, { damping: 8 }),
+      withDelay(300, withTiming(-5, { duration: 140 })),
+      withTiming(5, { duration: 160 }),
+      withTiming(0, { duration: 140 }),
     );
 
     // Number dramatic reveal
     numberScale.value = withDelay(
       200,
-      withSpring(1, { damping: 10, stiffness: 150 }),
+      withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) }),
     );
   }, [days]);
 

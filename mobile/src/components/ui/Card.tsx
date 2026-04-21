@@ -3,7 +3,7 @@ import { View, Platform, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
@@ -42,11 +42,11 @@ export const Card: FC<CardProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(0.98, { duration: 120 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(1, { duration: 120 });
   };
 
   const baseStyle: ViewStyle = {

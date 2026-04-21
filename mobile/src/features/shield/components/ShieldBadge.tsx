@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '@/theme';
@@ -25,9 +25,9 @@ export const ShieldBadge: FC<ShieldBadgeProps> = React.memo(({ count, onPress })
 
   const handlePress = useCallback(() => {
     haptics.light();
-    scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(0.9, { duration: 100 });
     setTimeout(() => {
-      scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+      scale.value = withTiming(1, { duration: 120 });
     }, 100);
     onPress();
   }, [onPress, scale]);

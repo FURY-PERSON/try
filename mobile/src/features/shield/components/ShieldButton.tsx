@@ -3,7 +3,6 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withSequence,
   withTiming,
   withRepeat,
@@ -47,11 +46,11 @@ export const ShieldButton: FC<ShieldButtonProps> = React.memo(({
 
     haptics.medium();
 
-    // Satisfying bounce
+    // Quick bounce
     scale.value = withSequence(
-      withSpring(1.25, { damping: 6, stiffness: 500 }),
-      withSpring(0.92, { damping: 10, stiffness: 300 }),
-      withSpring(1, { damping: 12, stiffness: 200 }),
+      withTiming(1.25, { duration: 120 }),
+      withTiming(0.92, { duration: 120 }),
+      withTiming(1, { duration: 160 }),
     );
 
     // Expanding ring on tap

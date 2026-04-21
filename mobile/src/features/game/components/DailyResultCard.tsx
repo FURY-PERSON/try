@@ -4,7 +4,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withDelay,
-  withSpring,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
 import type { FC } from 'react';
@@ -24,7 +25,7 @@ const ResultSquare: FC<{ correct: boolean; index: number; colors: Record<string,
   useEffect(() => {
     scale.value = withDelay(
       index * 80,
-      withSpring(1, { damping: 12, stiffness: 200 }),
+      withTiming(1, { duration: 260, easing: Easing.out(Easing.cubic) }),
     );
   }, [index, scale]);
 

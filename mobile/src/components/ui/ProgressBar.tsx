@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeContext } from '@/theme';
@@ -40,10 +40,7 @@ export const ProgressBar: FC<ProgressBarProps> = ({
   useEffect(() => {
     const clampedProgress = Math.min(1, Math.max(0, progress));
     if (animated) {
-      widthPercent.value = withSpring(clampedProgress * 100, {
-        damping: 20,
-        stiffness: 90,
-      });
+      widthPercent.value = withTiming(clampedProgress * 100, { duration: 350 });
     } else {
       widthPercent.value = clampedProgress * 100;
     }

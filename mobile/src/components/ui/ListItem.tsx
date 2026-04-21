@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -53,11 +53,11 @@ export const ListItem: FC<ListItemProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(0.98, { duration: 120 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(1, { duration: 120 });
   };
 
   // Compute border radius for items inside a Card with padding: 0

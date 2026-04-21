@@ -15,7 +15,7 @@ import {
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -521,8 +521,8 @@ const CategoryCard = React.memo(function CategoryCard({
 
   return (
     <AnimatedPressable
-      onPressIn={() => { anim.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
-      onPressOut={() => { anim.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPressIn={() => { anim.value = withTiming(0.95, { duration: 120 }); }}
+      onPressOut={() => { anim.value = withTiming(1, { duration: 120 }); }}
       onPress={onPress}
       style={animStyle}
     >
@@ -584,8 +584,8 @@ const DifficultyCard = React.memo(function DifficultyCard({
 
   return (
     <AnimatedPressable
-      onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
-      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPressIn={() => { scale.value = withTiming(0.95, { duration: 120 }); }}
+      onPressOut={() => { scale.value = withTiming(1, { duration: 120 }); }}
       onPress={onPress}
       disabled={loading}
       style={[{ flex: 1 }, animStyle]}
@@ -658,8 +658,8 @@ const CollectionCard = React.memo(function CollectionCard({
 
   return (
     <AnimatedPressable
-      onPressIn={() => { anim.value = withSpring(0.95, { damping: 15, stiffness: 300 }); }}
-      onPressOut={() => { anim.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
+      onPressIn={() => { anim.value = withTiming(0.95, { duration: 120 }); }}
+      onPressOut={() => { anim.value = withTiming(1, { duration: 120 }); }}
       onPress={onPress}
       disabled={loading}
       style={animStyle}

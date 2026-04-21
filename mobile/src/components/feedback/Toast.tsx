@@ -3,9 +3,9 @@ import { Text, Platform, StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -62,7 +62,7 @@ export const Toast: FC<ToastProps> = ({
       else if (variant === 'error') haptics.error();
 
       // Slide in
-      translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+      translateY.value = withTiming(0, { duration: 260, easing: Easing.out(Easing.cubic) });
 
       // Schedule slide out
       hideTimer.current = setTimeout(() => {

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
-  withSpring,
+  withTiming,
   useSharedValue,
 } from 'react-native-reanimated';
 import { useThemeContext } from '@/theme';
@@ -47,11 +47,11 @@ const TabItem: FC<TabItemProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.85, { damping: 15, stiffness: 400 });
+    scale.value = withTiming(0.85, { duration: 120 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    scale.value = withTiming(1, { duration: 120 });
   };
 
   return (

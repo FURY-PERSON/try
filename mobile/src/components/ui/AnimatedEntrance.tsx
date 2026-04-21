@@ -3,7 +3,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withDelay,
-  withSpring,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import type { FC, ReactNode } from 'react';
 import type { ViewStyle } from 'react-native';
@@ -18,10 +19,9 @@ type AnimatedEntranceProps = {
   style?: ViewStyle;
 };
 
-const springConfig = {
-  damping: 20,
-  stiffness: 200,
-  mass: 0.8,
+const timingConfig = {
+  duration: 320,
+  easing: Easing.out(Easing.cubic),
 };
 
 const getTranslate = (direction: Direction, distance: number) => {
@@ -53,9 +53,9 @@ export const AnimatedEntrance: FC<AnimatedEntranceProps> = ({
     translateX.value = initial.x;
     translateY.value = initial.y;
 
-    opacity.value = withDelay(delay, withSpring(1, springConfig));
-    translateX.value = withDelay(delay, withSpring(0, springConfig));
-    translateY.value = withDelay(delay, withSpring(0, springConfig));
+    opacity.value = withDelay(delay, withTiming(1, timingConfig));
+    translateX.value = withDelay(delay, withTiming(0, timingConfig));
+    translateY.value = withDelay(delay, withTiming(0, timingConfig));
   }, [delay, direction, distance, opacity, translateX, translateY]);
 
   const animatedStyle = useAnimatedStyle(() => ({

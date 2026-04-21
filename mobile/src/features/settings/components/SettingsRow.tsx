@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { Switch } from '@/components/ui/Switch';
@@ -43,10 +43,10 @@ export const SettingsRow: FC<SettingsRowProps> = ({
   }));
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(0.98, { duration: 120 });
   };
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    scale.value = withTiming(1, { duration: 120 });
   };
 
   const content = (

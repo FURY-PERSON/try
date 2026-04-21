@@ -9,7 +9,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
-  withSpring,
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,7 +73,7 @@ export default function ResultsModal() {
 
   useEffect(() => {
     scoreOpacity.value = withTiming(1, { duration: 300 });
-    scoreScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    scoreScale.value = withTiming(1, { duration: 320, easing: Easing.out(Easing.cubic) });
     displayCount.value = withTiming(correctCount, {
       duration: 800,
       easing: Easing.out(Easing.cubic),
@@ -138,8 +137,9 @@ export default function ResultsModal() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: s(24) }]}
         showsVerticalScrollIndicator={false}
+        bounces
       >
         <AnimatedEntrance delay={0} direction="up">
           <Animated.View style={[styles.scoreContainer, scoreAnimatedStyle]}>
@@ -237,10 +237,9 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     gap: s(16),
     paddingHorizontal: s(32),
-    paddingVertical: s(16),
+    paddingTop: s(24),
   },
   scoreContainer: {
     alignItems: 'center',
