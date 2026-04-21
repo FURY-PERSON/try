@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -45,7 +45,6 @@ export default function ResultsModal() {
   const dailyProgress = useGameStore((s) => s.dailyProgress);
   const resetDailyProgress = useGameStore((s) => s.resetDailyProgress);
   const collectionType = useGameStore((s) => s.collectionType);
-  const isReplay = useGameStore((s) => s.isReplay);
   const submissionResult = useGameStore((s) => s.submissionResult);
   const addFactsAnswered = useAdsStore((s) => s.addFactsAnswered);
 
@@ -156,18 +155,7 @@ export default function ResultsModal() {
           </Text>
         </AnimatedEntrance>
 
-        {isReplay && (
-          <AnimatedEntrance delay={200} direction="up">
-            <View style={[styles.replayBanner, { backgroundColor: colors.orange + '20' }]}>
-              <Feather name="rotate-ccw" size={16} color={colors.orange} />
-              <Text style={[styles.replayBannerText, { color: colors.orange }]}>
-                {t('results.replayBanner')}
-              </Text>
-            </View>
-          </AnimatedEntrance>
-        )}
-
-        {!isReplay && submissionResult && submissionResult.correctPercent > 0 && (
+        {submissionResult && submissionResult.correctPercent > 0 && (
           <AnimatedEntrance delay={200} direction="up">
             <Text style={[styles.percentText, { color: colors.primary }]}>
               {t('results.correctPercent', {
@@ -177,7 +165,7 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
-        {!isReplay && collectionType === 'daily' && (
+        {collectionType === 'daily' && (
           <AnimatedEntrance delay={250} direction="up">
             <View style={[
               styles.shieldBonusBanner,
@@ -198,13 +186,11 @@ export default function ResultsModal() {
           </AnimatedEntrance>
         )}
 
-        {!isReplay && (
-          <AnimatedEntrance delay={300} direction="up">
-            <StreakBadge days={currentStreak} size="md" bonusPercent={bonusPercent} />
-          </AnimatedEntrance>
-        )}
+        <AnimatedEntrance delay={300} direction="up">
+          <StreakBadge days={currentStreak} size="md" bonusPercent={bonusPercent} />
+        </AnimatedEntrance>
 
-        {!isReplay && submissionResult?.factOfDay && (
+        {submissionResult?.factOfDay && (
           <AnimatedEntrance delay={400} direction="up">
             <FactOfDayCard factOfDay={submissionResult.factOfDay} />
           </AnimatedEntrance>
@@ -275,18 +261,6 @@ const styles = StyleSheet.create({
     fontSize: s(17),
     fontFamily: fontFamily.semiBold,
     textAlign: 'center',
-  },
-  replayBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(8),
-    paddingVertical: s(10),
-    paddingHorizontal: s(16),
-    borderRadius: s(12),
-  },
-  replayBannerText: {
-    fontSize: s(14),
-    fontFamily: fontFamily.semiBold,
   },
   shieldBonusBanner: {
     flexDirection: 'row',

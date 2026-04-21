@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Platform } from 'react-native';
-import { OverlayModal } from '@/components/feedback/OverlayModal';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,13 +34,9 @@ export default function CollectionDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const language = useSettingsStore((s) => s.language);
-  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
-  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
   const [starting, setStarting] = useState(false);
-  const [showReplayWarning, setShowReplayWarning] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const { data: collection, isLoading, isError, refetch } = useQuery({
     queryKey: ['collection', id],
@@ -84,8 +79,7 @@ export default function CollectionDetailScreen() {
       });
       const cachedFeed = queryClient.getQueryData<HomeFeed>(['home', 'feed']);
       const streak = cachedFeed?.userProgress?.streak ?? 0;
-      const effectiveReplay = replay || session.replay === true;
-      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, effectiveReplay, streak);
+      startCollectionSession(session.sessionId, 'collection', session.questions.length, session.questions, streak);
       analytics.logEvent('collection_start', {
         type: 'collection',
         referenceId: id,
@@ -100,25 +94,13 @@ export default function CollectionDetailScreen() {
     }
   }, [id, starting, startCollectionSession, router]);
 
-  const handleStart = useCallback(() => {
-    if (isFullyDone) {
-      if (replayWarningDismissed) {
-        doStart(true);
-      } else {
-        setShowReplayWarning(true);
-      }
-    } else {
-      doStart(false);
-    }
-  }, [isFullyDone, replayWarningDismissed, doStart]);
+  const totalCount = collection?._count.questions ?? 0;
+  const answeredCount = Math.min(collection?.answeredCount ?? 0, totalCount);
+  const isFullyDone = totalCount > 0 && answeredCount >= totalCount;
 
-  const handleConfirmReplay = useCallback(() => {
-    if (dontShowAgain) {
-      setReplayWarningDismissed(true);
-    }
-    setShowReplayWarning(false);
-    doStart(true);
-  }, [dontShowAgain, setReplayWarningDismissed, doStart]);
+  const handleStart = useCallback(() => {
+    doStart(isFullyDone);
+  }, [isFullyDone, doStart]);
 
   if (isLoading) {
     return (
@@ -149,10 +131,6 @@ export default function CollectionDetailScreen() {
       </Screen>
     );
   }
-
-  const totalCount = collection._count.questions;
-  const answeredCount = Math.min(collection.answeredCount, totalCount);
-  const isFullyDone = totalCount > 0 && answeredCount >= totalCount;
 
   return (
     <Screen padded={false} backgroundColor={isDark ? colors.background : accentColor + '25'}>
@@ -228,47 +206,6 @@ export default function CollectionDetailScreen() {
         </View>
       </AnimatedEntrance>
 
-      <OverlayModal visible={showReplayWarning} onClose={() => setShowReplayWarning(false)}>
-        <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-          <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
-            {t('category.replayTitle')}
-          </Text>
-          <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
-            {t('category.replayDesc')}
-          </Text>
-          <Pressable
-            onPress={() => setDontShowAgain(!dontShowAgain)}
-            style={styles.replayCheckRow}
-          >
-            <Switch
-              value={dontShowAgain}
-              onValueChange={setDontShowAgain}
-              trackColor={{ true: colors.primary }}
-            />
-            <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
-              {t('category.dontShow')}
-            </Text>
-          </Pressable>
-          <View style={styles.replayButtons}>
-            <Pressable
-              onPress={() => setShowReplayWarning(false)}
-              style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}
-            >
-              <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>
-                {t('common.cancel')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleConfirmReplay}
-              style={[styles.replayBtn, { backgroundColor: colors.primary }]}
-            >
-              <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>
-                {t('category.start')}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </OverlayModal>
     </Screen>
   );
 }
@@ -360,48 +297,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingBottom: s(32),
     gap: s(12),
-  },
-  replayModal: {
-    width: '100%',
-    padding: s(24),
-  },
-  replayTitle: {
-    fontSize: s(20),
-    fontFamily: fontFamily.bold,
-    textAlign: 'center',
-    marginBottom: s(8),
-  },
-  replayDesc: {
-    fontSize: s(15),
-    fontFamily: fontFamily.regular,
-    textAlign: 'center',
-    lineHeight: s(22),
-    marginBottom: s(20),
-  },
-  replayCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(10),
-    marginBottom: s(20),
-  },
-  replayCheckLabel: {
-    fontSize: s(14),
-    fontFamily: fontFamily.regular,
-    flex: 1,
-    marginLeft: s(10),
-  },
-  replayButtons: {
-    flexDirection: 'row',
-    gap: s(12),
-  },
-  replayBtn: {
-    flex: 1,
-    paddingVertical: s(14),
-    borderRadius: s(12),
-    alignItems: 'center',
-  },
-  replayBtnText: {
-    fontSize: s(15),
-    fontFamily: fontFamily.semiBold,
   },
 });

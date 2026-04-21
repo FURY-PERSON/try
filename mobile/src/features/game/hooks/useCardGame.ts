@@ -32,7 +32,6 @@ export const useCardGame = (
   const setSubmissionResult = useGameStore((s) => s.setSubmissionResult);
   const sessionId = useGameStore((s) => s.sessionId);
   const collectionType = useGameStore((s) => s.collectionType);
-  const isReplay = useGameStore((s) => s.isReplay);
   const [feedback, setFeedback] = useState<AnswerFeedback | null>(null);
   const feedbackRef = useRef<AnswerFeedback | null>(null);
   const [previousFeedback, setPreviousFeedback] = useState<AnswerFeedback | null>(null);
@@ -275,9 +274,7 @@ export const useCardGame = (
       // BEFORE any async work — prevents race condition where resetDailyProgress() can
       // clear the store while we're awaiting network calls.
       const newProgress = useGameStore.getState().dailyProgress;
-      const currentIsReplay = useGameStore.getState().isReplay;
-      const needsFinalSubmit = newProgress.completed && !currentIsReplay;
-      const finalResults = needsFinalSubmit
+      const finalResults = newProgress.completed
         ? newProgress.results.map((r) => ({
             questionId: r.questionId,
             result: r.correct ? ('correct' as const) : ('incorrect' as const),
@@ -290,7 +287,6 @@ export const useCardGame = (
       // Does NOT block the JS thread — the card transition happens immediately.
       if (
         collectionType !== 'daily' &&
-        !isReplay &&
         sessionId &&
         !savedProgressIds.current.has(pendingResult.questionId)
       ) {
@@ -311,7 +307,7 @@ export const useCardGame = (
           });
       }
 
-      // Fire-and-forget: submit full set when all cards are done (skip for replays).
+      // Fire-and-forget: submit full set when all cards are done.
       // The results screen navigation is driven by isComplete state, not by this await.
       if (finalResults) {
         if (collectionType === 'daily' && dailySetId) {
@@ -323,7 +319,7 @@ export const useCardGame = (
     } else {
       setFeedback(null);
     }
-  }, [pendingResult, feedback, submitCardResult, collectionType, dailySetId, sessionId, isReplay, submitDailySetResults, submitCollectionResults]);
+  }, [pendingResult, feedback, submitCardResult, collectionType, dailySetId, sessionId, submitDailySetResults, submitCollectionResults]);
 
   return {
     currentQuestion,

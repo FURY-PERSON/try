@@ -1,12 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OverlayModal } from '@/components/feedback/OverlayModal';
 import { Screen } from '@/components/layout/Screen';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -14,7 +13,6 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { AdBanner } from '@/components/ads/AdBanner';
 import { collectionsApi } from '@/features/collections/api/collectionsApi';
 import { useGameStore } from '@/features/game/stores/useGameStore';
-import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useThemeContext } from '@/theme';
 import { fontFamily } from '@/theme/typography';
 import { analytics } from '@/services/analytics';
@@ -40,11 +38,7 @@ export default function DifficultyDetailScreen() {
   const { level } = useLocalSearchParams<{ level: string }>();
   const queryClient = useQueryClient();
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);
-  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
-  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
   const [starting, setStarting] = useState(false);
-  const [showReplayWarning, setShowReplayWarning] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const config = DIFFICULTY_CONFIG[level ?? ''] ?? DIFFICULTY_CONFIG.easy;
   const accentColor = isDark ? config.colorDark : config.colorLight;
@@ -66,7 +60,7 @@ export default function DifficultyDetailScreen() {
         count: 25,
         ...(replay ? { replay: true } : {}),
       });
-      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, replay, streak);
+      startCollectionSession(session.sessionId, 'difficulty', session.questions.length, session.questions, streak);
       analytics.logEvent('collection_start', { type: 'difficulty', referenceId: level, questionCount: session.questions.length, replay });
       router.push({ pathname: '/game/card', params: { mode: 'collection' } });
     } catch (err) {
@@ -77,24 +71,8 @@ export default function DifficultyDetailScreen() {
   }, [level, starting, startCollectionSession, router, streak]);
 
   const handleStart = useCallback(() => {
-    if (isCompleted) {
-      if (replayWarningDismissed) {
-        doStart(true);
-      } else {
-        setShowReplayWarning(true);
-      }
-    } else {
-      doStart(false);
-    }
-  }, [isCompleted, replayWarningDismissed, doStart]);
-
-  const handleConfirmReplay = useCallback(() => {
-    if (dontShowAgain) {
-      setReplayWarningDismissed(true);
-    }
-    setShowReplayWarning(false);
-    doStart(true);
-  }, [dontShowAgain, setReplayWarningDismissed, doStart]);
+    doStart(isCompleted);
+  }, [isCompleted, doStart]);
 
   return (
     <Screen padded={false} backgroundColor={isDark ? colors.background : accentColor + '25'}>
@@ -178,30 +156,6 @@ export default function DifficultyDetailScreen() {
         </View>
       </AnimatedEntrance>
 
-      <OverlayModal visible={showReplayWarning} onClose={() => setShowReplayWarning(false)}>
-        <View style={[styles.replayModal, { backgroundColor: colors.surface, borderRadius: 20 }]}>
-          <Text style={[styles.replayTitle, { color: colors.textPrimary }]}>
-            {t('category.replayTitle')}
-          </Text>
-          <Text style={[styles.replayDesc, { color: colors.textSecondary }]}>
-            {t('category.replayDesc')}
-          </Text>
-          <Pressable onPress={() => setDontShowAgain(!dontShowAgain)} style={styles.replayCheckRow}>
-            <Switch value={dontShowAgain} onValueChange={setDontShowAgain} trackColor={{ true: colors.primary }} />
-            <Text style={[styles.replayCheckLabel, { color: colors.textSecondary }]}>
-              {t('category.dontShow')}
-            </Text>
-          </Pressable>
-          <View style={styles.replayButtons}>
-            <Pressable onPress={() => setShowReplayWarning(false)} style={[styles.replayBtn, { backgroundColor: colors.surfaceVariant }]}>
-              <Text style={[styles.replayBtnText, { color: colors.textPrimary }]}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Pressable onPress={handleConfirmReplay} style={[styles.replayBtn, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.replayBtnText, { color: '#FFFFFF' }]}>{t('category.start')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </OverlayModal>
     </Screen>
   );
 }
@@ -244,12 +198,4 @@ const styles = StyleSheet.create({
   completedRow: { flexDirection: 'row', alignItems: 'center', gap: s(12) },
   completedTitle: { fontSize: s(15), fontFamily: fontFamily.bold },
   footer: { paddingBottom: s(32), gap: s(12) },
-  replayModal: { width: '100%', padding: s(24) },
-  replayTitle: { fontSize: s(20), fontFamily: fontFamily.bold, textAlign: 'center', marginBottom: s(8) },
-  replayDesc: { fontSize: s(15), fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: s(22), marginBottom: s(20) },
-  replayCheckRow: { flexDirection: 'row', alignItems: 'center', gap: s(10), marginBottom: s(20) },
-  replayCheckLabel: { fontSize: s(14), fontFamily: fontFamily.regular, flex: 1, marginLeft: s(10) },
-  replayButtons: { flexDirection: 'row', gap: s(12) },
-  replayBtn: { flex: 1, paddingVertical: s(14), borderRadius: s(12), alignItems: 'center' },
-  replayBtnText: { fontSize: s(15), fontFamily: fontFamily.semiBold },
 });

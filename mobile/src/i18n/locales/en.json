@@ -64,11 +64,6 @@
     "randomFacts": "Random Facts",
     "randomDesc": "Test your knowledge!",
     "randomFactsDesc": "Questions from all categories in random order",
-    "allFactsDone": "All facts completed!",
-    "allFactsDoneDesc": "You've already completed all available facts. No points will be awarded for replaying.",
-    "difficultyAllDone": "All facts at this level completed!",
-    "difficultyAllDoneDesc": "You've completed all facts at this difficulty level. No points will be awarded for replaying.",
-    "playAnyway": "Play anyway",
     "featured": "Collections",
     "questionsCount": "{{count}} questions",
     "startCollection": "Start",
@@ -107,8 +102,7 @@
     "position": "#{{position}} of {{total}} players today",
     "correctPercent": "{{percent}}% correct answers",
     "percentile": "You're better than {{percent}}% of players today",
-    "goHome": "Go Home",
-    "replayBanner": "Replay — results not recorded"
+    "goHome": "Go Home"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -188,10 +182,7 @@
     "solvedOf": "Solved {{solved}} out of {{total}}",
     "lastResult": "Last Result",
     "allDone": "All facts explored!",
-    "notFound": "Category not found",
-    "replayTitle": "Replay Mode",
-    "replayDesc": "You've already completed all facts in this category. No points will be awarded for replaying.",
-    "dontShow": "Got it, don't show again"
+    "notFound": "Category not found"
   },
   "error": {
     "title": "Oops! Something went wrong",

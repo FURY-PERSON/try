@@ -10,13 +10,11 @@ export const useSettings = () => {
   const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const notificationsEnabled = useSettingsStore((s) => s.notificationsEnabled);
-  const replayWarningDismissed = useSettingsStore((s) => s.replayWarningDismissed);
   const setTheme = useSettingsStore((s) => s.setTheme);
   const setLanguage = useSettingsStore((s) => s.setLanguage);
   const setSoundEnabled = useSettingsStore((s) => s.setSoundEnabled);
   const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
-  const setReplayWarningDismissed = useSettingsStore((s) => s.setReplayWarningDismissed);
 
   const changeLanguage = useCallback(
     (lang: 'ru' | 'en') => {
@@ -61,13 +59,11 @@ export const useSettings = () => {
     soundEnabled,
     hapticsEnabled,
     notificationsEnabled,
-    replayWarningDismissed,
     setTheme,
     setLanguage,
     setSoundEnabled,
     setHapticsEnabled,
     setNotificationsEnabled,
-    setReplayWarningDismissed,
     changeLanguage,
     changeTheme,
     toggleNotifications,
