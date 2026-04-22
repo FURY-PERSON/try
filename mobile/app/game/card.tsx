@@ -142,7 +142,7 @@ export default function CardScreen() {
           });
         }
         setShowExitConfirm(false);
-        router.replace('/modal/results');
+        router.replace('/game/results');
       } else {
         // For daily set — answers already saved via submitAnswer, invalidate caches and exit
         queryClient.invalidateQueries({ queryKey: ['home', 'feed'] });
@@ -330,7 +330,7 @@ export default function CardScreen() {
 
   useEffect(() => {
     if (isComplete && !feedback) {
-      router.replace('/modal/results');
+      router.replace('/game/results');
     }
   }, [isComplete, feedback, router]);
 

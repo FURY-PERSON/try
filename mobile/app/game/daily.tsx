@@ -8,7 +8,7 @@ export default function DailyScreen() {
 
   useEffect(() => {
     if (dailyProgress.completed) {
-      router.replace('/modal/results');
+      router.replace('/game/results');
     } else {
       router.replace('/game/card');
     }
