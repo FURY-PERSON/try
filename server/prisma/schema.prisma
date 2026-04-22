@@ -24,6 +24,10 @@ model User {
   totalCorrectAnswers Int      @default(0)
   totalScore          Int      @default(0)
   shields             Int      @default(0)
+  loginStreak         Int      @default(0)
+  bestLoginStreak     Int      @default(0)
+  lastLoginDate       DateTime? @db.Date
+  lastLoginBonusAt    DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -33,6 +37,7 @@ model User {
   collectionItemHistory    UserCollectionItemHistory[]
 
   @@index([lastPlayedDate])
+  @@index([lastLoginDate])
 }
 
 model Category {

@@ -49,6 +49,7 @@ import { getStreakBonusPercent } from '@/features/game/utils/streakBonus';
 import { useFeatureFlag, useFeatureFlagPayload } from '@/features/feature-flags/hooks/useFeatureFlag';
 import { ShieldBadge } from '@/features/shield/components/ShieldBadge';
 import { ShieldInfoModal } from '@/features/shield/components/ShieldInfoModal';
+import { useDailyLoginClaim } from '@/features/daily-login/hooks/useDailyLoginClaim';
 import { s } from '@/utils/scale';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -63,6 +64,7 @@ export default function HomeScreen() {
   const { colors, spacing, gradients, elevation, borderRadius, scale } = useThemeContext();
   const { t } = useTranslation();
   const router = useRouter();
+  useDailyLoginClaim();
   const language = useSettingsStore((s) => s.language);
   const startDailySet = useGameStore((s) => s.startDailySet);
   const startCollectionSession = useGameStore((s) => s.startCollectionSession);

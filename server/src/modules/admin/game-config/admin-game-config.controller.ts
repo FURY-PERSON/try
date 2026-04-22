@@ -8,6 +8,7 @@ import {
 import { AdminJwtGuard } from '../auth/admin-jwt.guard';
 import { AdminGameConfigService } from './admin-game-config.service';
 import { UpdateStreakBonusDto } from './dto/update-streak-bonus.dto';
+import { UpdateDailyLoginRewardDto } from './dto/update-daily-login-reward.dto';
 
 @ApiTags('admin/game-config')
 @ApiBearerAuth()
@@ -30,5 +31,19 @@ export class AdminGameConfigController {
   @ApiResponse({ status: 200, description: 'Streak bonus config updated' })
   async updateStreakBonus(@Body() dto: UpdateStreakBonusDto) {
     return this.adminGameConfigService.updateStreakBonus(dto);
+  }
+
+  @Get('daily-login-reward')
+  @ApiOperation({ summary: 'Get ежедневного бонуса за заход' })
+  @ApiResponse({ status: 200, description: 'Daily login reward config' })
+  async getDailyLoginReward() {
+    return this.adminGameConfigService.getDailyLoginReward();
+  }
+
+  @Put('daily-login-reward')
+  @ApiOperation({ summary: 'Обновить конфиг ежедневного бонуса за заход' })
+  @ApiResponse({ status: 200, description: 'Daily login reward config updated' })
+  async updateDailyLoginReward(@Body() dto: UpdateDailyLoginRewardDto) {
+    return this.adminGameConfigService.updateDailyLoginReward(dto);
   }
 }

@@ -50,6 +50,7 @@ import type {
   FeatureFlag,
   CreateFeatureFlagDto,
   UpdateFeatureFlagDto,
+  DailyLoginRewardConfig,
 } from '../types';
 
 export function createAdminEndpoints(http: AxiosInstance) {
@@ -295,6 +296,12 @@ export function createAdminEndpoints(http: AxiosInstance) {
       },
       updateStreakBonus(dto: { enabled: boolean; tiers: { minStreak: number; bonusPercent: number }[] }) {
         return http.put<ApiResponse<{ enabled: boolean; tiers: { minStreak: number; bonusPercent: number }[] }>>('/api/admin/game-config/streak-bonus', dto);
+      },
+      getDailyLoginReward() {
+        return http.get<ApiResponse<DailyLoginRewardConfig>>('/api/admin/game-config/daily-login-reward');
+      },
+      updateDailyLoginReward(dto: DailyLoginRewardConfig) {
+        return http.put<ApiResponse<DailyLoginRewardConfig>>('/api/admin/game-config/daily-login-reward', dto);
       },
     },
 

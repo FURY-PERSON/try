@@ -129,6 +129,20 @@
     "bestStreak": "Best streak",
     "avgScore": "Avg score",
     "defaultNickname": "Player",
+    "dailyBonus": {
+      "sectionTitle": "Daily Bonus",
+      "currentStreak": "Current streak",
+      "best": "Best streak",
+      "daysInRow_one": "{{count}} day",
+      "daysInRow_other": "{{count}} days",
+      "daysInRow": "{{count}} days",
+      "todayReceived": "Today",
+      "todayAvailable": "Available today",
+      "tomorrow": "Tomorrow",
+      "upcoming": "Upcoming",
+      "dayN": "Day {{day}}",
+      "max": "Max"
+    },
     "activityLess": "Less",
     "activityMore": "More"
   },
@@ -229,5 +243,14 @@
     "shieldGuideTitle": "Use a shield!",
     "shieldGuideDesc": "Tap the shield before answering to protect your streak. If you get it wrong, your streak won't reset.",
     "got": "Got it"
+  },
+  "dailyLoginBonus": {
+    "title": "Daily reward",
+    "dayLabel": "Day {{day}}",
+    "shields": "+{{count}} shields",
+    "streak": "+{{count}} to streak",
+    "tomorrow": "Tomorrow you'll get",
+    "claim": "Claim",
+    "empty": "—"
   }
 }

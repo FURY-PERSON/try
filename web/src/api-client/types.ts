@@ -371,6 +371,21 @@ export type UpdateFeatureFlagDto = {
   payload?: Record<string, unknown>;
 };
 
+// ── Daily Login Reward ──
+
+export type DailyLoginRewardEntry = {
+  day: number;
+  shields: number;
+  streak: number;
+};
+
+export type DailyLoginRewardConfig = {
+  isEnabled: boolean;
+  capShields: number;
+  capStreak: number;
+  rewards: DailyLoginRewardEntry[];
+};
+
 // ── Client Options ──
 
 export type ApiClientOptions = {

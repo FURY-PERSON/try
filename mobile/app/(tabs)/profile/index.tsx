@@ -14,6 +14,7 @@ import { AnimatedEntrance } from '@/components/ui/AnimatedEntrance';
 import { Skeleton } from '@/components/feedback/Skeleton';
 import { StatCard } from '@/features/profile/components/StatCard';
 import { HeatmapCalendar } from '@/features/profile/components/HeatmapCalendar';
+import { LoginStreakSection } from '@/features/daily-login/components/LoginStreakSection';
 import { useStats } from '@/features/profile/hooks/useStats';
 import { profileApi } from '@/features/profile/api/profileApi';
 import { useUserStore } from '@/stores/useUserStore';
@@ -111,6 +112,13 @@ export default function ProfileScreen() {
                 accentColor={colors.blue}
               />
             </View>
+          </AnimatedEntrance>
+
+          <Divider marginVertical={spacing.sectionGap} />
+
+          {/* Daily Login Bonus */}
+          <AnimatedEntrance delay={150}>
+            <LoginStreakSection />
           </AnimatedEntrance>
 
           <Divider marginVertical={spacing.sectionGap} />

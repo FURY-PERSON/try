@@ -10,6 +10,7 @@ type ScreenProps = {
   style?: StyleProp<ViewStyle>;
   padded?: boolean;
   backgroundColor?: string;
+  paddingHorizontal?: boolean
 };
 
 export const Screen: FC<ScreenProps> = ({
@@ -17,6 +18,7 @@ export const Screen: FC<ScreenProps> = ({
   style,
   padded = true,
   backgroundColor: bgOverride,
+  paddingHorizontal = true
 }) => {
   const { colors, spacing, isDark } = useThemeContext();
 
@@ -31,7 +33,7 @@ export const Screen: FC<ScreenProps> = ({
       <View
         style={[
           styles.content,
-          padded && { paddingHorizontal: spacing.screenPadding },
+          padded && { paddingHorizontal: paddingHorizontal ? spacing.screenPadding : undefined },
           style,
         ]}
       >

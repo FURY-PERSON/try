@@ -130,7 +130,22 @@
     "avgScore": "Средний балл",
     "defaultNickname": "Игрок",
     "activityLess": "Меньше",
-    "activityMore": "Больше"
+    "activityMore": "Больше",
+    "dailyBonus": {
+      "sectionTitle": "Ежедневный бонус",
+      "currentStreak": "Текущий стрик",
+      "best": "Лучший стрик",
+      "daysInRow_one": "{{count}} день",
+      "daysInRow_few": "{{count}} дня",
+      "daysInRow_many": "{{count}} дней",
+      "daysInRow": "{{count}} дней",
+      "todayReceived": "Сегодня",
+      "todayAvailable": "Доступно сегодня",
+      "tomorrow": "Завтра",
+      "upcoming": "Дальше",
+      "dayN": "День {{day}}",
+      "max": "Максимум"
+    }
   },
   "settings": {
     "title": "Настройки",
@@ -229,5 +244,14 @@
     "shieldGuideTitle": "Используй щит!",
     "shieldGuideDesc": "Нажми на щит перед ответом, чтобы защитить стрик. При неправильном ответе стрик не сбросится.",
     "got": "Понятно"
+  },
+  "dailyLoginBonus": {
+    "title": "Ежедневная награда",
+    "dayLabel": "День {{day}}",
+    "shields": "+{{count}} щитов",
+    "streak": "+{{count}} к стрику",
+    "tomorrow": "Завтра получишь",
+    "claim": "Забрать",
+    "empty": "—"
   }
 }

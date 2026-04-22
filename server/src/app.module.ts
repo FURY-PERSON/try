@@ -21,6 +21,7 @@ import { SupportModule } from './modules/support/support.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ShieldsModule } from './modules/shields/shields.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { DailyLoginBonusModule } from './modules/daily-login-bonus/daily-login-bonus.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
     LogsModule,
     ShieldsModule,
     TasksModule,
+    DailyLoginBonusModule,
   ],
   providers: [
     // Apply throttler guard globally

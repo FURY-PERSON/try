@@ -33,7 +33,8 @@ type AnalyticsEvent =
   | 'category_start'
   | 'daily_locked_viewed'
   | 'home_section_scroll'
-  | 'home_filter_applied';
+  | 'home_filter_applied'
+  | 'daily_login_bonus_shown';
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 
